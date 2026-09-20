@@ -154,13 +154,15 @@ body{
 
 #scChat{flex-direction:row}
 #chatMain{flex:1;min-width:0;display:flex;flex-direction:column}
-#rail{width:56px;flex:0 0 auto;background:var(--tint);border-right:1.5px solid #A9C4B9;
+#rail{width:56px;flex:0 0 auto;background:var(--tint);border-right:1px solid var(--tint-line);
   overflow-y:auto;padding:9px 0 14px;display:flex;flex-direction:column;
   align-items:center;gap:7px;scrollbar-width:none}
 #rail::-webkit-scrollbar{display:none}
+/* 경계선은 흐리게, 대신 아주 옅은 그림자로 채팅 영역과 구분 */
+#rail{position:relative;z-index:2;box-shadow:1px 0 5px rgba(27,32,36,.07)}
 /* 방 목록 바 숨기기 — 두 줄 버튼으로 접고 편다 */
 #rail{transition:width .2s cubic-bezier(.32,.72,0,1),padding .2s,border-width .2s}
-#scChat.norail #rail{width:0;padding-left:0;padding-right:0;border-right-width:0;overflow:hidden}
+#scChat.norail #rail{box-shadow:none;width:0;padding-left:0;padding-right:0;border-right-width:0;overflow:hidden}
 /* 바 숨기기·보이기 버튼 하나 — 자리가 고정돼 있어 연달아 눌러도 같은 곳 */
 #railTog{position:absolute;z-index:6;top:11px;left:10.5px;color:var(--ink-3)}
 #railTog:hover{background:var(--soft);color:var(--accent)}
