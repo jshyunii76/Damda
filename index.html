@@ -823,8 +823,8 @@ body.rzing *{user-select:none!important}
       <button class="ic" id="btnCal" title="날짜별 보기">
         <svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/></svg>
       </button>
-      <button class="ic" id="btnGroup" title="그룹">
-        <svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg>
+      <button class="ic" id="btnGroup" title="폴더">
+        <svg viewBox="0 0 24 24"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H10l2 2.5h6.5A2.5 2.5 0 0 1 21 10v7.5a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z"/></svg>
       </button>
       <button class="selall" id="btnSelAll">전체 선택</button>
       <button class="ic" id="btnShare" title="공유 코드">
@@ -853,7 +853,7 @@ body.rzing *{user-select:none!important}
     <div id="selbar">
       <button class="sbtn" id="sDone"><svg viewBox="0 0 24 24"><path d="M4 12h16"/></svg><span id="sDoneLb">완료</span></button>
       <button class="sbtn" id="sPin"><svg viewBox="0 0 24 24"><path d="M9 4h6l-1 6 4 3v2H6v-2l4-3-1-6zM12 15v5"/></svg><span id="sPinLb">고정</span></button>
-      <button class="sbtn" id="sMove"><svg viewBox="0 0 24 24"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H10l2 2.5h6.5A2.5 2.5 0 0 1 21 10v7.5a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z"/><path d="M10 13.5h6M13.5 11l2.5 2.5-2.5 2.5"/></svg><span>옮기기</span></button>
+      <button class="sbtn" id="sMove"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10"/></svg><span>옮기기</span></button>
       <button class="sbtn danger" id="sDel"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg><span>삭제</span></button>
     </div>
     </div>
@@ -889,8 +889,8 @@ body.rzing *{user-select:none!important}
     <div id="cvList"></div>
   </section>
 
-  <div class="pop" id="grpPop" role="dialog" aria-label="그룹">
-    <div class="ph"><b>그룹</b>
+  <div class="pop" id="grpPop" role="dialog" aria-label="폴더">
+    <div class="ph"><b>폴더</b>
       <button class="ic" id="gpRefresh" title="다시 담기">
         <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></svg>
       </button>
@@ -904,7 +904,7 @@ body.rzing *{user-select:none!important}
   <section id="grpview">
     <div class="bar">
       <button class="ic" id="gvClose"><svg viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg></button>
-      <h1>그룹</h1>
+      <h1>폴더</h1>
       <button class="ic" id="gvRefresh" title="다시 담기">
         <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></svg>
       </button>
@@ -1013,17 +1013,17 @@ body.rzing *{user-select:none!important}
   </div></div>
 
   <div class="sheet" id="shGrpName"><div class="card">
-    <h2 id="grpNameHd">그룹 이름 바꾸기</h2>
+    <h2 id="grpNameHd">폴더 이름 바꾸기</h2>
     <p id="grpNameP">바꾼 이름은 다시 담아도 그대로 남아요.</p>
-    <input type="text" id="grpNameIn" placeholder="그룹 이름" maxlength="20">
+    <input type="text" id="grpNameIn" placeholder="폴더 이름" maxlength="20">
     <div class="btns">
       <button class="btn ghost" data-close>취소</button>
       <button class="btn" id="doGrpName">바꾸기</button></div>
   </div></div>
 
   <div class="sheet" id="shGrpDel"><div class="card">
-    <h2 id="grpDelHd">그룹 삭제</h2>
-    <p>안에 있던 메모는 지워지지 않고 ‘그룹에 속하지 않은 메모’로 옮겨져요.</p>
+    <h2 id="grpDelHd">폴더 삭제</h2>
+    <p>안에 있던 메모는 지워지지 않고 ‘폴더에 속하지 않은 메모’로 옮겨져요.</p>
     <div class="btns"><button class="btn ghost" data-close>취소</button>
       <button class="btn danger" id="delGrp">삭제</button></div>
   </div></div>
@@ -1960,7 +1960,7 @@ function drawStream(keep){
   if(selMode) updSel();
   if(grpF&&!view.length){
     const e=el('div','hint');
-    e.innerHTML='<strong>이 그룹에 남은 메모가 없어요</strong>뒤로 가면 전체 메모로 돌아가요.';
+    e.innerHTML='<strong>이 폴더에 남은 메모가 없어요</strong>뒤로 가면 전체 메모로 돌아가요.';
     add(e); return;
   }
   if(!msgs.length){
@@ -3313,9 +3313,9 @@ async function computeGroups(fresh){
   const groups=[...mg.values(),...ai];
   let hint=null;
   if(!groups.length){
-    if(!aiKey) hint=['AI 정리가 꺼져 있어요','홈 화면의 AI 설정에서 키를 넣으면 AI가 나눠 줘요. 자세히 보기에서 직접 그룹을 만들 수도 있어요.'];
+    if(!aiKey) hint=['AI 정리가 꺼져 있어요','홈 화면의 AI 설정에서 키를 넣으면 AI가 나눠 줘요. 자세히 보기에서 직접 폴더를 만들 수도 있어요.'];
     else if(msgs.filter(m=>vecCache.has(m.id)).length<2) hint=['아직 정리된 메모가 적어요','AI 설정에서 “아직 정리 안 된 메모 처리하기”를 누르면 이 방의 메모를 읽어서 나누어 담을 수 있어요.'];
-    else hint=['아직 그룹으로 나눌 만큼 비슷한 게 없어요','비슷한 메모가 두 개 이상 쌓이면 알아서 그룹으로 나눠 줘요. 자세히 보기에서 직접 만들 수도 있어요.'];
+    else hint=['아직 폴더로 나눌 만큼 비슷한 게 없어요','비슷한 메모가 두 개 이상 쌓이면 알아서 폴더로 나눠 줘요. 자세히 보기에서 직접 만들 수도 있어요.'];
   }
   return {groups,singles,hint};
 }
@@ -3438,7 +3438,7 @@ function gvRow(m,from){
     d.textContent=ddText(ddays(m.due));
     row.appendChild(d);
   }
-  const hd=el('span','hd'); hd.title='끌어서 다른 그룹으로'; hd.innerHTML=GRIP;
+  const hd=el('span','hd'); hd.title='끌어서 다른 폴더로'; hd.innerHTML=GRIP;
   row.appendChild(hd);
   /* 메모를 누르면 전체 방에서 그 메모 위치로 */
   row.onclick=()=>{
@@ -3451,15 +3451,15 @@ function gvRow(m,from){
 function gvCard(name,items,key,g){
   const card=el('div','gcard');
   card._g=g||'none';
-  const h=el('div','gh'); h.title='이 그룹만 보기';
+  const h=el('div','gh'); h.title='이 폴더만 보기';
   const n=el('span','gn'); n.textContent=name;
   const c=el('span','gc'); c.textContent=items.length+'개';
   const go=el('span','go'); go.innerHTML='<svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>';
   if(g){
-    const ed=el('button','ren'); ed.title='그룹 이름 바꾸기';
+    const ed=el('button','ren'); ed.title='폴더 이름 바꾸기';
     ed.innerHTML='<svg viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>';
     ed.onclick=e=>{ e.stopPropagation(); askGrpName(g); };
-    const dl=el('button','ren del'); dl.title='그룹 삭제';
+    const dl=el('button','ren del'); dl.title='폴더 삭제';
     dl.innerHTML='<svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>';
     dl.onclick=e=>{ e.stopPropagation(); askGrpDel(g); };
     /* 이름 · 방으로 가는 화살표 · 개수 · (맨 오른쪽) 이름 바꾸기 · 삭제 */
@@ -3508,12 +3508,12 @@ function drawGroups(r){
   const grid=el('div','ggrid');
   r.groups.forEach((g,i)=>grid.appendChild(gvCard(g.name,g.items,g.id||'a'+i,g)));
   const nb=el('button','gnew');
-  nb.innerHTML='<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>새 그룹 만들기';
+  nb.innerHTML='<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>새 폴더 만들기';
   nb.onclick=()=>askGrpName(null);
   grid.appendChild(nb);
   box.appendChild(grid);
   /* 그룹에 속하지 않은 메모는 구분선 아래 맨 끝에 */
-  const dv=el('div','gdiv'); dv.innerHTML='<span>그룹에 속하지 않은 메모</span>';
+  const dv=el('div','gdiv'); dv.innerHTML='<span>폴더에 속하지 않은 메모</span>';
   box.appendChild(dv);
   box.appendChild(gvCard('기타',r.singles,'etc',null));
   box.scrollTop=top;
@@ -3592,7 +3592,7 @@ async function gEndDrag(ok){
   const to=d.over._g;
   await moveMemo(d.m,d.from,to);
   await refreshGroups();
-  toast(to==='none'?'그룹에서 뺐어요':`‘${to.name}’ 그룹으로 옮겼어요`);
+  toast(to==='none'?'폴더에서 뺐어요':`‘${to.name}’ 폴더로 옮겼어요`);
 }
 window.addEventListener('pointermove',e=>{ if(gdrag) gMoveDrag(e.clientX,e.clientY); });
 window.addEventListener('pointerup',()=>{ if(gdrag) gEndDrag(true); });
@@ -3604,7 +3604,7 @@ document.addEventListener('touchmove',e=>{ if(gdrag) e.preventDefault(); },{pass
 let grpNameT=null;   /* null이면 새 그룹 만들기 */
 function askGrpName(g){
   grpNameT=g;
-  $('#grpNameHd').textContent=g?'그룹 이름 바꾸기':'새 그룹 만들기';
+  $('#grpNameHd').textContent=g?'폴더 이름 바꾸기':'새 폴더 만들기';
   $('#grpNameP').textContent=g?'바꾼 이름은 다시 담아도 그대로 남아요.':'만든 뒤 메모를 끌어다 넣으면 돼요.';
   $('#doGrpName').textContent=g?'바꾸기':'만들기';
   $('#grpNameIn').value=g?g.name:'';
@@ -3612,23 +3612,23 @@ function askGrpName(g){
 }
 $('#doGrpName').onclick=async()=>{
   const v=$('#grpNameIn').value.trim();
-  if(!v){ toast('그룹 이름을 입력하세요'); return; }
+  if(!v){ toast('폴더 이름을 입력하세요'); return; }
   const g=grpNameT; close('#shGrpName'); grpNameT=null;
-  if(!g){ await createGroup(v); await refreshGroups(); toast('새 그룹을 만들었어요'); return; }
+  if(!g){ await createGroup(v); await refreshGroups(); toast('새 폴더를 만들었어요'); return; }
   if(v===g.name) return;
   await renameGroup(g,v);
   await refreshGroups();
-  toast('그룹 이름을 바꿨어요');
+  toast('폴더 이름을 바꿨어요');
 };
 let grpDelT=null;
-function askGrpDel(g){ grpDelT=g; $('#grpDelHd').textContent=`‘${g.name}’ 그룹 삭제`; open('#shGrpDel'); }
+function askGrpDel(g){ grpDelT=g; $('#grpDelHd').textContent=`‘${g.name}’ 폴더 삭제`; open('#shGrpDel'); }
 $('#delGrp').onclick=async()=>{
   const g=grpDelT; close('#shGrpDel'); grpDelT=null;
   if(!g) return;
   await deleteGroup(g);
   if(grpF&&grpF.name===g.name) exitGrp();
   await refreshGroups();
-  toast('그룹을 지웠어요. 다시 담기를 누르면 AI가 다시 나눠요');
+  toast('폴더를 지웠어요. 다시 담기를 누르면 AI가 다시 나눠요');
 };
 $('#grpNameIn').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#doGrpName').click(); });
 $('#gvRefresh').onclick=()=>openGrpView(true).then(()=>toast('전체 메모를 다시 나눴어요'));
