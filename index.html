@@ -98,11 +98,17 @@ body{
   display:grid;place-items:center}
 .room .av{background:var(--accent-soft);color:var(--accent);font-weight:700;
   font-size:14px;letter-spacing:-.04em}
-.ini{display:block;text-align:center;line-height:1.08;white-space:nowrap}
-.ini.n3{font-size:.8em;letter-spacing:-.07em}
-.ini.n4{font-size:.86em;letter-spacing:-.05em}
-.rbtn .ini.n3{font-size:.72em}
-.rbtn .ini.n4{font-size:.78em}
+/* 방 아이콘 글자 — 아이콘 폭에 맞춰 크게(cqw = 아이콘 폭의 %), 글자 사이는 띄워서.
+   3글자까지 한 줄, 4글자는 두 줄. 글자 수가 달라도 크기 차이가 크지 않게 맞춘다.
+   글자 뒤에 붙는 간격만큼 앞에도 넣어 가운데를 맞춘다 */
+.room .av,.rbtn,.mvrow .av{container-type:size}
+.rbtn{padding:0}   /* 버튼 기본 여백이 있으면 글자 기준 폭이 줄어든다 */
+.ini{display:block;text-align:center;line-height:1.08;white-space:nowrap;
+  font-size:34cqw;letter-spacing:.1em;padding-left:.1em}
+.ini.n1{font-size:38cqw;letter-spacing:0;padding-left:0}
+.ini.n3{font-size:29cqw;letter-spacing:.04em;padding-left:.04em}
+.ini.n4{font-size:32cqw}
+.ini.nl{font-size:30cqw;letter-spacing:.06em;padding-left:.06em}
 .room .av.bav2{background:var(--accent);color:#fff}
 .room .av.bav2 svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;
   stroke-linecap:round;stroke-linejoin:round}
@@ -1718,11 +1724,14 @@ const avStyle=r=>r.color?` style="background:${r.color};color:${fgOf(r.color)}"`
 /* 앞 4글자를 쓰되, 그 안의 공백은 글자 수에서 뺀다 ('PAC 대회' → PAC) */
 const iniChars=n=>[...String(n).trim()].slice(0,4).filter(c=>c.trim());
 const initial=n=>iniChars(n).join('')||'·';
-/* 방 아이콘 글자: 2자까지는 그대로, 3자는 한 줄, 4자는 두 줄로 */
+/* 방 아이콘 글자: 3자까지 한 줄, 4자는 두 줄로 (영문만이면 한 줄) */
 function iniHTML(n){
   const c=iniChars(n);
   if(!c.length) return '<span class="ini">·</span>';
-  if(c.length<=2) return `<span class="ini">${esc(c.join(''))}</span>`;
+  if(c.length===1) return `<span class="ini n1">${esc(c[0])}</span>`;
+  if(c.length===2) return `<span class="ini">${esc(c.join(''))}</span>`;
+  /* 영문·숫자처럼 폭이 좁은 글자만 있으면 4글자도 한 줄 */
+  if(c.every(x=>/[\x21-\x7e]/.test(x))) return `<span class="ini nl">${esc(c.join(''))}</span>`;
   if(c.length===3) return `<span class="ini n3">${esc(c.join(''))}</span>`;
   return `<span class="ini n4">${esc(c.slice(0,2).join(''))}<br>${esc(c.slice(2).join(''))}</span>`;
 }
