@@ -418,6 +418,7 @@ body{
 .gcard .gh:hover .gn{color:var(--accent)}
 .gcard .gh .ren{flex:0 0 auto;border:0;background:transparent;padding:3px;border-radius:6px;cursor:pointer;
   color:var(--ink-3);display:grid;place-items:center}
+.gcard .gh .ren.first{margin-left:auto}
 .gcard .gh .ren:hover{background:var(--mute);color:var(--accent)}
 .gcard .gh .ren.del:hover{background:var(--danger-soft);color:var(--strike)}
 .gcard .gh .ren svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
@@ -429,18 +430,26 @@ body{
 .gpmore:hover{text-decoration:underline}
 .gpmore svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 /* 그룹 카드는 한 줄에 두 개씩 */
-.ggrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;align-items:start}
+.ggrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 9px;align-items:start}
 .ggrid .gcard{margin:0;padding:10px 10px 7px;min-width:0}
 .ggrid .gcard .gh{gap:4px}
 .ggrid .gcard .gn{flex:0 1 auto;min-width:0;font-size:14px}
 .ggrid .gcard .gc{padding:1px 6px}
 .ggrid .gcard .gh .go{margin-left:-3px}
 .ggrid .gcard .gi{gap:6px;font-size:13px}
-.ggrid .gcard .gi img,.ggrid .gcard .gi .fi{width:26px;height:26px;border-radius:7px}
+.ggrid .gcard .gi img,.ggrid .gcard .gi .fi{width:20px;height:20px;border-radius:5px;margin:-1px 0}
+.ggrid .gcard .gi .fi svg{width:12px;height:12px}
+.ggrid .gcard .gi{min-height:32px}
 .ggrid .gcard .gi .fi svg{width:14px;height:14px}
 .ggrid .gcard .gi .hd{width:22px;margin-right:-5px}
 .ggrid .gcard .gw{font-size:11px}
-.ggrid .gnew{margin:0;height:100%;min-height:92px;flex-direction:column;gap:4px}
+.ggrid .gcard.fx{height:var(--gfh,114px);display:flex;flex-direction:column;position:relative}
+/* 더보기는 카드 크기를 늘리지 않게 아래 테두리 위에 걸친다 */
+.ggrid .gcard.fx .gmore{position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);width:auto;
+  padding:1px 10px;background:#fff;border:1.5px solid #8FB7AB;border-radius:10px;font-size:11px;line-height:1.5;
+  white-space:nowrap;z-index:1}
+.ggrid .gcard.fx .gempty{flex:1;display:grid;place-items:center;padding:0}
+.ggrid .gnew{margin:0;height:var(--gfh,114px);flex-direction:column;gap:4px}
 /* 그룹 편집: 새 그룹, 끌어서 옮기기, 구분선 */
 .gcard .gi .hd{flex:0 0 auto;width:26px;height:30px;margin:-4px -6px -4px 0;display:grid;place-items:center;
   color:var(--ctrl);touch-action:none;cursor:grab;border-radius:6px}
@@ -1033,7 +1042,7 @@ body.rzing *{user-select:none!important}
 
   <div class="sheet" id="shMove"><div class="card">
     <h2 id="mvHd">다른 방으로 옮기기</h2>
-    <p>옮긴 메모는 이 방에서 사라지고, 고른 방에 들어가요.</p>
+    <p id="mvP">옮긴 메모는 이 방에서 사라지고, 고른 방에 들어가요.</p>
     <div id="mvList"></div>
     <div class="btns"><button class="btn ghost" data-close>취소</button></div>
   </div></div>
@@ -2304,6 +2313,7 @@ $('#sPin').onclick=async()=>{
 $('#sMove').onclick=()=>{
   const L=selList(); if(!L.length) return;
   $('#mvHd').textContent=`메모 ${L.length}개를 다른 방으로`;
+  $('#mvP').textContent='옮긴 메모는 이 방에서 사라지고, 고른 방에 들어가요.';
   const box=$('#mvList'); box.innerHTML='';
   const others=rooms.filter(r=>!cur||r.id!==cur.id);
   if(!others.length){ box.innerHTML='<p style="margin:4px 8px 10px">옮길 다른 방이 없어요. 방을 먼저 만들어주세요.</p>'; }
@@ -3076,7 +3086,7 @@ const GRP_SYS=`너는 메모 묶음에 이름을 붙이는 도우미다.
 
 출력 형식
 {"names":["...","..."]}`;
-const GRP_TH=0.62, GRP_MAX=300, GRP_SHOW=3;
+const GRP_TH=0.62, GRP_MAX=300, GRP_SHOW=2;
 let grpF=null, lastGrp=null, grpOpen=new Set();   /* 지금 보고 있는 그룹 {name, ids} */
 
 /* 평균 연결 방식으로 비슷한 것끼리 합친다 */
@@ -3410,7 +3420,7 @@ async function openPop(fresh){
   const r=await computeGroups(fresh);
   lastGrp=r;
   if(!gpop.classList.contains('on')) return;
-  drawPop(r); $('#gpMore').hidden=!msgs.length; placePop();
+  drawPop(r); $('#gpMore').hidden=false; placePop();
 }
 const closePop=()=>gpop.classList.remove('on');
 $('#btnGroup').onclick=e=>{ e.stopPropagation(); gpop.classList.contains('on')?closePop():openPop(false); };
@@ -3456,7 +3466,6 @@ function gvCard(name,items,key,g){
   card._g=g||'none';
   const h=el('div','gh'); h.title='이 폴더만 보기';
   const n=el('span','gn'); n.textContent=name;
-  const c=el('span','gc'); c.textContent=items.length+'개';
   const go=el('span','go'); go.innerHTML='<svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>';
   if(g){
     const ed=el('button','ren'); ed.title='폴더 이름 바꾸기';
@@ -3465,21 +3474,24 @@ function gvCard(name,items,key,g){
     const dl=el('button','ren del'); dl.title='폴더 삭제';
     dl.innerHTML='<svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>';
     dl.onclick=e=>{ e.stopPropagation(); askGrpDel(g); };
-    /* 이름 · 방으로 가는 화살표 · 개수 · (맨 오른쪽) 이름 바꾸기 · 삭제 */
+    const mv=el('button','ren'); mv.title='다른 방으로 폴더 옮기기';
+    mv.innerHTML='<svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10"/></svg>';
+    mv.onclick=e=>{ e.stopPropagation(); askFolderMove(g); };
+    /* 이름 · 방으로 가는 화살표 · (맨 오른쪽) 이름 바꾸기 · 다른 방으로 옮기기 · 삭제 */
+    ed.classList.add('first');
     h.append(n);
     if(items.length) h.append(go);
-    h.append(c,ed,dl);
+    h.append(ed,mv,dl);
   }else{
     h.append(n);
     if(items.length) h.append(go);
-    h.append(c);
   }
   card.appendChild(h);
   /* 그룹 이름을 누르면 그 그룹만 있는 방으로 */
   h.onclick=()=>{ if(!items.length) return; $('#grpview').classList.remove('on'); enterGrp(name,items); };
   const files=items.filter(x=>x.m.file).length;
   const dues=items.filter(x=>x.m.due&&!x.m.done).length;
-  if(files||dues){
+  if((files||dues)&&!g){
     const wk=el('div','gw');
     wk.textContent=[files?`파일 ${files}`:'',dues?`날짜 ${dues}`:''].filter(Boolean).join(' · ');
     card.appendChild(wk);
@@ -3489,6 +3501,8 @@ function gvCard(name,items,key,g){
     card.appendChild(e);
   }
   const all=grpOpen.has(key);
+  /* 접힌 폴더 카드는 메모 2개 자리 + 더보기 자리로 크기를 고정한다 */
+  if(!all&&g) card.classList.add('fx');
   (all?items:items.slice(0,GRP_SHOW)).forEach(x=>card.appendChild(gvRow(x.m,g||'none')));
   if(items.length>GRP_SHOW){
     const mo=el('button','gmore');
@@ -3500,10 +3514,6 @@ function gvCard(name,items,key,g){
 }
 function drawGroups(r){
   const box=$('#gvList'), top=box.scrollTop; box.innerHTML='';
-  if(r.hint&&!r.groups.length&&!msgs.length){
-    const e=el('div','hint'); e.innerHTML=`<strong>${r.hint[0]}</strong>`;
-    e.appendChild(document.createTextNode(r.hint[1])); box.appendChild(e); return;
-  }
   if(r.hint){
     const e=el('div','gnote'); e.innerHTML=`<b>${r.hint[0]}</b>`;
     e.appendChild(document.createTextNode(r.hint[1])); box.appendChild(e);
@@ -3623,6 +3633,51 @@ $('#doGrpName').onclick=async()=>{
   await refreshGroups();
   toast('폴더 이름을 바꿨어요');
 };
+/* ---------- 폴더를 통째로 다른 방으로 ----------
+   메모는 이 방에서 빠져 고른 방으로 가고, 고른 방에 같은 이름 폴더가 있으면 합친다 */
+function askFolderMove(g){
+  $('#mvHd').textContent=`‘${g.name}’ 폴더를 다른 방으로`;
+  $('#mvP').textContent='폴더 안 메모가 모두 다른 방의 폴더로 이동해요.';
+  const box=$('#mvList'); box.innerHTML='';
+  const others=rooms.filter(r=>!cur||r.id!==cur.id);
+  if(!others.length) box.innerHTML='<p style="margin:4px 8px 10px">옮길 다른 방이 없어요. 방을 먼저 만들어주세요.</p>';
+  others.forEach(r=>{
+    const b=el('button','mvrow');
+    b.innerHTML=`<span class="av"${avStyle(r)}>${iniHTML(r.name)}</span><span class="nm">${esc(r.name)}</span>`;
+    b.onclick=async()=>{ close('#shMove'); await moveFolderToRoom(g,r); };
+    box.appendChild(b);
+  });
+  open('#shMove');
+}
+async function moveFolderToRoom(g,r){
+  if(!cur||r.id===cur.id) return;
+  const ms=g.items.map(x=>x.m);
+  /* 1) 메모를 고른 방에 넣는다 */
+  const list=await readList(r), have=new Set(list.map(x=>x.id));
+  ms.forEach(m=>{ if(!have.has(m.id)){ const mv={...m}; if(mv.ai==='run') delete mv.ai; list.push(mv); } });
+  list.sort((a,b)=>a.ts-b.ts);
+  await saveList(r,list);
+  /* 2) 고른 방의 폴더: 같은 이름이 있으면 합치고, 없으면 새로 만든다 */
+  const tk='grpman:'+r.id, td=await S.get(tk)||{};
+  const tm={groups:td.groups||[],assign:td.assign||{}};
+  let tg=tm.groups.find(x=>x.name===g.name);
+  if(!tg){ tg={id:newGid(),name:g.name}; tm.groups.push(tg); }
+  delete tg.ai;
+  ms.forEach(m=>{ tm.assign[m.id]=tg.id; });
+  await S.set(tk,tm);
+  /* 3) 이 방에서는 폴더와 메모를 뺀다 */
+  const ids=new Set(ms.map(m=>m.id));
+  const man=await loadMan();
+  if(g.manual) man.groups=man.groups.filter(x=>x.id!==g.id);
+  Object.keys(man.assign).forEach(k=>{ if(ids.has(k)||man.assign[k]===g.id) delete man.assign[k]; });
+  await saveMan(man);
+  msgs=msgs.filter(x=>!ids.has(x.id));
+  ids.forEach(id=>noteOpen.delete(id));
+  if(grpF&&grpF.name===g.name) exitGrp();
+  drawStream(true); await persist();
+  await refreshGroups();
+  toast(`‘${g.name}’ 폴더를 ‘${r.name}’ 방으로 옮겼어요`);
+}
 let grpDelT=null;
 function askGrpDel(g){ grpDelT=g; $('#grpDelHd').textContent=`‘${g.name}’ 폴더 삭제`; open('#shGrpDel'); }
 $('#delGrp').onclick=async()=>{
