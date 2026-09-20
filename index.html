@@ -678,6 +678,8 @@ body{
 /* 날짜 지정 창: 스크롤 없이 한 번에 보이게 — 창은 화면 거의 끝까지, 넓은 화면에선 달력 폭을 제한 */
 #shCal .card{max-height:calc(100% - 8px)}
 #shCal .cal{max-width:380px;margin-left:auto;margin-right:auto}
+/* 시간 눈금자를 줄인 만큼(약 9px) 날짜 칸을 세로로 조금 키운다 */
+#calGrid .dcell{aspect-ratio:1/1.03}
 .calhd{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
 .calhd b{font-size:15px}
 .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
@@ -701,6 +703,14 @@ body{
 #calGrid .dcell.rs::after{top:5px;bottom:5px;left:50%;right:-2px;background:var(--soft);z-index:-2}
 #calGrid .dcell.re::after{top:5px;bottom:5px;left:-2px;right:50%;background:var(--soft);z-index:-2}
 .calhint{font-size:11.5px;color:var(--ink-3);margin:-4px 0 10px;min-height:17px}
+#shCal .card{padding-top:18px;padding-bottom:calc(18px + env(safe-area-inset-bottom))}
+/* 날짜 지정 창: 작은 폰에서도 6주짜리 달이 스크롤 없이 들어가게 여백만 조금씩 줄인다 */
+#shCal .card p{margin-bottom:10px}
+#shCal .calhd{margin-bottom:5px}
+#shCal .cal{margin-bottom:8px}
+#shCal .calhint{margin-bottom:7px}
+#shCal .tpick{margin-bottom:10px}
+#shCal .tphd{margin-bottom:6px}
 .calhint b{color:var(--accent);font-weight:700}
 
 /* 시간 눈금자 — 좌우로 끌어서 10분 단위로 고른다 */
@@ -721,7 +731,7 @@ body{
 .rwrap::before,.rwrap::after{content:'';position:absolute;top:0;bottom:0;width:36px;z-index:2;pointer-events:none}
 .rwrap::before{left:0;background:linear-gradient(90deg,var(--mute),rgba(242,245,246,0))}
 .rwrap::after{right:0;background:linear-gradient(270deg,var(--mute),rgba(242,245,246,0))}
-.ruler{height:60px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;cursor:grab;
+.ruler{height:51px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;cursor:grab;
   touch-action:pan-x;outline:none;-webkit-user-select:none;user-select:none}
 .ruler::-webkit-scrollbar{display:none}
 .ruler.drag{cursor:grabbing}
@@ -1077,7 +1087,7 @@ body.rzing *{user-select:none!important}
 
   <div class="sheet" id="shCal"><div class="card">
     <h2 id="calHead">날짜 지정</h2>
-    <p>고른 날짜까지 며칠 남았는지 메모에 함께 표시됩니다. 날짜를 누른 채 끌면 기간이 돼요.</p>
+    <p id="calDesc">고른 날짜까지 며칠 남았는지 메모에 함께 표시됩니다.</p>
     <div class="cal">
       <div class="calhd">
         <button class="ic" id="calPrev"><svg viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg></button>
