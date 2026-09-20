@@ -1922,7 +1922,8 @@ async function openRoom(id){
   try{ const o=await S.get('open:'+cur.id); if(o&&o.day===todayKey()) (o.keys||[]).forEach(k=>{ opened[k]=true; }); }catch(e){}
   msgs=await readList(cur);
   drawStream();
-  setTimeout(()=>$('#txt').focus(),260);
+  /* PC에서만 입력창에 바로 커서 — 폰은 키보드가 튀어 올라와서 하지 않는다 */
+  if(matchMedia('(pointer:fine)').matches) setTimeout(()=>$('#txt').focus(),260);
 }
 
 async function persist(){
