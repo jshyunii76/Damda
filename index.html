@@ -79,7 +79,7 @@ body{
   color:var(--ink-2);display:grid;place-items:center;flex:0 0 auto}
 .ic:hover{background:var(--mute)}
 .ic:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-.ic svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;
+.ic svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;
   stroke-linecap:round;stroke-linejoin:round}
 .ic.hl{color:var(--accent)}
 
@@ -418,7 +418,6 @@ body{
 .gcard .gh:hover .gn{color:var(--accent)}
 .gcard .gh .ren{flex:0 0 auto;border:0;background:transparent;padding:3px;border-radius:6px;cursor:pointer;
   color:var(--ink-3);display:grid;place-items:center}
-.gcard .gh .ren.first{margin-left:auto}
 .gcard .gh .ren:hover{background:var(--mute);color:var(--accent)}
 .gcard .gh .ren.del:hover{background:var(--danger-soft);color:var(--strike)}
 .gcard .gh .ren svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
@@ -437,15 +436,11 @@ body{
 .ggrid .gcard .gc{padding:1px 6px}
 .ggrid .gcard .gh .go{margin-left:-3px}
 .ggrid .gcard .gi{gap:6px;font-size:13px}
-.ggrid .gcard .gi img,.ggrid .gcard .gi .fi{width:20px;height:20px;border-radius:5px;margin:-1px 0}
-.ggrid .gcard .gi .fi svg{width:12px;height:12px}
-.ggrid .gcard .gi{min-height:32px}
+.ggrid .gcard .gi img,.ggrid .gcard .gi .fi{width:26px;height:26px;border-radius:7px}
 .ggrid .gcard .gi .fi svg{width:14px;height:14px}
 .ggrid .gcard .gi .hd{width:22px;margin-right:-5px}
 .ggrid .gcard .gw{font-size:11px}
-.ggrid .gcard.fx{min-height:var(--gfh,114px);display:flex;flex-direction:column}
-.ggrid .gcard.fx .gempty{flex:1;display:grid;place-items:center;padding:0}
-.ggrid .gnew{margin:0;height:var(--gfh,114px);flex-direction:column;gap:4px}
+.ggrid .gnew{margin:0;height:100%;min-height:92px;flex-direction:column;gap:4px}
 /* 그룹 편집: 새 그룹, 끌어서 옮기기, 구분선 */
 .gcard .gi .hd{flex:0 0 auto;width:26px;height:30px;margin:-4px -6px -4px 0;display:grid;place-items:center;
   color:var(--ctrl);touch-action:none;cursor:grab;border-radius:6px}
@@ -675,11 +670,6 @@ body{
   padding:9px 11px;margin-bottom:12px;line-height:1.45}
 
 .cal{margin-bottom:12px}
-/* 날짜 지정 창: 스크롤 없이 한 번에 보이게 — 창은 화면 거의 끝까지, 넓은 화면에선 달력 폭을 제한 */
-#shCal .card{max-height:calc(100% - 8px)}
-#shCal .cal{max-width:380px;margin-left:auto;margin-right:auto}
-/* 시간 눈금자를 줄인 만큼(약 9px) 날짜 칸을 세로로 조금 키운다 */
-#calGrid .dcell{aspect-ratio:1/1.03}
 .calhd{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
 .calhd b{font-size:15px}
 .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
@@ -703,14 +693,6 @@ body{
 #calGrid .dcell.rs::after{top:5px;bottom:5px;left:50%;right:-2px;background:var(--soft);z-index:-2}
 #calGrid .dcell.re::after{top:5px;bottom:5px;left:-2px;right:50%;background:var(--soft);z-index:-2}
 .calhint{font-size:11.5px;color:var(--ink-3);margin:-4px 0 10px;min-height:17px}
-#shCal .card{padding-top:18px;padding-bottom:calc(18px + env(safe-area-inset-bottom))}
-/* 날짜 지정 창: 작은 폰에서도 6주짜리 달이 스크롤 없이 들어가게 여백만 조금씩 줄인다 */
-#shCal .card p{margin-bottom:10px}
-#shCal .calhd{margin-bottom:5px}
-#shCal .cal{margin-bottom:8px}
-#shCal .calhint{margin-bottom:7px}
-#shCal .tpick{margin-bottom:10px}
-#shCal .tphd{margin-bottom:6px}
 .calhint b{color:var(--accent);font-weight:700}
 
 /* 시간 눈금자 — 좌우로 끌어서 10분 단위로 고른다 */
@@ -731,7 +713,7 @@ body{
 .rwrap::before,.rwrap::after{content:'';position:absolute;top:0;bottom:0;width:36px;z-index:2;pointer-events:none}
 .rwrap::before{left:0;background:linear-gradient(90deg,var(--mute),rgba(242,245,246,0))}
 .rwrap::after{right:0;background:linear-gradient(270deg,var(--mute),rgba(242,245,246,0))}
-.ruler{height:51px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;cursor:grab;
+.ruler{height:60px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;cursor:grab;
   touch-action:pan-x;outline:none;-webkit-user-select:none;user-select:none}
 .ruler::-webkit-scrollbar{display:none}
 .ruler.drag{cursor:grabbing}
@@ -842,7 +824,7 @@ body.rzing *{user-select:none!important}
         <svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/></svg>
       </button>
       <button class="ic" id="btnGroup" title="폴더">
-        <svg viewBox="0 0 24 24"><path d="M3 17.7V6.3a1.8 1.8 0 0 1 1.8-1.8h4.3l2.1 2.2h8A1.8 1.8 0 0 1 21 8.5v9.2a1.8 1.8 0 0 1-1.8 1.8H4.8A1.8 1.8 0 0 1 3 17.7z"/><path d="M3 10.3h18"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H10l2 2.5h6.5A2.5 2.5 0 0 1 21 10v7.5a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z"/></svg>
       </button>
       <button class="selall" id="btnSelAll">전체 선택</button>
       <button class="ic" id="btnShare" title="공유 코드">
@@ -915,7 +897,7 @@ body.rzing *{user-select:none!important}
     </div>
     <p class="pd">AI가 비슷한 내용끼리 나누어 담습니다.</p>
     <div id="gpList"></div>
-    <button class="gpmore" id="gpMore" hidden>전체 폴더 보기
+    <button class="gpmore" id="gpMore" hidden>자세히 보기
       <svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
   </div>
 
@@ -1048,7 +1030,7 @@ body.rzing *{user-select:none!important}
 
   <div class="sheet" id="shMove"><div class="card">
     <h2 id="mvHd">다른 방으로 옮기기</h2>
-    <p id="mvP">옮긴 메모는 이 방에서 사라지고, 고른 방에 들어가요.</p>
+    <p>옮긴 메모는 이 방에서 사라지고, 고른 방에 들어가요.</p>
     <div id="mvList"></div>
     <div class="btns"><button class="btn ghost" data-close>취소</button></div>
   </div></div>
@@ -1087,7 +1069,7 @@ body.rzing *{user-select:none!important}
 
   <div class="sheet" id="shCal"><div class="card">
     <h2 id="calHead">날짜 지정</h2>
-    <p id="calDesc">고른 날짜까지 며칠 남았는지 메모에 함께 표시됩니다.</p>
+    <p>고른 날짜까지 며칠 남았는지 메모에 함께 표시됩니다. 날짜를 누른 채 끌면 기간이 돼요.</p>
     <div class="cal">
       <div class="calhd">
         <button class="ic" id="calPrev"><svg viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg></button>
@@ -2319,7 +2301,6 @@ $('#sPin').onclick=async()=>{
 $('#sMove').onclick=()=>{
   const L=selList(); if(!L.length) return;
   $('#mvHd').textContent=`메모 ${L.length}개를 다른 방으로`;
-  $('#mvP').textContent='옮긴 메모는 이 방에서 사라지고, 고른 방에 들어가요.';
   const box=$('#mvList'); box.innerHTML='';
   const others=rooms.filter(r=>!cur||r.id!==cur.id);
   if(!others.length){ box.innerHTML='<p style="margin:4px 8px 10px">옮길 다른 방이 없어요. 방을 먼저 만들어주세요.</p>'; }
@@ -3092,7 +3073,7 @@ const GRP_SYS=`너는 메모 묶음에 이름을 붙이는 도우미다.
 
 출력 형식
 {"names":["...","..."]}`;
-const GRP_TH=0.62, GRP_MAX=300, GRP_SHOW=2;
+const GRP_TH=0.62, GRP_MAX=300, GRP_SHOW=3;
 let grpF=null, lastGrp=null, grpOpen=new Set();   /* 지금 보고 있는 그룹 {name, ids} */
 
 /* 평균 연결 방식으로 비슷한 것끼리 합친다 */
@@ -3209,16 +3190,13 @@ async function aiArrange(loose,groups,fresh){
   const key='grpai:'+cur.id;
   const sig=groups.map(g=>g.id+':'+g.name).join('|');
   let c=null; try{ c=await S.get(key); }catch(e){}
+  if(!c||c.sig!==sig||fresh) c={sig,d:{}};
   const live=new Set(loose.map(m=>m.id));
-  /* AI는 새로고침을 직접 눌렀을 때만 부른다. 평소에는 지난번에 나눈 결과만 쓰고,
-     그 뒤에 쓴 메모는 새로고침 전까지 '폴더에 속하지 않은 메모'에 둔다 */
-  if(!fresh){
-    const d={};
-    if(c&&c.d) Object.keys(c.d).forEach(k=>{ if(live.has(k)) d[k]=c.d[k]; });
-    return d;
-  }
-  c={sig,d:{}};
-  const todo=loose.slice();
+  Object.keys(c.d).forEach(k=>{ if(!live.has(k)) delete c.d[k]; });
+  /* 새 메모가 생기면, 전에 기타로 남긴 메모도 같이 다시 본다 — 짝이 생기면 새 그룹이 된다 */
+  const fresh2=loose.filter(m=>!(m.id in c.d));
+  const todo=fresh2.length?[...loose.filter(m=>c.d[m.id]===''),...fresh2]:[];
+  todo.forEach(m=>{ delete c.d[m.id]; });
   for(let i=0;i<todo.length;i+=80){
     const batch=todo.slice(i,i+80);
     /* 지금까지 AI가 만든 그룹도 '기존 그룹'으로 알려 준다 */
@@ -3335,9 +3313,9 @@ async function computeGroups(fresh){
   const groups=[...mg.values(),...ai];
   let hint=null;
   if(!groups.length){
-    if(!aiKey) hint=['AI 정리가 꺼져 있어요','홈 화면의 AI 설정에서 키를 넣으면 AI가 나눠 줘요. 전체 폴더 보기에서 직접 폴더를 만들 수도 있어요.'];
-    else if(!(await S.get('grpai:'+cur.id))) hint=['아직 AI가 나누지 않았어요','오른쪽 위 새로고침을 누르면 AI가 비슷한 메모끼리 폴더로 나눠 줘요.'];
-    else hint=['아직 폴더로 나눌 만큼 비슷한 게 없어요','비슷한 메모가 두 개 이상 쌓인 뒤 새로고침을 누르면 폴더로 나눠 줘요. 전체 폴더 보기에서 직접 만들 수도 있어요.'];
+    if(!aiKey) hint=['AI 정리가 꺼져 있어요','홈 화면의 AI 설정에서 키를 넣으면 AI가 나눠 줘요. 자세히 보기에서 직접 폴더를 만들 수도 있어요.'];
+    else if(msgs.filter(m=>vecCache.has(m.id)).length<2) hint=['아직 정리된 메모가 적어요','AI 설정에서 “아직 정리 안 된 메모 처리하기”를 누르면 이 방의 메모를 읽어서 나누어 담을 수 있어요.'];
+    else hint=['아직 폴더로 나눌 만큼 비슷한 게 없어요','비슷한 메모가 두 개 이상 쌓이면 알아서 폴더로 나눠 줘요. 자세히 보기에서 직접 만들 수도 있어요.'];
   }
   return {groups,singles,hint};
 }
@@ -3429,7 +3407,7 @@ async function openPop(fresh){
   const r=await computeGroups(fresh);
   lastGrp=r;
   if(!gpop.classList.contains('on')) return;
-  drawPop(r); $('#gpMore').hidden=false; placePop();
+  drawPop(r); $('#gpMore').hidden=!msgs.length; placePop();
 }
 const closePop=()=>gpop.classList.remove('on');
 $('#btnGroup').onclick=e=>{ e.stopPropagation(); gpop.classList.contains('on')?closePop():openPop(false); };
@@ -3475,6 +3453,7 @@ function gvCard(name,items,key,g){
   card._g=g||'none';
   const h=el('div','gh'); h.title='이 폴더만 보기';
   const n=el('span','gn'); n.textContent=name;
+  const c=el('span','gc'); c.textContent=items.length+'개';
   const go=el('span','go'); go.innerHTML='<svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>';
   if(g){
     const ed=el('button','ren'); ed.title='폴더 이름 바꾸기';
@@ -3483,24 +3462,21 @@ function gvCard(name,items,key,g){
     const dl=el('button','ren del'); dl.title='폴더 삭제';
     dl.innerHTML='<svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>';
     dl.onclick=e=>{ e.stopPropagation(); askGrpDel(g); };
-    const mv=el('button','ren'); mv.title='다른 방으로 폴더 옮기기';
-    mv.innerHTML='<svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10"/></svg>';
-    mv.onclick=e=>{ e.stopPropagation(); askFolderMove(g); };
-    /* 이름 · 방으로 가는 화살표 · (맨 오른쪽) 이름 바꾸기 · 다른 방으로 옮기기 · 삭제 */
-    ed.classList.add('first');
+    /* 이름 · 방으로 가는 화살표 · 개수 · (맨 오른쪽) 이름 바꾸기 · 삭제 */
     h.append(n);
     if(items.length) h.append(go);
-    h.append(ed,mv,dl);
+    h.append(c,ed,dl);
   }else{
     h.append(n);
     if(items.length) h.append(go);
+    h.append(c);
   }
   card.appendChild(h);
   /* 그룹 이름을 누르면 그 그룹만 있는 방으로 */
   h.onclick=()=>{ if(!items.length) return; $('#grpview').classList.remove('on'); enterGrp(name,items); };
   const files=items.filter(x=>x.m.file).length;
   const dues=items.filter(x=>x.m.due&&!x.m.done).length;
-  if((files||dues)&&!g){
+  if(files||dues){
     const wk=el('div','gw');
     wk.textContent=[files?`파일 ${files}`:'',dues?`날짜 ${dues}`:''].filter(Boolean).join(' · ');
     card.appendChild(wk);
@@ -3510,8 +3486,6 @@ function gvCard(name,items,key,g){
     card.appendChild(e);
   }
   const all=grpOpen.has(key);
-  /* 접힌 폴더 카드는 메모 2개 자리 + 더보기 자리로 크기를 고정한다 */
-  if(!all&&g) card.classList.add('fx');
   (all?items:items.slice(0,GRP_SHOW)).forEach(x=>card.appendChild(gvRow(x.m,g||'none')));
   if(items.length>GRP_SHOW){
     const mo=el('button','gmore');
@@ -3523,6 +3497,10 @@ function gvCard(name,items,key,g){
 }
 function drawGroups(r){
   const box=$('#gvList'), top=box.scrollTop; box.innerHTML='';
+  if(r.hint&&!r.groups.length&&!msgs.length){
+    const e=el('div','hint'); e.innerHTML=`<strong>${r.hint[0]}</strong>`;
+    e.appendChild(document.createTextNode(r.hint[1])); box.appendChild(e); return;
+  }
   if(r.hint){
     const e=el('div','gnote'); e.innerHTML=`<b>${r.hint[0]}</b>`;
     e.appendChild(document.createTextNode(r.hint[1])); box.appendChild(e);
@@ -3642,51 +3620,6 @@ $('#doGrpName').onclick=async()=>{
   await refreshGroups();
   toast('폴더 이름을 바꿨어요');
 };
-/* ---------- 폴더를 통째로 다른 방으로 ----------
-   메모는 이 방에서 빠져 고른 방으로 가고, 고른 방에 같은 이름 폴더가 있으면 합친다 */
-function askFolderMove(g){
-  $('#mvHd').textContent=`‘${g.name}’ 폴더를 다른 방으로`;
-  $('#mvP').textContent='폴더 안 메모가 모두 다른 방의 폴더로 이동해요.';
-  const box=$('#mvList'); box.innerHTML='';
-  const others=rooms.filter(r=>!cur||r.id!==cur.id);
-  if(!others.length) box.innerHTML='<p style="margin:4px 8px 10px">옮길 다른 방이 없어요. 방을 먼저 만들어주세요.</p>';
-  others.forEach(r=>{
-    const b=el('button','mvrow');
-    b.innerHTML=`<span class="av"${avStyle(r)}>${iniHTML(r.name)}</span><span class="nm">${esc(r.name)}</span>`;
-    b.onclick=async()=>{ close('#shMove'); await moveFolderToRoom(g,r); };
-    box.appendChild(b);
-  });
-  open('#shMove');
-}
-async function moveFolderToRoom(g,r){
-  if(!cur||r.id===cur.id) return;
-  const ms=g.items.map(x=>x.m);
-  /* 1) 메모를 고른 방에 넣는다 */
-  const list=await readList(r), have=new Set(list.map(x=>x.id));
-  ms.forEach(m=>{ if(!have.has(m.id)){ const mv={...m}; if(mv.ai==='run') delete mv.ai; list.push(mv); } });
-  list.sort((a,b)=>a.ts-b.ts);
-  await saveList(r,list);
-  /* 2) 고른 방의 폴더: 같은 이름이 있으면 합치고, 없으면 새로 만든다 */
-  const tk='grpman:'+r.id, td=await S.get(tk)||{};
-  const tm={groups:td.groups||[],assign:td.assign||{}};
-  let tg=tm.groups.find(x=>x.name===g.name);
-  if(!tg){ tg={id:newGid(),name:g.name}; tm.groups.push(tg); }
-  delete tg.ai;
-  ms.forEach(m=>{ tm.assign[m.id]=tg.id; });
-  await S.set(tk,tm);
-  /* 3) 이 방에서는 폴더와 메모를 뺀다 */
-  const ids=new Set(ms.map(m=>m.id));
-  const man=await loadMan();
-  if(g.manual) man.groups=man.groups.filter(x=>x.id!==g.id);
-  Object.keys(man.assign).forEach(k=>{ if(ids.has(k)||man.assign[k]===g.id) delete man.assign[k]; });
-  await saveMan(man);
-  msgs=msgs.filter(x=>!ids.has(x.id));
-  ids.forEach(id=>noteOpen.delete(id));
-  if(grpF&&grpF.name===g.name) exitGrp();
-  drawStream(true); await persist();
-  await refreshGroups();
-  toast(`‘${g.name}’ 폴더를 ‘${r.name}’ 방으로 옮겼어요`);
-}
 let grpDelT=null;
 function askGrpDel(g){ grpDelT=g; $('#grpDelHd').textContent=`‘${g.name}’ 폴더 삭제`; open('#shGrpDel'); }
 $('#delGrp').onclick=async()=>{
