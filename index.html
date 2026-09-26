@@ -2370,7 +2370,6 @@ function bubblePress(b,m){
       t=null; armed=true; msgArmed=true; fired=true; ax=sx; ay=sy;
       noSel(true);
       b.classList.remove('press'); b.classList.add('armed'); vib();
-      if(cur) railPeek(true);   /* 바가 닫혀 있으면 열어서 끌어다 놓을 수 있게 */
       try{ b.setPointerCapture(e.pointerId); }catch(_){}
     },350);
   });
@@ -2436,6 +2435,7 @@ function mStart(b,m,x,y){
   gh.textContent=list.length>1?`메모 ${list.length}개`:(m.file&&!m.text?'[파일] ':'')+mlabel(m);
   $('#phone').appendChild(gh);
   mdrag={m,list,b,gh,ph,over:null,x,y,vy:0,sp:null,spT:null};
+  if(cur) railPeek(true);   /* 끌기 시작하면 바가 닫혀 있어도 열어서 놓을 곳을 보여 준다 */
   b.classList.add('lift'); $('#scChat').classList.add('mdrag');
   mMove(x,y); requestAnimationFrame(mAuto);
 }
