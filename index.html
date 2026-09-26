@@ -674,6 +674,11 @@ body{
 .b.done{box-shadow:none}
 @media(prefers-reduced-motion:reduce){.b .sx{transition:none}}
 @media(pointer:coarse){.b,.li{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}}
+/* 폰: 화면 글자는 선택되지 않게 — 꾹 누르면 사파리 선택·메뉴 대신 담다 메뉴가 뜬다 (입력칸은 그대로) */
+@media(pointer:coarse){
+  body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+}
 /* 채팅을 꾹 누르고 있는 동안에는 화면 어디도 글자 선택(파란 칠)이 되지 않게 */
 body.nosel,body.nosel *{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important}
 .dday{display:inline-block;margin-top:4px;font-size:11.5px;font-weight:700;color:var(--accent);
@@ -1084,6 +1089,9 @@ body.rzing *{user-select:none!important}
     <button class="mrow" id="gSel">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M8.2 12.2l2.6 2.6 5-5.3"/></svg>
       여러 개 선택</button>
+    <button class="mrow" id="gCopy">
+      <svg viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2"/><path d="M15.5 8.5V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7.5a2 2 0 0 0 2 2h2.5"/></svg>
+      복사</button>
     <button class="mrow" id="gDone">
       <svg viewBox="0 0 24 24"><path d="M4 12h16"/></svg>
       <span id="gDoneLb">완료 표시</span></button>
@@ -2350,7 +2358,7 @@ function bubble(m){
 }
 
 function bubblePress(b,m){
-  let t=null,armed=false,fired=false,touch=false,sx=0,sy=0,ax=0,ay=0;
+  let t=null,armed=false,fired=false,touch=false,sx=0,sy=0,ax=0,ay=0,lost=false;
   const clear=()=>{ if(t){ clearTimeout(t); t=null; } b.classList.remove('press'); };
   const disarm=()=>{ armed=false; msgArmed=false; b.classList.remove('armed'); };
   b.addEventListener('pointerdown',e=>{
@@ -2366,20 +2374,29 @@ function bubblePress(b,m){
       try{ b.setPointerCapture(e.pointerId); }catch(_){}
     },350);
   });
-  b.addEventListener('pointermove',e=>{
-    if(t&&(Math.abs(e.clientX-sx)>8||Math.abs(e.clientY-sy)>8)){ clear(); return; }
-    if(mdrag){ mMove(e.clientX,e.clientY); return; }
-    if(armed&&(Math.abs(e.clientX-ax)>6||Math.abs(e.clientY-ay)>6)){
-      b.classList.remove('armed'); mStart(b,m,e.clientX,e.clientY);
+  const move=(x,y)=>{
+    if(t&&(Math.abs(x-sx)>8||Math.abs(y-sy)>8)){ clear(); return; }
+    if(mdrag){ mMove(x,y); return; }
+    if(armed&&(Math.abs(x-ax)>6||Math.abs(y-ay)>6)){
+      b.classList.remove('armed'); mStart(b,m,x,y);
     }
+  };
+  const release=()=>{
+    clear(); lost=false;
+    if(mdrag){ eatClick(); disarm(); mEnd(true); return; }
+    /* 손을 뗀 뒤 생기는 클릭이 바나 메뉴 바깥을 눌러 버리지 않게 한 번 삼키고 연다 */
+    if(armed){ eatClick(); disarm(); railPeek(false); if(selMode) setTimeout(()=>toggleSel(m,b),60); else setTimeout(()=>askMsg(m),60); }
+  };
+  b.addEventListener('pointermove',e=>{ if(!lost) move(e.clientX,e.clientY); });
+  b.addEventListener('pointerup',release);
+  b.addEventListener('pointercancel',()=>{
+    /* 아이폰은 꾹 누르는 도중 포인터를 끊어 버리기도 한다 — 이미 잡은 뒤면 터치 이벤트로 이어 간다 */
+    if(armed||mdrag){ lost=true; return; }
+    clear(); disarm(); railPeek(false);
   });
-  b.addEventListener('pointerup',()=>{
-    clear();
-    if(mdrag){ disarm(); mEnd(true); return; }
-    /* 손을 뗀 뒤 생기는 클릭이 메뉴 바깥을 눌러 닫아버리지 않게 조금 뒤에 연다 */
-    if(armed){ disarm(); railPeek(false); if(selMode) setTimeout(()=>toggleSel(m,b),60); else setTimeout(()=>askMsg(m),60); }
-  });
-  b.addEventListener('pointercancel',()=>{ clear(); if(mdrag) mEnd(false); disarm(); railPeek(false); });
+  b.addEventListener('touchmove',e=>{ if(lost&&e.touches[0]) move(e.touches[0].clientX,e.touches[0].clientY); },{passive:true});
+  b.addEventListener('touchend',()=>{ if(lost) release(); });
+  b.addEventListener('touchcancel',()=>{ if(!lost) return; lost=false; clear(); if(mdrag) mEnd(false); disarm(); railPeek(false); });
   b.addEventListener('pointerleave',()=>{ if(t) clear(); });
   b.addEventListener('click',e=>{
     if(fired){ e.preventDefault(); e.stopPropagation(); fired=false; return; }
@@ -2395,7 +2412,12 @@ function bubblePress(b,m){
     clear(); if(selMode) toggleSel(m,b); else askMsg(m);
   });
 }
-let mdrag=null, msgArmed=false;
+let mdrag=null, msgArmed=false, eatUntil=0;
+/* 꾹 눌렀다 뗀 직후 폰이 만들어 내는 클릭 한 번은 버린다 */
+function eatClick(){ eatUntil=Date.now()+450; }
+document.addEventListener('click',e=>{
+  if(Date.now()<eatUntil){ e.preventDefault(); e.stopPropagation(); eatUntil=0; }
+},true);
 /* 꾹 누르는 동안 글자 선택을 막고, 이미 잡힌 선택은 지운다 */
 function noSel(on){
   document.body.classList.toggle('nosel',on);
@@ -2558,6 +2580,20 @@ function updSel(){
   $('#btnSelAll').textContent=n&&n===view.length?'선택 해제':'전체 선택';
 }
 $('#gSel').onclick=()=>{ const m=msgTarget; close('#shMsg'); enterSel(m); };
+/* 폰에서는 글자를 직접 선택할 수 없으니 메뉴로 복사한다 */
+$('#gCopy').onclick=async()=>{
+  const m=msgTarget; close('#shMsg'); if(!m||!m.text) return;
+  let ok=false;
+  try{ await navigator.clipboard.writeText(m.text); ok=true; }catch(e){}
+  if(!ok){
+    try{
+      const ta=document.createElement('textarea'); ta.value=m.text; ta.setAttribute('readonly','');
+      ta.style.cssText='position:fixed;top:0;left:0;opacity:0'; document.body.appendChild(ta);
+      ta.select(); ta.setSelectionRange(0,ta.value.length); ok=document.execCommand('copy'); ta.remove();
+    }catch(e){}
+  }
+  toast(ok?'복사했어요':'복사하지 못했어요');
+};
 $('#btnSelAll').onclick=()=>{
   const view=grpF?msgs.filter(x=>grpF.ids.has(x.id)):msgs;
   if(sel.size===view.length) sel.clear(); else view.forEach(x=>sel.add(x.id));
@@ -2625,6 +2661,7 @@ function askMsg(m){
   $('#gDueLb').textContent=m.due?'날짜 바꾸기':'날짜 지정';
   /* 사진·파일만 있는 메모는 수정 대신 추가 메모를 쓴다 */
   $('#gEdit').style.display=m.text?'':'none';
+  $('#gCopy').style.display=m.text?'':'none';
   open('#shMsg');
 }
 /* 이미 보낸 메모의 날짜를 새로 지정하거나 바꾼다 */
