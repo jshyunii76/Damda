@@ -154,62 +154,112 @@ body{
 
 #scChat{flex-direction:row}
 #chatMain{flex:1;min-width:0;display:flex;flex-direction:column}
-#rail{width:56px;flex:0 0 auto;background:var(--tint);border-right:1px solid var(--tint-line);
-  overflow-y:auto;padding:9px 0 14px;display:flex;flex-direction:column;
-  align-items:center;gap:7px;scrollbar-width:none}
-#rail::-webkit-scrollbar{display:none}
-/* 경계선은 흐리게, 대신 아주 옅은 그림자로 채팅 영역과 구분 */
-#rail{position:relative;z-index:2;box-shadow:1px 0 5px rgba(27,32,36,.07)}
-/* 방 목록 바 숨기기 — 두 줄 버튼으로 접고 편다 */
-#rail{transition:width .2s cubic-bezier(.32,.72,0,1),padding .2s,border-width .2s}
+/* ---------- 왼쪽 방 목록 바 — 방 이름 아래에 그 방의 폴더가 펼쳐진다 ---------- */
+#rail{width:var(--rw,228px);flex:0 0 auto;background:var(--tint);border-right:1px solid var(--tint-line);
+  overflow-y:auto;overflow-x:hidden;padding:9px 8px 18px;display:flex;flex-direction:column;gap:1px;
+  scrollbar-width:thin;position:relative;z-index:2;box-shadow:1px 0 5px rgba(27,32,36,.07);
+  transition:width .2s cubic-bezier(.32,.72,0,1),padding .2s,border-width .2s}
 #scChat.norail #rail{box-shadow:none;width:0;padding-left:0;padding-right:0;border-right-width:0;overflow:hidden}
 /* 바 숨기기·보이기 버튼 하나 — 자리가 고정돼 있어 연달아 눌러도 같은 곳 */
 #railTog{position:absolute;z-index:6;top:11px;left:10.5px;color:var(--ink-3)}
 #railTog:hover{background:var(--soft);color:var(--accent)}
-.rtogsp{flex:0 0 auto;height:37px}
+.rtogsp{flex:0 0 auto;height:37px;display:flex;align-items:center;padding-left:44px;margin-bottom:3px;
+  font-size:12px;font-weight:700;color:var(--ink-3);letter-spacing:.02em;white-space:nowrap}
 #scChat.norail #chatMain>.bar{padding-left:56px}
+#railScrim{display:none}
+.rrow{display:flex;align-items:center;gap:9px;width:100%;min-height:36px;padding:5px 8px;border:0;border-radius:9px;
+  background:transparent;font:inherit;font-size:14px;color:var(--ink);text-align:left;cursor:pointer;
+  user-select:none;-webkit-user-select:none;flex:0 0 auto;white-space:nowrap}
+@media(hover:hover){.rrow:hover{background:rgba(46,106,99,.07)}}
+.rrow:focus-visible,.rkid:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.rrow .rnm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.rrow.cur .rnm{font-weight:700}
+.rrow.cur.all{background:var(--soft)}
+.rrow.cur.all .rnm{color:var(--accent)}
+.rbf .rico{color:var(--accent)}
+.rbf.on{background:var(--soft)}
+.rbf.on .rnm{font-weight:700;color:var(--accent)}
+/* 방 아이콘 — 로고의 네모난 D + 말풍선 꼬리, 방 색으로 채운다 */
+.rico{position:relative;flex:0 0 auto;width:1.15em;height:1.15em;padding:0;border:0;background:transparent;
+  display:grid;place-items:center;color:inherit}
+.rico svg{width:1.15em;height:1.15em;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+/* 방 아이콘은 글씨 높이에 맞춘다 */
+.rico svg.rdd{width:auto;height:1em;overflow:visible}
+.rdd path{fill:var(--c,var(--soft-2));stroke:var(--k,var(--accent));stroke-opacity:.5;stroke-width:1.1;
+  vector-effect:non-scaling-stroke;stroke-linejoin:round}
+.rico .dot{position:absolute;top:-2px;right:-3px;width:7px;height:7px;border-radius:50%;
+  background:var(--strike);border:1.5px solid var(--tint)}
+.rpn{flex:0 0 auto;display:inline-flex;color:var(--pin)}
+.rpn svg{width:12px;height:12px;fill:currentColor;stroke:none}
+/* 오른쪽 화살표 — 누르면 폴더 목록을 열고 닫는다 */
+.rcv{flex:0 0 auto;display:grid;place-items:center;width:28px;height:28px;margin:-4px -6px -4px 0;padding:0;border:0;
+  border-radius:7px;background:transparent;color:var(--ink-3);cursor:pointer;transition:transform .18s}
+@media(hover:hover){.rcv:hover{background:rgba(46,106,99,.13);color:var(--accent)}}
+.rcv:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.rcv svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.rgrp.open .rcv{transform:rotate(90deg)}
+/* 펼친 방의 폴더 — 왼쪽 세로선에 붙여 들여 쓴다 */
+.rkids{position:relative;margin:1px 0 5px 18px;padding-left:9px;display:flex;flex-direction:column;gap:1px}
+.rkids::before{content:'';position:absolute;left:0;top:3px;bottom:3px;width:1.5px;border-radius:1px;background:var(--soft-2)}
+.rkid{display:flex;align-items:center;gap:8px;width:100%;min-height:32px;padding:5px 9px;border:0;border-radius:8px;
+  background:transparent;font:inherit;font-size:13.5px;color:var(--ink-2);text-align:left;cursor:pointer;
+  user-select:none;-webkit-user-select:none;white-space:nowrap}
+@media(hover:hover){.rkid:hover{background:rgba(46,106,99,.07);color:var(--ink)}}
+.rkid .kn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rkid .kc{flex:0 0 auto;font-size:11px;color:var(--ink-3)}
+.rkid.on{background:var(--soft);color:var(--accent);font-weight:600}
+.rkid.on .kc{color:var(--accent)}
+.rkid.ld{cursor:default;color:var(--ink-3);font-size:12px}
+.rsep{height:1px;background:var(--tint-line);flex:0 0 auto;margin:5px 8px}
 @media(min-width:860px){
   #railTog{top:12px;left:15.5px}
-  .rtogsp{height:38px}
+  .rtogsp{height:38px;padding-left:48px}
   #scChat.norail #chatMain>.bar{padding-left:66px}
 }
+@media(min-width:1180px){ #rail{width:var(--rw,250px)} }
+/* 바 오른쪽 끝을 잡고 끌면 폭이 바뀐다 (두 번 누르면 처음 폭으로) */
+#railRz{position:absolute;top:0;bottom:0;left:calc(var(--rw,228px) - 4px);width:9px;z-index:7;
+  cursor:col-resize;touch-action:none}
+#railRz::after{content:'';position:absolute;top:0;bottom:0;left:3.5px;width:2px;background:var(--accent);
+  opacity:0;transition:opacity .15s}
+@media(hover:hover){#railRz:hover::after{opacity:.45}}
+#scChat.rwing #railRz::after{opacity:.6}
+#scChat.norail #railRz{display:none}
+#scChat.rwing #rail{transition:none}
+#scChat.rwing,#scChat.rwing *{cursor:col-resize!important;user-select:none!important;-webkit-user-select:none!important}
+@media(min-width:1180px){ #railRz{left:calc(var(--rw,250px) - 4px)} }
 @media(max-width:479px){
   #railTog{top:calc(9px + env(safe-area-inset-top))}
   .rtogsp{height:35px}
 }
-@media(prefers-reduced-motion:reduce){#rail{transition:none}}
-.rbtn{position:relative;flex:0 0 auto;width:40px;height:40px;border-radius:12px;border:0;
-  background:#fff;color:var(--accent);font:inherit;font-weight:700;font-size:13px;
-  letter-spacing:-.04em;cursor:pointer;display:grid;place-items:center;
-  box-shadow:0 1px 2px rgba(27,32,36,.06)}
-.rbtn:hover{background:var(--soft)}
-.rbtn.on{background:var(--accent);color:#fff}
-/* 색을 따로 고르지 않은 방 — 방 목록 아이콘과 같은 초록 */
-.rbtn.rm{background:var(--soft);color:var(--accent)}
-.rbtn.rm:hover{background:var(--soft-2)}
-.rbtn.ring{box-shadow:0 0 0 2px var(--tint),0 0 0 4px var(--accent)}
-.rbtn.bf svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;
-  stroke-linecap:round;stroke-linejoin:round}
-.rbtn .dot{position:absolute;top:-2.7px;right:-2.7px;width:10px;height:10px;border-radius:50%;
-  background:var(--strike);border:1.8px solid var(--tint)}
+/* 폰·좁은 창: 평소엔 닫혀 있고, 열면 화면의 70%를 덮으며 나온다 */
+@media(max-width:859px){
+  #rail{position:absolute;left:0;top:0;bottom:0;width:var(--rwm,70%);z-index:30;border-right:0;
+    box-shadow:6px 0 28px rgba(27,32,36,.2);transform:translateX(0);
+    transition:transform .24s cubic-bezier(.32,.72,0,1),visibility 0s}
+  #scChat.norail #rail{width:var(--rwm,70%);padding:9px 8px 18px;transform:translateX(-102%);visibility:hidden;
+    box-shadow:none;transition:transform .24s cubic-bezier(.32,.72,0,1),visibility 0s .24s}
+  #railScrim{display:block;position:absolute;inset:0;z-index:29;background:rgba(27,32,36,.3);transition:opacity .24s}
+  #scChat.norail #railScrim{opacity:0;pointer-events:none}
+  #scChat:not(.norail) #railTog{z-index:31}
+  #railRz{left:calc(var(--rwm,70%) - 7px);width:14px;z-index:31}
+  #chatMain>.bar{padding-left:56px}
+  .rrow{min-height:42px;font-size:15px}
+  .rcv{width:34px;height:34px}
+  .rkid{min-height:38px;font-size:14.5px}
+}
+@media(prefers-reduced-motion:reduce){#rail,#railScrim{transition:none!important}}
 /* 방 목록 아이콘(44px)과 같은 비율: 점 지름 = 아이콘의 1/4 */
 /* 기한 3일 안 — D-day 글씨와 같은 노랑 */
 .room .av{position:relative}
 .room .av .dot{position:absolute;top:-3px;right:-3px;width:11px;height:11px;border-radius:50%;
   background:var(--strike);border:2px solid var(--app)}
-.rbtn .dot.soon,.room .av .dot.soon{background:#B07D00}
+.rico .dot.soon,.room .av .dot.soon{background:#B07D00}
 /* 4일 이상 남음 — D-day 기본 글씨와 같은 초록 */
-.rbtn .dot.later,.room .av .dot.later{background:var(--accent)}
-.rbtn .pn{position:absolute;bottom:-2px;left:-2px;width:12px;height:12px;border-radius:50%;
-  background:#fff;display:grid;place-items:center;border:1.5px solid var(--tint)}
-.rbtn .pn svg{width:7.5px;height:7.5px;fill:var(--pin);stroke:none}
-.rsep{width:22px;height:1px;background:var(--tint-line);flex:0 0 auto;margin:1px 0}
+.rico .dot.later,.room .av .dot.later{background:var(--accent)}
 #stream{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-gutter:stable;
   background:var(--field);padding:12px 12px 8px;position:relative}
 @media(min-width:860px){
-  #rail{width:66px}
-  .rbtn{width:46px;height:46px;font-size:14px}
-  .rbtn .dot{width:11.5px;height:11.5px;top:-3.1px;right:-3.1px;border-width:2px}
   #stream{padding:14px 18px 10px}
   #compose{padding:10px 16px 14px}
   .bar{padding:12px 18px 9.5px}
@@ -301,9 +351,8 @@ body{
 .mghost{position:absolute;z-index:70;pointer-events:none;max-width:220px;background:var(--mine);
   border-radius:var(--r) 4px var(--r) var(--r);padding:8px 12px;font-size:13.5px;color:var(--ink);
   box-shadow:0 10px 26px rgba(27,32,36,.22);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#scChat.mdrag #rail .rbtn[data-rid]:not(.ring){box-shadow:0 0 0 2px var(--tint),0 0 0 3.5px var(--soft-2)}
-#rail .rbtn.dropok{box-shadow:0 0 0 2px var(--tint),0 0 0 4.5px var(--accent)!important;transform:scale(1.12);
-  transition:transform .1s}
+/* 끌어다 놓을 방·폴더 */
+#rail .dropok{background:var(--soft)!important;box-shadow:inset 0 0 0 2px var(--accent);color:var(--accent)}
 .carry{background:#FCF3F2;border-left:3px solid var(--strike);
   border-radius:9px;padding:9px 12px;margin:2px 0 12px}
 .carry .h{font-size:11.5px;font-weight:700;color:var(--strike);margin-bottom:5px}
@@ -820,7 +869,7 @@ body.rzing *{user-select:none!important}
 /* 첫 실행 화면 — 아주 짧게 로고와 이름을 보여주고 사라진다 */
 #splash{position:absolute;inset:0;z-index:100;background:var(--app);display:flex;flex-direction:column;
   align-items:center;justify-content:center;gap:10px;padding-bottom:6%;transition:opacity .22s ease,visibility .22s}
-#splash .spi{width:128px;height:auto;color:var(--accent);animation:spIn .25s ease-out both}
+#splash .spi{width:115px;height:auto;color:var(--accent);animation:spIn .25s ease-out both}
 #splash .spt{line-height:1;font-family:'Gowun Batang','Nanum Myeongjo','AppleMyungjo','Batang',serif;font-size:32px;
   font-weight:700;display:flex;gap:.14em;color:var(--accent);opacity:0;transition:opacity .2s}
 #splash.ready .spt{opacity:1}
@@ -833,14 +882,14 @@ body.rzing *{user-select:none!important}
 <div id="phone">
 
   <div id="splash" aria-hidden="true">
-    <svg class="spi" viewBox="224 59 1148 1032"><path fill="currentColor" transform="translate(0 1152) scale(.1 -.1)" d="M6920 10074 l0 -806 71 -111 c842 -1335 833 -3516 -22 -4842 -54 -85 -96 -193 -713 -1865 -361 -976 -655 -1778 -653 -1781 1 -4 272 243 602 548 330 306 686 633 790 728 105 95 312 286 460 423 l270 251 1716 1 c1772 0 1832 1 2018 41 962 208 1773 1296 2080 2789 167 817 171 1725 10 2550 -262 1343 -936 2382 -1777 2741 -51 22 -146 55 -213 74 -235 68 -121 65 -2495 65 l-2144 0 0 -806z m3880 -1028 c721 -130 1259 -1084 1260 -2231 0 -1086 -464 -1996 -1132 -2218 -137 -46 -199 -48 -1376 -45 l-1102 3 0 2248 c0 1236 0 2249 0 2252 0 13 2276 4 2350 -9z M9259 7626 c-280 -60 -280 -462 -1 -522 83 -18 1821 -14 1874 4 262 89 231 469 -42 521 -82 15 -1758 13 -1831 -3z M9230 6465 c-200 -62 -245 -339 -75 -467 76 -58 82 -58 677 -58 586 1 579 0 658 55 73 51 105 116 105 215 0 129 -64 221 -179 255 -71 21 -1118 21 -1186 0z M2292 6753 l3 -3098 1575 0 c1468 0 1581 1 1669 18 777 147 1423 1032 1630 2232 56 323 66 456 66 845 0 409 -15 582 -81 930 -200 1059 -764 1883 -1439 2104 -195 64 -73 60 -1828 63 l-1597 4 2 -3098z m2853 1706 c723 -189 1109 -1440 764 -2473 -147 -438 -414 -750 -734 -857 l-70 -24 -797 -3 -798 -3 0 1690 0 1691 778 0 c754 0 781 -1 857 -21z"/></svg>
+    <svg class="spi" viewBox="299 45 1032 1032"><path fill="currentColor" transform="translate(0 1152) scale(.1 -.1)" d="M7230 9717 L7230 9003 L7293 8904 C8046 7720 8038 5787 7274 4611 C7226 4535 7188 4440 6637 2957 C6314 2092 6052 1381 6053 1378 C6054 1374 6296 1593 6591 1864 C6886 2135 7204 2425 7297 2509 C7391 2594 7576 2763 7708 2884 L7949 3107 L9482 3108 C11066 3108 11119 3109 11285 3144 C12145 3329 12869 4293 13144 5617 C13293 6342 13296 7147 13153 7878 C12918 9069 12316 9990 11565 10309 C11519 10328 11435 10358 11375 10374 C11165 10435 11267 10432 9146 10432 L7230 10432 L7230 9717z M10800 9046 C11521 8916 12059 7962 12060 6815 C12060 5729 11596 4819 10928 4597 C10791 4551 10729 4549 9552 4552 L8450 4555 L8450 6803 C8450 8039 8450 9052 8450 9055 C8450 9068 10726 9059 10800 9046z M9259 7626 C8979 7566 8979 7164 9258 7104 C9341 7086 11079 7090 11132 7108 C11394 7197 11363 7577 11090 7629 C11008 7644 9332 7642 9259 7626z M9230 6465 C9030 6403 8985 6126 9155 5998 C9231 5940 9237 5940 9832 5940 C10418 5941 10411 5940 10490 5995 C10563 6046 10595 6111 10595 6210 C10595 6339 10531 6431 10416 6465 C10345 6486 9298 6486 9230 6465z M3046 6753 L3049 3965 L4466 3965 C5788 3965 5889 3966 5969 3981 C6668 4113 7249 4910 7436 5990 C7486 6280 7495 6400 7495 6750 C7495 7118 7482 7274 7422 7587 C7242 8540 6734 9282 6127 9481 C5952 9539 6061 9535 4482 9538 L3044 9541 L3046 6753z M5580 8153 C6161 7999 6472 6977 6194 6133 C6076 5776 5861 5521 5604 5433 L5547 5414 L4906 5411 L4264 5409 L4264 6789 L4264 8170 L4890 8170 C5497 8170 5518 8169 5580 8153z"/></svg>
     <div class="spt"><span>담</span><span>다</span></div>
   </div>
 
 
   <section class="screen" id="scHome">
     <div class="bar">
-      <h1 class="logo"><svg class="lgm" viewBox="224 59 1148 1032" aria-hidden="true"><path fill="currentColor" transform="translate(0 1152) scale(.1 -.1)" d="M6920 10074 l0 -806 71 -111 c842 -1335 833 -3516 -22 -4842 -54 -85 -96 -193 -713 -1865 -361 -976 -655 -1778 -653 -1781 1 -4 272 243 602 548 330 306 686 633 790 728 105 95 312 286 460 423 l270 251 1716 1 c1772 0 1832 1 2018 41 962 208 1773 1296 2080 2789 167 817 171 1725 10 2550 -262 1343 -936 2382 -1777 2741 -51 22 -146 55 -213 74 -235 68 -121 65 -2495 65 l-2144 0 0 -806z m3880 -1028 c721 -130 1259 -1084 1260 -2231 0 -1086 -464 -1996 -1132 -2218 -137 -46 -199 -48 -1376 -45 l-1102 3 0 2248 c0 1236 0 2249 0 2252 0 13 2276 4 2350 -9z M9259 7626 c-280 -60 -280 -462 -1 -522 83 -18 1821 -14 1874 4 262 89 231 469 -42 521 -82 15 -1758 13 -1831 -3z M9230 6465 c-200 -62 -245 -339 -75 -467 76 -58 82 -58 677 -58 586 1 579 0 658 55 73 51 105 116 105 215 0 129 -64 221 -179 255 -71 21 -1118 21 -1186 0z M2292 6753 l3 -3098 1575 0 c1468 0 1581 1 1669 18 777 147 1423 1032 1630 2232 56 323 66 456 66 845 0 409 -15 582 -81 930 -200 1059 -764 1883 -1439 2104 -195 64 -73 60 -1828 63 l-1597 4 2 -3098z m2853 1706 c723 -189 1109 -1440 764 -2473 -147 -438 -414 -750 -734 -857 l-70 -24 -797 -3 -798 -3 0 1690 0 1691 778 0 c754 0 781 -1 857 -21z"/></svg><span>담다</span></h1>
+      <h1 class="logo"><svg class="lgm" viewBox="299 45 1032 1032" aria-hidden="true"><path fill="currentColor" transform="translate(0 1152) scale(.1 -.1)" d="M7230 9717 L7230 9003 L7293 8904 C8046 7720 8038 5787 7274 4611 C7226 4535 7188 4440 6637 2957 C6314 2092 6052 1381 6053 1378 C6054 1374 6296 1593 6591 1864 C6886 2135 7204 2425 7297 2509 C7391 2594 7576 2763 7708 2884 L7949 3107 L9482 3108 C11066 3108 11119 3109 11285 3144 C12145 3329 12869 4293 13144 5617 C13293 6342 13296 7147 13153 7878 C12918 9069 12316 9990 11565 10309 C11519 10328 11435 10358 11375 10374 C11165 10435 11267 10432 9146 10432 L7230 10432 L7230 9717z M10800 9046 C11521 8916 12059 7962 12060 6815 C12060 5729 11596 4819 10928 4597 C10791 4551 10729 4549 9552 4552 L8450 4555 L8450 6803 C8450 8039 8450 9052 8450 9055 C8450 9068 10726 9059 10800 9046z M9259 7626 C8979 7566 8979 7164 9258 7104 C9341 7086 11079 7090 11132 7108 C11394 7197 11363 7577 11090 7629 C11008 7644 9332 7642 9259 7626z M9230 6465 C9030 6403 8985 6126 9155 5998 C9231 5940 9237 5940 9832 5940 C10418 5941 10411 5940 10490 5995 C10563 6046 10595 6111 10595 6210 C10595 6339 10531 6431 10416 6465 C10345 6486 9298 6486 9230 6465z M3046 6753 L3049 3965 L4466 3965 C5788 3965 5889 3966 5969 3981 C6668 4113 7249 4910 7436 5990 C7486 6280 7495 6400 7495 6750 C7495 7118 7482 7274 7422 7587 C7242 8540 6734 9282 6127 9481 C5952 9539 6061 9535 4482 9538 L3044 9541 L3046 6753z M5580 8153 C6161 7999 6472 6977 6194 6133 C6076 5776 5861 5521 5604 5433 L5547 5414 L4906 5411 L4264 5409 L4264 6789 L4264 8170 L4890 8170 C5497 8170 5518 8169 5580 8153z"/></svg><span>담다</span></h1>
       <button class="ic" id="btnHomeCal" title="모든 방 일정">
         <svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/></svg>
       </button>
@@ -856,7 +905,9 @@ body.rzing *{user-select:none!important}
 
   <section class="screen hide" id="scChat">
     <button class="ic" id="railTog" title="방 목록 숨기기"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9 4.5v15M15.8 9.6l-2.4 2.4 2.4 2.4"/></svg></button>
-    <nav id="rail" aria-label="다른 방으로 이동"></nav>
+    <nav id="rail" aria-label="방 목록"></nav>
+    <div id="railScrim"></div>
+    <div id="railRz" title="끌어서 폭 조절 · 두 번 누르면 처음 폭"></div>
     <div id="chatMain">
     <div class="bar">
       <button class="ic" id="btnBack"><svg viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg></button>
@@ -1753,32 +1804,127 @@ const PIN='<svg viewBox="0 0 24 24"><path d="M9 3h6l-1 6 4 3v2h-4v7h-2v-7H8v-2l4
 const dueDot=r=>(r._due||r._today)?'<span class="dot"></span>'
   :(r._soon?'<span class="dot soon"></span>':(r._later?'<span class="dot later"></span>':''));
 
+/* ---------- 왼쪽 방 목록 바 ----------
+   방 이름을 누르면 그 방의 폴더 목록이 열리고 닫힌다. 방 아이콘을 누르면 그 방으로 간다. */
+const ROOM_IC='<svg class="rdd" viewBox="552 56 824 1036" aria-hidden="true"><path transform="translate(0 1152) scale(.1 -.1)" d="M6920 10880 L6920 4300 L5603 669 L7725 2619 l1716 1 c1772 0 1832 1 2018 41 962 208 1773 1296 2080 2789 167 817 171 1725 10 2550 -262 1343 -936 2382 -1777 2741 -51 22 -146 55 -213 74 -235 68 -121 65 -2495 65 Z"/></svg>';
+const CHEV='<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>';
+const railF=new Map();   /* 방id → {total, fs:[{id,name,ids}]} */
+let railOpenSet=new Set(), railT=null;
+try{ railOpenSet=new Set(JSON.parse(localStorage.getItem('damda:railOpen')||'[]')); }catch(e){}
+const saveRailOpen=()=>{ try{ localStorage.setItem('damda:railOpen',JSON.stringify([...railOpenSet])); }catch(e){} };
+const railMQ=matchMedia('(max-width:859px)');
+const railOvl=()=>railMQ.matches;   /* 폰·좁은 창: 바가 화면 위로 덮이며 나온다 */
+
+/* 방의 폴더를 저장된 결과만으로 읽는다 (AI는 부르지 않는다) — 폴더 말풍선과 같은 규칙 */
+async function peekFolders(r){
+  const list=await readList(r);
+  const d=await S.get('grpman:'+r.id)||{};
+  const assign=d.assign||{};
+  const mg=new Map((d.groups||[]).map(g=>[g.id,{id:g.id,name:g.name,ids:[]}]));
+  const loose=[];
+  list.forEach(m=>{
+    const a=assign[m.id];
+    if(a==='none'||a==='del') return;
+    if(a&&mg.has(a)) mg.get(a).ids.push(m.id); else loose.push(m.id);
+  });
+  const ai=[];
+  if(aiKey&&loose.length){
+    let c=null; try{ c=await S.get('grpai:'+r.id); }catch(e){}
+    const dd=(c&&c.d)||{}, made=new Map();
+    loose.forEach(id=>{
+      const x=dd[id];
+      if(x&&x.g&&mg.has(x.g)) mg.get(x.g).ids.push(id);
+      else if(x&&x.n){ if(!made.has(x.n)) made.set(x.n,[]); made.get(x.n).push(id); }
+    });
+    made.forEach((ids,name)=>{ if(ids.length>1) ai.push({id:null,name,ids}); });
+    ai.sort((a,b)=>b.ids.length-a.ids.length);
+  }
+  return {total:list.length,fs:[...mg.values(),...ai]};
+}
+function railSoon(){ clearTimeout(railT); railT=setTimeout(railLoad,120); }
+async function railLoad(){
+  for(const r of rooms){
+    try{ railF.set(r.id,await peekFolders(r)); }catch(e){ railF.set(r.id,{total:0,fs:[]}); }
+  }
+  drawRail();
+}
+function toggleRoom(id){
+  railOpenSet.has(id)?railOpenSet.delete(id):railOpenSet.add(id);
+  saveRailOpen(); drawRail(); railSoon();
+}
+/* 폰에서는 방이나 폴더를 고르면 바를 닫는다 */
+const railDone=()=>{ railAuto=false; if(railOvl()) setRail(true); };
+async function goRoom(r){
+  railDone();
+  if(cur&&cur.id===r.id){ if(grpF) exitGrp(); return; }
+  await openRoom(r.id);
+}
+async function goFolder(r,f){
+  railDone();
+  if(!cur||cur.id!==r.id) await openRoom(r.id);
+  if(!cur||cur.id!==r.id) return;
+  const ids=new Set(f.ids);
+  const items=msgs.filter(m=>ids.has(m.id)).map(m=>({m}));
+  if(!items.length){ toast('이 폴더는 비어 있어요'); return; }
+  enterGrp(f.name,items);
+}
+
 function drawRail(){
   const rail=$('#rail'); if(!rail) return;
+  const top=rail.scrollTop;
   rail.innerHTML='';
-  rail.appendChild(el('div','rtogsp'));   /* 숨기기 버튼 자리 */
-  const bf=el('button','rbtn bf'+(briefOn?' on':''));
-  bf.title='어제와 오늘'; bf.innerHTML=SUN;
-  bf.onclick=()=>{ if(!briefOn) openBrief(); };
+  const hd=el('div','rtogsp'); hd.textContent='채팅방'; rail.appendChild(hd);   /* 숨기기 버튼 자리 */
+  const bf=el('button','rrow rbf'+(briefOn?' on':''));
+  bf.innerHTML=`<span class="rico">${SUN}</span><span class="rnm">어제와 오늘</span>`;
+  bf.onclick=()=>{ railDone(); if(!briefOn) openBrief(); };
   rail.appendChild(bf);
   rail.appendChild(el('div','rsep'));
-  let sep=false;
+  let sep=false, miss=false;
   rooms.forEach(r=>{
     if(!r.pin && !sep && rooms.some(x=>x.pin)){
       sep=true; rail.appendChild(el('div','rsep'));
     }
-    const on=cur&&cur.id===r.id;
-    /* 모든 방은 방 목록과 같은 배경색을 그대로 쓰고, 선택된 방은 초록 테두리로만 표시한다 */
-    const b=el('button','rbtn'+(on?' ring':''));
-    b.title=r.name; b.dataset.rid=r.id;
-    if(r.color){ b.style.background=r.color; b.style.color=fgOf(r.color); }
-    else b.classList.add('rm');
-    b.innerHTML=iniHTML(r.name)
-      +dueDot(r)
-      +(r.pin?'<span class="pn">'+PIN+'</span>':'');
-    b.onclick=()=>{ if(!cur||cur.id!==r.id) openRoom(r.id); };
-    rail.appendChild(b);
+    const inf=railF.get(r.id); if(!inf) miss=true;
+    const hasF=!!inf&&inf.fs.length>0;
+    const isCur=!!cur&&cur.id===r.id, isOpen=hasF&&railOpenSet.has(r.id);
+    const g=el('div','rgrp'+(isOpen?' open':''));
+    const row=el('div','rrow rroom'+(isCur?' cur':'')+(isCur&&!grpF?' all':''));
+    row.dataset.rid=r.id; row.dataset.drop='room';
+    row.setAttribute('role','button'); row.tabIndex=0; row.title=`‘${r.name}’ 방 열기`;
+    const ic=el('span','rico');
+    ic.innerHTML=ROOM_IC+dueDot(r);
+    if(r.color){ ic.style.setProperty('--c',r.color); ic.style.setProperty('--k',lum(r.color)<=0.45?'transparent':fgOf(r.color)); }
+    const nm=el('span','rnm'); nm.textContent=r.name;
+    row.append(ic,nm);
+    if(r.pin){ const pn=el('span','rpn'); pn.innerHTML=PIN; row.appendChild(pn); }
+    /* 방 이름 줄을 누르면 전체 채팅방으로, 오른쪽 화살표를 누르면 폴더 목록을 열고 닫는다 */
+    /* 폴더가 없는 방은 이름만 — 화살표도 띄우지 않는다 */
+    if(hasF){
+      const cv=el('button','rcv'); cv.innerHTML=CHEV;
+      cv.title=isOpen?'폴더 목록 닫기':'폴더 목록 열기'; cv.setAttribute('aria-expanded',String(isOpen));
+      cv.onclick=e=>{ e.stopPropagation(); toggleRoom(r.id); };
+      row.appendChild(cv);
+    }
+    row.onclick=()=>goRoom(r);
+    row.onkeydown=e=>{ if(e.target===row&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); goRoom(r); } };
+    g.appendChild(row);
+    if(isOpen){
+      const kids=el('div','rkids');
+      inf.fs.forEach(f=>{
+        const k=el('button','rkid'+(isCur&&grpF&&grpF.name===f.name?' on':''));
+        k.dataset.rid=r.id; k.dataset.drop='folder'; k._f=f;
+        const kn=el('span','kn'); kn.textContent=f.name;
+        const kc=el('span','kc'); kc.textContent=f.ids.length;
+        k.append(kn,kc);
+        k.onclick=()=>goFolder(r,f);
+        kids.appendChild(k);
+      });
+      g.appendChild(kids);
+    }
+    rail.appendChild(g);
   });
+  rail.scrollTop=top;
+  if(miss) railSoon();
 }
 
 function briefPreview(){
@@ -1871,7 +2017,7 @@ function drawRooms(){
   add.onclick=openNew;
   box.appendChild(add);
 
-  drawRail();
+  drawRail(); railSoon();
 }
 
 /* ---------- 방 생성 / 삭제 ---------- */
@@ -2212,6 +2358,7 @@ function bubblePress(b,m){
     t=setTimeout(()=>{
       t=null; armed=true; msgArmed=true; fired=true; ax=sx; ay=sy;
       b.classList.remove('press'); b.classList.add('armed'); vib();
+      if(cur) railPeek(true);   /* 바가 닫혀 있으면 열어서 끌어다 놓을 수 있게 */
       try{ b.setPointerCapture(e.pointerId); }catch(_){}
     },350);
   });
@@ -2226,9 +2373,9 @@ function bubblePress(b,m){
     clear();
     if(mdrag){ disarm(); mEnd(true); return; }
     /* 손을 뗀 뒤 생기는 클릭이 메뉴 바깥을 눌러 닫아버리지 않게 조금 뒤에 연다 */
-    if(armed){ disarm(); if(selMode) setTimeout(()=>toggleSel(m,b),60); else setTimeout(()=>askMsg(m),60); }
+    if(armed){ disarm(); railPeek(false); if(selMode) setTimeout(()=>toggleSel(m,b),60); else setTimeout(()=>askMsg(m),60); }
   });
-  b.addEventListener('pointercancel',()=>{ clear(); if(mdrag) mEnd(false); disarm(); });
+  b.addEventListener('pointercancel',()=>{ clear(); if(mdrag) mEnd(false); disarm(); railPeek(false); });
   b.addEventListener('pointerleave',()=>{ if(t) clear(); });
   b.addEventListener('click',e=>{
     if(fired){ e.preventDefault(); e.stopPropagation(); fired=false; return; }
@@ -2253,29 +2400,100 @@ function mStart(b,m,x,y){
   const gh=el('div','mghost');
   gh.textContent=list.length>1?`메모 ${list.length}개`:(m.file&&!m.text?'[파일] ':'')+mlabel(m);
   $('#phone').appendChild(gh);
-  mdrag={m,list,b,gh,ph,over:null};
+  mdrag={m,list,b,gh,ph,over:null,x,y,vy:0,sp:null,spT:null};
   b.classList.add('lift'); $('#scChat').classList.add('mdrag');
-  mMove(x,y);
+  mMove(x,y); requestAnimationFrame(mAuto);
+}
+/* 놓을 수 있는 곳: 다른 방 이름, 어느 방이든 폴더 (지금 방의 같은 폴더는 제외) */
+function dropTarget(e,d){
+  let t=e&&e.closest?e.closest('#rail [data-drop]'):null;
+  if(!t||!cur) return t;
+  if(t.dataset.rid===cur.id){
+    if(t.dataset.drop==='room') return null;
+    const f=t._f; if(f&&d.list.every(m=>f.ids.includes(m.id))) return null;
+  }
+  return t;
 }
 function mMove(x,y){
   const d=mdrag; if(!d) return;
+  d.x=x; d.y=y;
   d.gh.style.left=(x-d.ph.left-d.gh.offsetWidth+14)+'px';
-  d.gh.style.top=(y-d.ph.top-d.gh.offsetHeight/2)+'px';
+  /* 손가락 위쪽에 띄워서 놓을 폴더 이름이 가려지지 않게 */
+  d.gh.style.top=(y-d.ph.top-d.gh.offsetHeight-16)+'px';
   const e=document.elementFromPoint(x,y);
-  let t=e&&e.closest?e.closest('#rail .rbtn[data-rid]'):null;
-  if(t&&cur&&t.dataset.rid===cur.id) t=null;
+  const t=dropTarget(e,d);
   if(d.over!==t){ if(d.over) d.over.classList.remove('dropok'); d.over=t; if(t) t.classList.add('dropok'); }
+  /* 닫힌 방 이름 위에 잠깐 머물면 폴더 목록을 펼친다 */
+  const rr=e&&e.closest?e.closest('#rail .rroom'):null, rid=rr&&rr.dataset.rid;
+  const rinf=rid&&railF.get(rid);
+  if(rid&&!railOpenSet.has(rid)&&rinf&&rinf.fs.length){
+    if(d.sp!==rid){
+      clearTimeout(d.spT); d.sp=rid;
+      d.spT=setTimeout(()=>{
+        if(mdrag!==d||d.sp!==rid) return;
+        railOpenSet.add(rid); saveRailOpen();
+        if(d.over) d.over.classList.remove('dropok'); d.over=null;
+        drawRail(); railSoon(); vib();
+      },550);
+    }
+  }else{ clearTimeout(d.spT); d.sp=null; }
+  /* 바의 위·아래 끝으로 가면 목록이 스크롤된다 */
+  const R=$('#rail').getBoundingClientRect();
+  d.vy=(R.width&&x>=R.left&&x<=R.right)?(y<R.top+50?-8:(y>R.bottom-50?8:0)):0;
+}
+function mAuto(){
+  const d=mdrag; if(!d) return;
+  if(d.vy){ $('#rail').scrollTop+=d.vy; mMove(d.x,d.y); }
+  requestAnimationFrame(mAuto);
 }
 async function mEnd(ok){
   const d=mdrag; if(!d) return;
+  clearTimeout(d.spT);
   mdrag=null; d.gh.remove(); d.b.classList.remove('lift'); $('#scChat').classList.remove('mdrag');
   if(d.over) d.over.classList.remove('dropok');
-  if(!ok||!d.over) return;
-  const r=rooms.find(x=>x.id===d.over.dataset.rid);
-  if(r) await moveToRoom(d.list,r);
+  railPeek(false);
+  const t=ok?d.over:null; if(!t) return;
+  const r=rooms.find(x=>x.id===t.dataset.rid); if(!r) return;
+  if(t.dataset.drop==='folder'&&t._f) await dropToFolder(d.list,r,t._f);
+  else await moveToRoom(d.list,r);
+}
+/* 메모를 어느 방의 폴더에 넣는다. AI가 나눈 폴더는 손대는 순간 지금 모습대로 고정한다
+   (그 방의 다른 AI 폴더도 함께 — 폴더 순서가 뒤섞이지 않게) */
+async function fileInto(r,ids,f){
+  const k='grpman:'+r.id, d=await S.get(k)||{};
+  const man={groups:d.groups||[],assign:d.assign||{}};
+  const fs=(await peekFolders(r)).fs;
+  let gid=f.id&&man.groups.some(g=>g.id===f.id)?f.id:null;
+  fs.forEach(x=>{
+    if(x.id) return;
+    const id=newGid();
+    man.groups.push({id,name:x.name,ai:true});
+    x.ids.forEach(i=>{ man.assign[i]=id; });
+    if(!gid&&x.name===f.name) gid=id;
+  });
+  if(!gid){ gid=newGid(); man.groups.push({id:gid,name:f.name}); }
+  ids.forEach(i=>{ man.assign[i]=gid; });
+  await S.set(k,man);
+}
+async function dropToFolder(ms,r,f){
+  if(!cur||!ms.length) return;
+  const ids=ms.map(m=>m.id);
+  if(r.id===cur.id){
+    await fileInto(r,ids,f);
+    if(selMode) exitSel(true);
+    if(grpF){ if(grpF.name===f.name) ids.forEach(i=>grpF.ids.add(i)); else ids.forEach(i=>grpF.ids.delete(i)); }
+    drawStream(true);
+    if(lastGrp) await refreshGroups(); else railSoon();
+    toast(ms.length>1?`메모 ${ms.length}개를 ‘${f.name}’ 폴더로 옮겼어요`:`‘${f.name}’ 폴더로 옮겼어요`);
+    return;
+  }
+  await moveToRoom(ms,r,true);
+  await fileInto(r,ids,f);
+  railSoon();
+  toast(`‘${r.name}’ 방의 ‘${f.name}’ 폴더로 옮겼어요`);
 }
 /* 메모를 다른 방으로 옮긴다 — 원래 방에서는 사라진다 */
-async function moveToRoom(ms,r){
+async function moveToRoom(ms,r,quiet){
   if(!Array.isArray(ms)) ms=[ms];
   if(!cur||r.id===cur.id||!ms.length) return;
   const list=await readList(r);
@@ -2288,7 +2506,7 @@ async function moveToRoom(ms,r){
   ids.forEach(id=>noteOpen.delete(id));
   if(selMode) exitSel(true);
   drawStream(true); await persist();
-  toast(ms.length>1?`메모 ${ms.length}개를 ‘${r.name}’ 방으로 옮겼어요`:`‘${r.name}’ 방으로 옮겼어요`);
+  if(!quiet) toast(ms.length>1?`메모 ${ms.length}개를 ‘${r.name}’ 방으로 옮겼어요`:`‘${r.name}’ 방으로 옮겼어요`);
 }
 
 /* ---------- 메모 여러 개 선택 ---------- */
@@ -3372,6 +3590,7 @@ async function computeGroups(fresh){
     else if(!(await S.get('grpai:'+cur.id))) hint=['아직 AI가 나누지 않았어요','오른쪽 위 새로고침을 누르면 AI가 비슷한 메모끼리 폴더로 나눠 줘요.'];
     else hint=['아직 폴더로 나눌 만큼 비슷한 게 없어요','비슷한 메모가 두 개 이상 쌓인 뒤 새로고침을 누르면 폴더로 나눠 줘요. 전체 폴더 보기에서 직접 만들 수도 있어요.'];
   }
+  railSoon();   /* 왼쪽 바의 폴더 목록도 맞춘다 */
   return {groups,singles,hint};
 }
 
@@ -3389,6 +3608,7 @@ function fixAll(man){ if(lastGrp&&lastGrp.groups) lastGrp.groups.forEach(g=>fixG
 async function refreshGroups(){
   lastGrp=await computeGroups(false);
   if($('#grpview').classList.contains('on')) drawGroups(lastGrp);
+  railSoon();
 }
 async function renameGroup(g,name){
   const man=await loadMan();
@@ -3742,13 +3962,13 @@ window.addEventListener('resize',()=>{ if(gpop.classList.contains('on')) placePo
 function enterGrp(name,items){
   grpF={name,ids:new Set(items.map(x=>x.m.id))};
   $('#scChat').classList.add('grp');
-  drawStream();
+  drawStream(); drawRail();
 }
 function exitGrp(){
   if(!grpF) return;
   grpF=null; $('#scChat').classList.remove('grp');
   $('#chatName').textContent=cur?cur.name:'';
-  drawStream();
+  drawStream(); drawRail();
 }
 
 /* ---------- 날짜별 보기 ---------- */
@@ -3844,14 +4064,75 @@ document.querySelectorAll('.sheet').forEach(sh=>sh.onclick=e=>{if(e.target===sh)
 
 /* ---------- 방 목록 바 숨기기 / 보이기 (이 기기에 기억) ---------- */
 const RAIL_CLOSE='<svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9 4.5v15M15.8 9.6l-2.4 2.4 2.4 2.4"/></svg>', RAIL_OPEN='<svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9 4.5v15M13.4 9.6l2.4 2.4-2.4 2.4"/></svg>';
-function setRail(hide){
+const railStored=()=>{ try{ return localStorage.getItem('damda:railHide')==='1'; }catch(e){ return false; } };
+/* 넓은 창에서 숨기기·보이기는 이 기기에 기억한다. 폰(덮는 바)은 늘 닫힌 채로 시작 */
+function setRail(hide,keep){
   $('#scChat').classList.toggle('norail',hide);
   const b=$('#railTog'); b.innerHTML=hide?RAIL_OPEN:RAIL_CLOSE;
   b.title=hide?'방 목록 보이기':'방 목록 숨기기';
-  try{ localStorage.setItem('damda:railHide',hide?'1':'0'); }catch(e){}
+  if(!keep&&!railOvl()){ try{ localStorage.setItem('damda:railHide',hide?'1':'0'); }catch(e){} }
 }
-try{ setRail(localStorage.getItem('damda:railHide')==='1'); }catch(e){}
-$('#railTog').onclick=()=>setRail(!$('#scChat').classList.contains('norail'));
+/* 메모를 꾹 눌렀을 때 바가 닫혀 있으면 잠시 연다 — 놓거나 취소하면 다시 닫는다 */
+let railAuto=false;
+function railPeek(on){
+  if(on){
+    if($('#scChat').classList.contains('norail')){ railAuto=true; setRail(false,true); }
+  }else if(railAuto){ railAuto=false; setRail(true,true); }
+}
+setRail(railOvl()?true:railStored(),true);
+const railMode=()=>{ railAuto=false; setRail(railOvl()?true:railStored(),true); };
+if(railMQ.addEventListener) railMQ.addEventListener('change',railMode); else railMQ.addListener(railMode);
+$('#railTog').onclick=()=>{ railAuto=false; setRail(!$('#scChat').classList.contains('norail')); };
+$('#railScrim').onclick=()=>{ railAuto=false; setRail(true); };
+
+/* ---------- 바 폭 조절 — 넓은 창(px)과 폰(화면 %)을 따로 기억한다 ---------- */
+const RW_KEY='damda:railW', RWM_KEY='damda:railWm';
+function railWApply(){
+  const sc=$('#scChat');
+  let w=null, wm=null;
+  try{ w=parseFloat(localStorage.getItem(RW_KEY)); wm=parseFloat(localStorage.getItem(RWM_KEY)); }catch(e){}
+  if(w>0) sc.style.setProperty('--rw',w+'px'); else sc.style.removeProperty('--rw');
+  if(wm>0) sc.style.setProperty('--rwm',wm+'%'); else sc.style.removeProperty('--rwm');
+}
+railWApply();
+(()=>{
+  const h=$('#railRz'), sc=$('#scChat');
+  let drag=null;
+  h.addEventListener('pointerdown',e=>{
+    if(e.pointerType==='mouse'&&e.button!==0) return;
+    e.preventDefault();
+    const R=sc.getBoundingClientRect(), W=$('#rail').getBoundingClientRect().width;
+    drag={x:e.clientX,w:W,R,ovl:railOvl(),v:null};
+    try{ h.setPointerCapture(e.pointerId); }catch(_){}
+    sc.classList.add('rwing');
+  });
+  h.addEventListener('pointermove',e=>{
+    if(!drag) return;
+    let w=drag.w+(e.clientX-drag.x);
+    if(drag.ovl){
+      const pc=Math.round(Math.min(92,Math.max(40,w/drag.R.width*100))*10)/10;
+      sc.style.setProperty('--rwm',pc+'%'); drag.v=pc;
+    }else{
+      /* 채팅 영역은 최소 300px 남긴다 */
+      w=Math.round(Math.min(Math.max(150,drag.R.width-300),Math.max(150,w)));
+      sc.style.setProperty('--rw',w+'px'); drag.v=w;
+    }
+  });
+  const end=()=>{
+    if(!drag) return;
+    const d=drag; drag=null; sc.classList.remove('rwing');
+    if(d.v!==null){ try{ localStorage.setItem(d.ovl?RWM_KEY:RW_KEY,String(d.v)); }catch(e){} }
+  };
+  h.addEventListener('pointerup',end);
+  h.addEventListener('pointercancel',end);
+  h.addEventListener('dblclick',()=>{
+    try{ localStorage.removeItem(railOvl()?RWM_KEY:RW_KEY); }catch(e){}
+    railWApply();
+  });
+})();
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&railOvl()&&!$('#scChat').classList.contains('norail')){ railAuto=false; setRail(true); }
+});
 
 $('#btnBack').onclick=()=>{ if(selMode){ exitSel(); return; }
   if(grpF){ exitGrp(); return; }
