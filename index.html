@@ -674,6 +674,8 @@ body{
 .b.done{box-shadow:none}
 @media(prefers-reduced-motion:reduce){.b .sx{transition:none}}
 @media(pointer:coarse){.b,.li{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}}
+/* 채팅을 꾹 누르고 있는 동안에는 화면 어디도 글자 선택(파란 칠)이 되지 않게 */
+body.nosel,body.nosel *{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important}
 .dday{display:inline-block;margin-top:4px;font-size:11.5px;font-weight:700;color:var(--accent);
   font-variant-numeric:tabular-nums}
 /* D-day와 날짜 사이 점 */
@@ -2354,9 +2356,11 @@ function bubblePress(b,m){
   b.addEventListener('pointerdown',e=>{
     if(e.button!==0||e.target.closest('video,.nb')) return;
     touch=e.pointerType!=='mouse'; fired=false; sx=e.clientX; sy=e.clientY;
+    if(touch) noSel(true);
     b.classList.add('press');
     t=setTimeout(()=>{
       t=null; armed=true; msgArmed=true; fired=true; ax=sx; ay=sy;
+      noSel(true);
       b.classList.remove('press'); b.classList.add('armed'); vib();
       if(cur) railPeek(true);   /* 바가 닫혀 있으면 열어서 끌어다 놓을 수 있게 */
       try{ b.setPointerCapture(e.pointerId); }catch(_){}
@@ -2392,6 +2396,15 @@ function bubblePress(b,m){
   });
 }
 let mdrag=null, msgArmed=false;
+/* 꾹 누르는 동안 글자 선택을 막고, 이미 잡힌 선택은 지운다 */
+function noSel(on){
+  document.body.classList.toggle('nosel',on);
+  if(on){ try{ const s=window.getSelection(); if(s&&s.rangeCount) s.removeAllRanges(); }catch(e){} }
+}
+document.addEventListener('selectstart',e=>{ if(msgArmed||mdrag||document.body.classList.contains('nosel')) e.preventDefault(); });
+['pointerup','pointercancel'].forEach(ev=>window.addEventListener(ev,()=>{
+  setTimeout(()=>{ if(!msgArmed&&!mdrag) noSel(false); },80);
+}));
 function mStart(b,m,x,y){
   const ph=$('#phone').getBoundingClientRect();
   /* 선택 중이면 고른 메모 전부를 함께 옮긴다 */
