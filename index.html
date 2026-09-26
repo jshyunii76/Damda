@@ -2461,7 +2461,7 @@ async function mEnd(ok){
    (그 방의 다른 AI 폴더도 함께 — 폴더 순서가 뒤섞이지 않게) */
 async function fileInto(r,ids,f){
   const k='grpman:'+r.id, d=await S.get(k)||{};
-  const man={groups:d.groups||[],assign:d.assign||{}};
+  const man={groups:d.groups||[],assign:d.assign||{},lock:d.lock||{}};
   const fs=(await peekFolders(r)).fs;
   let gid=f.id&&man.groups.some(g=>g.id===f.id)?f.id:null;
   fs.forEach(x=>{
@@ -2472,7 +2472,7 @@ async function fileInto(r,ids,f){
     if(!gid&&x.name===f.name) gid=id;
   });
   if(!gid){ gid=newGid(); man.groups.push({id:gid,name:f.name}); }
-  ids.forEach(i=>{ man.assign[i]=gid; });
+  ids.forEach(i=>{ man.assign[i]=gid; man.lock[i]=true; });   /* 내가 옮긴 메모 — AI가 다시 옮기지 않는다 */
   await S.set(k,man);
 }
 async function dropToFolder(ms,r,f){
@@ -3389,7 +3389,8 @@ async function nameGroups(groups){
 
 /* =====================================================
    그룹 = AI가 나눈 그룹 + 내가 만들거나 고친 그룹
-   grpman:방id = {groups:[{id,name}], assign:{메모id: 그룹id | 'none'}}
+   grpman:방id = {groups:[{id,name}], assign:{메모id: 그룹id | 'none'}, lock:{메모id:true}}
+   - lock은 내가 직접 옮긴 메모 — 다시 담기(새로고침)를 눌러도 AI가 옮기지 않는다
    - 이름을 바꾸거나 메모를 옮긴 AI 그룹은 '고정'되어 AI가 다시 흔들지 않는다
    - 새 메모는 고정된 그룹과 충분히 비슷하면 그 그룹에 알아서 들어간다
    - 'none'은 내가 그룹에서 뺀 메모 — 그룹에 속하지 않은 메모에 남는다
@@ -3405,7 +3406,7 @@ function nameFor(g,ov){
 const manKey=()=>'grpman:'+cur.id;
 async function loadMan(){
   const d=await S.get(manKey());
-  return {groups:(d&&d.groups)||[],assign:(d&&d.assign)||{}};
+  return {groups:(d&&d.groups)||[],assign:(d&&d.assign)||{},lock:(d&&d.lock)||{}};
 }
 const saveMan=man=>S.set(manKey(),man);
 const idsKey=g=>g.map(x=>x.m.id).sort().join(',');
@@ -3512,14 +3513,22 @@ async function computeGroups(fresh){
      내가 만들었거나 이름을 바꾼 그룹은 이름 그대로 두고(비워서) AI가 다시 채운다 */
   const exHint={};
   if(fresh){
-    man.groups=man.groups.filter(g=>!g.ai);
+    /* 내가 직접 옮긴 메모가 들어 있는 폴더는 AI가 만든 폴더라도 남긴다 */
+    const keepG=new Set(Object.keys(man.assign).filter(k=>man.lock[k]).map(k=>man.assign[k]));
+    man.groups=man.groups.filter(g=>!g.ai||keepG.has(g.id));
     /* 비우기 전에 들어 있던 메모를 예시로 기억해 AI에게 알려 준다 */
     const byId=new Map(msgs.map(m=>[m.id,m]));
     Object.entries(man.assign).forEach(([mid,gid])=>{
       const m=byId.get(mid); if(!m||!man.groups.some(g=>g.id===gid)) return;
       (exHint[gid]=exHint[gid]||[]).push(m);
     });
-    man.assign={};
+    /* 내가 직접 옮긴 메모는 그 자리 그대로 — 나머지만 AI가 다시 나눈다 */
+    const keep={};
+    Object.keys(man.assign).forEach(k=>{
+      const a=man.assign[k];
+      if(man.lock[k]&&(a==='none'||man.groups.some(g=>g.id===a))) keep[k]=a;
+    });
+    man.assign=keep;
     await saveMan(man);
   }
   let release=false;
@@ -3642,6 +3651,7 @@ async function moveMemo(m,from,to){
   fixAll(man);
   if(from&&from!=='none') fixGroup(man,from);
   man.assign[m.id]=to==='none'?'none':fixGroup(man,to);
+  man.lock[m.id]=true;   /* 내가 옮긴 메모 — AI가 다시 옮기지 않는다 */
   await saveMan(man);
 }
 
@@ -3921,11 +3931,11 @@ async function moveFolderToRoom(g,r){
   await saveList(r,list);
   /* 2) 고른 방의 폴더: 같은 이름이 있으면 합치고, 없으면 새로 만든다 */
   const tk='grpman:'+r.id, td=await S.get(tk)||{};
-  const tm={groups:td.groups||[],assign:td.assign||{}};
+  const tm={groups:td.groups||[],assign:td.assign||{},lock:td.lock||{}};
   let tg=tm.groups.find(x=>x.name===g.name);
   if(!tg){ tg={id:newGid(),name:g.name}; tm.groups.push(tg); }
   delete tg.ai;
-  ms.forEach(m=>{ tm.assign[m.id]=tg.id; });
+  ms.forEach(m=>{ tm.assign[m.id]=tg.id; tm.lock[m.id]=true; });   /* 내가 옮긴 폴더 — AI가 다시 옮기지 않는다 */
   await S.set(tk,tm);
   /* 3) 이 방에서는 폴더와 메모를 뺀다 */
   const ids=new Set(ms.map(m=>m.id));
