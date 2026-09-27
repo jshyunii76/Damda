@@ -82,6 +82,7 @@ body{
 .ic svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;
   stroke-linecap:round;stroke-linejoin:round}
 .ic.hl{color:var(--accent)}
+#btnAI.aion svg{fill:#F5C542;stroke:#D9A21B}
 
 .screen{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--app);
   transition:transform .22s cubic-bezier(.32,.72,0,1)}
@@ -274,7 +275,9 @@ body{
   border-radius:12px;display:none;align-items:center;justify-content:center;z-index:12;
   font-weight:600;color:var(--accent);pointer-events:none}
 #drop.on{display:flex}
-.daysep{display:flex;align-items:center;justify-content:center;margin:10px 0 12px}
+.daysep{display:flex;align-items:center;justify-content:center;gap:10px;margin:10px 0 12px}
+/* 날짜 글씨 양옆으로 흐린 실선 */
+.daysep::before,.daysep::after{content:'';flex:1;height:1px;background:var(--line)}
 .daysep span{font-size:11.5px;font-weight:600;color:var(--ink-2);background:var(--mute);
   padding:4px 12px;border-radius:20px}
 .foldbar{display:flex;align-items:center;gap:9px;width:100%;margin:8px 0;padding:9px 14px;
@@ -637,7 +640,8 @@ body{
 @keyframes sp{to{transform:rotate(360deg)}}
 .sechd{padding:12px 16px 5px;font-size:11.5px;font-weight:700;color:var(--ink-3);
   display:flex;align-items:center;gap:6px}
-.sechd .ln{flex:1;height:1px;background:var(--line)}
+/* 바로 찾음과 뜻이 비슷한 메모 사이 경계선은 초록 */
+.hit + .semzone{margin-top:-1px;border-top:1.5px solid var(--accent)}
 .sim{font-size:10.5px;color:var(--accent);font-weight:700;flex:0 0 auto}
 .hit .m{display:flex;align-items:center;gap:6px}
 .hit .m .sp{flex:1}
@@ -695,6 +699,8 @@ body.nosel,body.nosel *{-webkit-user-select:none!important;user-select:none!impo
 .dday.over{color:var(--strike)}
 .b.done .dday{display:none}
 .flash{animation:fl 1.1s ease}
+/* 검색으로 찾은 메모 — 다른 행동을 할 때까지 노랗게 */
+.b.found{background:var(--warn-soft)!important;box-shadow:0 0 0 2px #E9C46A}
 @keyframes fl{0%,100%{background:var(--bubble)}35%{background:var(--warn-soft)}}
 
 #lightbox{position:absolute;inset:0;background:rgba(15,18,20,.92);display:none;
@@ -1576,6 +1582,9 @@ async function loadVecs(){
 }
 
 /* ---------- 설정 시트 ---------- */
+/* AI 정리가 켜져 있으면 홈 화면 별이 노랗게 채워진다 */
+function updAIBtn(){ const b=$('#btnAI'); if(b){ b.classList.toggle('aion',!!aiKey); b.title=aiKey?'AI 정리 켜짐':'AI 설정'; } }
+updAIBtn();
 function aiStat(){
   const box=$('#aiStat');
   if(!aiKey){ box.innerHTML='아직 <b>꺼져 있습니다.</b> 아래에 키를 넣으면 켜집니다.'; return; }
@@ -1587,7 +1596,7 @@ $('#aiSave').onclick=()=>{
   aiKey=cleanKey($('#aiKey').value);
   if(/^sk-/.test(aiKey)){ aiKey=''; $('#aiKey').value=''; toast('OpenAI 키예요. Gemini 키(AIza…)를 넣어주세요'); aiStat(); return; }
   try{ aiKey?localStorage.setItem(AI_KEY_STORE,aiKey):localStorage.removeItem(AI_KEY_STORE); }catch(e){}
-  aiStat(); toast(aiKey?'AI 정리를 켰어요':'AI 정리를 껐어요');
+  aiStat(); updAIBtn(); toast(aiKey?'AI 정리를 켰어요':'AI 정리를 껐어요');
 };
 $('#aiTest').onclick=async()=>{
   if(!aiKey){ toast('먼저 키를 저장해주세요'); return; }
@@ -2264,11 +2273,28 @@ function drawStream(keep){
 }
 
 const pinned=()=>msgs.filter(m=>m.pin).sort((a,b)=>(a.pinAt||0)-(b.pinAt||0));
-function jumpTo(m){
-  opened[dkey(new Date(m.ts))]=true; flashId=m.id; drawStream();
-  const t=document.getElementById('b'+m.id);
-  if(t)t.scrollIntoView({block:'center',behavior:'smooth'});
+/* 찾은 메모로 바로 이동 — 화면 가운데에 오게 곧바로 맞추고, 사진이 늦게 뜨면 한 번 더 맞춘다.
+   keep이면 다른 행동을 할 때까지 노란색을 유지한다 (검색에서 온 경우) */
+let foundId=null;
+function jumpTo(m,keep){
+  if(grpF&&!grpF.ids.has(m.id)) exitGrp();
+  opened[dkey(new Date(m.ts))]=true;
+  if(keep){ foundId=m.id; flashId=null; } else flashId=m.id;
+  drawStream();
+  const center=()=>{
+    const s=$('#stream'), t=document.getElementById('b'+m.id); if(!t) return;
+    const R=t.getBoundingClientRect(), S=s.getBoundingClientRect();
+    s.scrollTop+=R.top-S.top-(S.height-R.height)/2;
+  };
+  center(); requestAnimationFrame(center); setTimeout(center,250); setTimeout(center,700);
 }
+function clearFound(){
+  if(!foundId) return;
+  const t=document.getElementById('b'+foundId); foundId=null;
+  if(t) t.classList.remove('found');
+}
+/* 찾은 메모를 표시한 뒤 화면을 누르거나 입력하면 원래 색으로 */
+['pointerdown','keydown'].forEach(ev=>document.addEventListener(ev,()=>{ if(foundId) setTimeout(clearFound,0); },true));
 
 let pinOpen=true;
 function drawPinned(){
@@ -2347,7 +2373,7 @@ function bubble(m){
   const media=f && (isImg(f.type)||isVid(f.type));
   const animate=strikeId===m.id;
   const b=el('div','b'+(media?' pic':'')
-    +(m.done&&!animate?' done':'')+(flashId===m.id?' flash':''));
+    +(m.done&&!animate?' done':'')+(flashId===m.id?' flash':'')+(foundId===m.id?' found':''));
   if(animate){ strikeId=null; requestAnimationFrame(()=>requestAnimationFrame(()=>b.classList.add('done'))); }
   b.id='b'+m.id;
   if(flashId===m.id) setTimeout(()=>{flashId=null;},1200);
@@ -3357,11 +3383,11 @@ function hitRow(m,q,sim,byNote){
     +(byNote&&m.note?`<div class="m nt">${esc(m.note.trim().split('\n')[0])}</div>`
       :(m.desc?`<div class="m" style="margin:4px 0 0">${esc(m.desc)}</div>`:''));
   d.dataset.id=m.id;
-  d.onclick=()=>{$('#search').classList.remove('on'); jumpTo(m);};
+  d.onclick=()=>{$('#search').classList.remove('on'); jumpTo(m,true);};
   return d;
 }
 function sechd(t){
-  const h=el('div','sechd'); h.innerHTML=`<span>${t}</span><span class="ln"></span>`; return h;
+  const h=el('div','sechd'); h.innerHTML=`<span>${t}</span>`; return h;
 }
 
 function runSearch(){
@@ -3646,6 +3672,12 @@ async function computeGroups(fresh){
      내가 만들었거나 이름을 바꾼 그룹은 이름 그대로 두고(비워서) AI가 다시 채운다 */
   const exHint={};
   if(fresh){
+    /* 내가 만든 폴더(이름을 바꾼 폴더 포함)에 AI가 넣어 둔 메모도 지금 자리 그대로 고정한다 */
+    try{
+      const c=await S.get('grpai:'+cur.id), dd=(c&&c.d)||{};
+      const mine=new Set(man.groups.filter(g=>!g.ai).map(g=>g.id));
+      msgs.forEach(m=>{ const x=dd[m.id]; if(!man.assign[m.id]&&x&&x.g&&mine.has(x.g)) man.assign[m.id]=x.g; });
+    }catch(e){}
     /* 내가 직접 옮긴 메모가 들어 있는 폴더는 AI가 만든 폴더라도 남긴다 */
     const keepG=new Set(Object.keys(man.assign).filter(k=>man.lock[k]).map(k=>man.assign[k]));
     man.groups=man.groups.filter(g=>!g.ai||keepG.has(g.id));
@@ -3659,7 +3691,9 @@ async function computeGroups(fresh){
     const keep={};
     Object.keys(man.assign).forEach(k=>{
       const a=man.assign[k];
-      if(man.lock[k]&&(a==='none'||man.groups.some(g=>g.id===a))) keep[k]=a;
+      const g=man.groups.find(x=>x.id===a);
+      /* 내가 옮긴 메모, 그리고 내가 만든 폴더 안의 메모는 그대로 */
+      if((man.lock[k]&&(a==='none'||g))||(g&&!g.ai)) keep[k]=a;
     });
     man.assign=keep;
     await saveMan(man);
