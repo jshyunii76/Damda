@@ -124,6 +124,10 @@ body{
 .room .pin{flex:0 0 auto;color:var(--pin);opacity:1}
 .room .pin svg{width:15px;height:15px;fill:currentColor;stroke:none}
 .room.drag{opacity:.35}
+.room.armed{background:var(--mute-2)}
+/* 폰에서 끌고 있는 방 */
+.room.rghost{position:absolute;z-index:70;pointer-events:none;background:var(--app);border-radius:12px;
+  box-shadow:0 10px 26px rgba(27,32,36,.22);transform:scale(1.02)}
 .room.over{box-shadow:inset 0 2px 0 var(--accent)}
 .room.over-b{box-shadow:inset 0 -2px 0 var(--accent)}
 .pindiv{display:flex;align-items:center;gap:9px;padding:6px 18px 4px;
@@ -161,7 +165,7 @@ body{
   transition:width .2s cubic-bezier(.32,.72,0,1),padding .2s,border-width .2s}
 #scChat.norail #rail{box-shadow:none;width:0;padding-left:0;padding-right:0;border-right-width:0;overflow:hidden}
 /* 바 숨기기·보이기 버튼 하나 — 자리가 고정돼 있어 연달아 눌러도 같은 곳 */
-#railTog{position:absolute;z-index:6;top:11px;left:10.5px;color:var(--ink-3)}
+#railTog{position:absolute;z-index:6;top:11px;left:10.5px}   /* 색·크기는 다른 아이콘(.ic)과 같게 */
 #railTog:hover{background:var(--soft);color:var(--accent)}
 .rtogsp{flex:0 0 auto;height:37px;display:flex;align-items:center;padding-left:44px;margin-bottom:3px;
   font-size:12px;font-weight:700;color:var(--ink-3);letter-spacing:.02em;white-space:nowrap}
@@ -581,11 +585,11 @@ body{
 .gpload{display:flex;align-items:center;gap:8px;padding:8px 10px 10px;font-size:12.5px;color:var(--ink-2)}
 .gpload .aip{margin:0}
 /* 그룹만 보이는 방 */
-#scChat.grp #compose,#scChat.grp #pinbar,#scChat.grp #btnSearch,
+#scChat.grp #pinbar,#scChat.grp #btnSearch,
 #scChat.grp #btnCal,#scChat.grp #btnShare{display:none}
 #scChat.grp #btnGroup{color:var(--accent);background:var(--soft)}
 /* 방 - 그룹: 하이픈은 제목과 같은 글씨. 한글 높이 가운데에 오도록 살짝만 올린다 */
-#chatName .gsep{margin:0 .32em;position:relative;top:-.09em}
+#chatName .gsep,#gvTitle .gsep{margin:0 .32em;position:relative;top:-.09em}
 #chatName .gcnt{margin-left:7px;font-size:12px;font-weight:700;color:var(--accent);background:var(--soft);
   padding:1px 7px;border-radius:6px;vertical-align:3px;font-variant-numeric:tabular-nums}
 #nvSrc{margin:12px 14px 10px;padding:10px 12px;background:var(--mute);border-radius:11px;
@@ -901,7 +905,7 @@ body.rzing *{user-select:none!important}
         <svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/></svg>
       </button>
       <button class="ic" id="btnAI" title="AI 설정">
-        <svg viewBox="0 0 24 24"><path d="M12 3l1.9 4.3 4.6.5-3.4 3.1 1 4.5L12 13l-4.1 2.4 1-4.5L5.5 7.8l4.6-.5L12 3z"/><path d="M18.5 16.5l.7 1.6 1.7.2-1.3 1.2.4 1.7-1.5-.9-1.5.9.4-1.7-1.3-1.2 1.7-.2.7-1.6z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.8.8-4.2 4.1 1 5.8L12 16.8l-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z"/></svg>
       </button>
       <button class="ic" id="btnJoin" title="코드로 참여">
         <svg viewBox="0 0 24 24"><path d="M15 7h3a4 4 0 0 1 0 8h-3M9 7H6a4 4 0 0 0 0 8h3M8 11h8"/></svg>
@@ -911,13 +915,13 @@ body.rzing *{user-select:none!important}
   </section>
 
   <section class="screen hide" id="scChat">
-    <button class="ic" id="railTog" title="방 목록 숨기기"><svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9 4.5v15M15.8 9.6l-2.4 2.4 2.4 2.4"/></svg></button>
+    <button class="ic" id="railTog" title="방 목록 숨기기"><svg viewBox="0 0 24 24"><path d="M4 6.5h16M4 12h16M4 17.5h16"/></svg></button>
     <nav id="rail" aria-label="방 목록"></nav>
     <div id="railScrim"></div>
     <div id="railRz" title="끌어서 폭 조절 · 두 번 누르면 처음 폭"></div>
     <div id="chatMain">
     <div class="bar">
-      <button class="ic" id="btnBack"><svg viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg></button>
+      <button class="ic" id="btnBack" title="홈으로"><svg viewBox="0 0 24 24"><path d="M4 10.5L12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5H15v-5.5H9v5.5H5.5A1.5 1.5 0 0 1 4 19z"/></svg></button>
       <h1 id="chatName">방</h1>
       <button class="ic" id="btnRefresh" title="다시 정리">
         <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></svg>
@@ -1009,7 +1013,7 @@ body.rzing *{user-select:none!important}
   <section id="grpview">
     <div class="bar">
       <button class="ic" id="gvClose"><svg viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg></button>
-      <h1>폴더</h1>
+      <h1 id="gvTitle">폴더</h1>
       <button class="ic" id="gvRefresh" title="다시 담기">
         <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></svg>
       </button>
@@ -1052,7 +1056,7 @@ body.rzing *{user-select:none!important}
   <div class="sheet" id="shNew"><div class="card">
     <h2>새 방 만들기</h2>
     <p>주제 하나에 방 하나.</p>
-    <input type="text" id="newName" placeholder="예) 장보기, 여행 계획, 아이디어" maxlength="20">
+    <input type="text" id="newName" placeholder="예) 업무, 여행, 장보기" maxlength="20">
     <div class="swlb">아이콘 색</div>
     <div class="sws" id="newSw"></div>
     <div class="btns"><button class="btn ghost" data-close>취소</button>
@@ -1746,17 +1750,17 @@ async function saveList(r,list){
 }
 
 /* 방 아이콘 색 — 글자색은 배경 밝기에 맞춰 자동으로 고른다 */
-/* 빨 주 노 초 파 남 보 + 회색 + 검정 */
+/* 빨 주 노 초 파 남 보 + 회색 */
 /* 연한 회색만 처음 색 그대로, 나머지는 처음 팔레트에 흰색을 20% 섞은 색 */
-const COLORS=['#F7CFCF','#FADEBD','#F5ECB6','#C3E6CE','#BADCF5','#C9CBF1','#E3CCF1','#DDE2E5',
-  '#5D6166'];
+const COLORS=['#F7CFCF','#FADEBD','#F5ECB6','#C3E6CE','#BADCF5','#C9CBF1','#E3CCF1','#DDE2E5'];
 /* 예전 팔레트(처음 색, 35% 연한 색)로 만든 방은 지금 색으로 옮긴다 */
 const OLD_COLORS={
   '#F5C3C3':'#F7CFCF','#F9D6AC':'#FADEBD','#F3E7A4':'#F5ECB6','#B4E0C2':'#C3E6CE',
   '#A9D3F2':'#BADCF5','#BBBEEE':'#C9CBF1','#DCBFEE':'#E3CCF1','#E4E8EA':'#DDE2E5',
   '#F8D8D8':'#F7CFCF','#FBE4C9':'#FADEBD','#F7EFC4':'#F5ECB6','#CEEBD7':'#C3E6CE',
   '#C7E2F7':'#BADCF5','#D3D5F4':'#C9CBF1','#E8D5F4':'#E3CCF1','#E9ECEE':'#DDE2E5',
-  '#343A40':'#5D6166','#495057':'#5D6166'};
+  /* 검정 계열은 없앴다 — 이미 고른 방은 회색으로 */
+  '#343A40':'#DDE2E5','#495057':'#DDE2E5','#5D6166':'#DDE2E5'};
 function migrateColors(){
   let ch=false;
   rooms.forEach(r=>{ const n=r.color&&OLD_COLORS[r.color.toUpperCase()]; if(n){ r.color=n; ch=true; } });
@@ -1875,8 +1879,7 @@ async function goFolder(r,f){
   if(!cur||cur.id!==r.id) return;
   const ids=new Set(f.ids);
   const items=msgs.filter(m=>ids.has(m.id)).map(m=>({m}));
-  if(!items.length){ toast('이 폴더는 비어 있어요'); return; }
-  enterGrp(f.name,items);
+  enterGrp(f.name,items,f.id);
 }
 
 function drawRail(){
@@ -1945,12 +1948,82 @@ function briefPreview(){
   return parts.join(' · ');
 }
 
+/* 방 순서 바꾸기 — 드롭한 자리로 옮기고, 고정 여부는 놓은 자리를 따른다 */
+async function moveRoomTo(from,to){
+  if(from===to||from==null||to==null) return;
+  const moved=rooms[from];
+  moved.pin=!!rooms[to].pin;
+  if(!moved.pin) delete moved.pinAt;
+  rooms.splice(from,1);
+  rooms.splice(to,0,moved);
+  repin(); normalize();
+  await saveRooms(); drawRooms();
+}
+/* 폰: 방을 꾹 누르면 들리고, 그대로 떼면 메뉴, 움직이면 위아래로 끌어 순서를 바꾼다 */
+let rdrag=null;
+function roomPress(b,idx,r){
+  let t=null, armed=false, sx=0, sy=0;
+  const reset=()=>{ if(t){ clearTimeout(t); t=null; } armed=false; b.classList.remove('press','armed'); };
+  b.addEventListener('touchstart',e=>{
+    if(e.touches.length>1){ reset(); return; }
+    const p=e.touches[0]; sx=p.clientX; sy=p.clientY;
+    b.classList.add('press');
+    t=setTimeout(()=>{ t=null; armed=true; b.classList.remove('press'); b.classList.add('armed'); vib(); },400);
+  },{passive:true});
+  b.addEventListener('touchmove',e=>{
+    const p=e.touches[0]; if(!p) return;
+    if(t){ if(Math.abs(p.clientX-sx)>8||Math.abs(p.clientY-sy)>8) reset(); return; }   /* 먼저 움직이면 스크롤 */
+    if(!armed) return;
+    e.preventDefault();
+    if(!rdrag&&(Math.abs(p.clientX-sx)>6||Math.abs(p.clientY-sy)>6)) rStart(b,idx,p.clientY);
+    if(rdrag) rMove(p.clientY);
+  },{passive:false});
+  b.addEventListener('touchend',()=>{
+    if(!armed){ reset(); return; }
+    const dragging=!!rdrag; reset(); eatClick();
+    if(dragging) rEnd(true); else setTimeout(()=>askMenu(r),60);
+  });
+  b.addEventListener('touchcancel',()=>{ const d=!!rdrag; reset(); if(d) rEnd(false); });
+  b.addEventListener('contextmenu',e=>{ if(armed||t) e.preventDefault(); });
+}
+function rStart(b,idx,y){
+  const box=$('#rooms'), R=b.getBoundingClientRect(), ph=$('#phone').getBoundingClientRect();
+  const gh=b.cloneNode(true); gh.className='room rghost';
+  gh.style.width=R.width+'px'; gh.style.left=(R.left-ph.left)+'px';
+  $('#phone').appendChild(gh);
+  rdrag={b,from:idx,to:idx,gh,dy:y-R.top,ph,box,vy:0,y,over:null};
+  b.classList.add('drag');
+  rMove(y); requestAnimationFrame(rAuto);
+}
+function rMove(y){
+  const d=rdrag; if(!d) return;
+  d.y=y; d.gh.style.top=(y-d.dy-d.ph.top)+'px';
+  let hit=null;
+  d.box.querySelectorAll('.room[data-i]').forEach(x=>{ const q=x.getBoundingClientRect(); if(y>=q.top&&y<q.bottom) hit=x; });
+  if(d.over&&d.over!==hit) d.over.classList.remove('over','over-b');
+  d.over=hit; d.to=hit?+hit.dataset.i:d.to;
+  if(hit&&+hit.dataset.i!==d.from){ hit.classList.toggle('over',d.from>+hit.dataset.i); hit.classList.toggle('over-b',d.from<+hit.dataset.i); }
+  const B=d.box.getBoundingClientRect();
+  d.vy=y<B.top+50?-8:(y>B.bottom-50?8:0);
+}
+function rAuto(){
+  const d=rdrag; if(!d) return;
+  if(d.vy){ d.box.scrollTop+=d.vy; rMove(d.y); }
+  requestAnimationFrame(rAuto);
+}
+async function rEnd(ok){
+  const d=rdrag; if(!d) return;
+  rdrag=null; d.gh.remove(); d.b.classList.remove('drag');
+  if(d.over) d.over.classList.remove('over','over-b');
+  if(ok&&d.to!==d.from){ await moveRoomTo(d.from,d.to); vib(); }
+}
+
 function drawRooms(){
   const box=$('#rooms'); box.innerHTML='';
 
   if(!rooms.length){
     const h=el('div','hint');
-    h.innerHTML='<strong>방을 만들어 시작하세요</strong>장보기, 여행 계획, 업무처럼 주제별로 나눠 담으면 나중에 찾기 쉬워집니다.';
+    h.innerHTML='<strong>방을 만들어 시작하세요</strong>업무, 여행, 장보기처럼 주제별로 나눠 담으세요.';
     box.appendChild(h);
   }else{
     /* 어제·오늘 요약방 — 항상 맨 위 */
@@ -1974,7 +2047,8 @@ function drawRooms(){
       box.appendChild(dv);
     }
     const b=el('button','room');
-    b.draggable=true;
+    /* 마우스는 브라우저 끌기로, 폰은 아래 roomPress로 순서를 바꾼다 */
+    b.draggable=!matchMedia('(pointer:coarse)').matches;
     b.dataset.i=idx;
     b.innerHTML=`<span class="av"${avStyle(r)}>${iniHTML(r.name)}${dueDot(r)}</span>
       <span class="mid">
@@ -2002,22 +2076,10 @@ function drawRooms(){
     b.addEventListener('drop',async e=>{
       e.preventDefault();
       if(dragFrom===null||dragFrom===idx) return;
-      const moved=rooms[dragFrom];
-      moved.pin=!!rooms[idx].pin;
-      if(!moved.pin) delete moved.pinAt;
-      rooms.splice(dragFrom,1);
-      rooms.splice(idx,0,moved);
-      repin(); normalize();
-      dragFrom=null; await saveRooms(); drawRooms();
+      const from=dragFrom; dragFrom=null;
+      await moveRoomTo(from,idx);
     });
-    let timer=null;
-    b.addEventListener('touchstart',()=>{
-      b.classList.add('press');
-      timer=setTimeout(()=>{b.classList.remove('press'); askMenu(r); timer=null;},550);
-    },{passive:true});
-    const cancel=()=>{b.classList.remove('press'); if(timer){clearTimeout(timer); timer=null;}};
-    b.addEventListener('touchend',cancel);
-    b.addEventListener('touchmove',cancel);
+    roomPress(b,idx,r);
     box.appendChild(b);
   });
 
@@ -2118,7 +2180,7 @@ function closeOverlays(){
 async function openRoom(id){
   cur=rooms.find(r=>r.id===id); if(!cur) return;
   if(selMode) exitSel(true);
-  briefOn=false; grpF=null; lastGrp=null; $('#scChat').classList.remove('brief','grp');
+  briefOn=false; grpF=null; lastGrp=null; $('#scChat').classList.remove('brief','grp'); updBack();
   $('#chatName').textContent=cur.name;
   $('#btnShare').classList.toggle('hl',!!cur.code);
   $('#scChat').classList.remove('hide'); drawRail();
@@ -2167,13 +2229,13 @@ function drawStream(keep){
   if(selMode) updSel();
   if(grpF&&!view.length){
     const e=el('div','hint');
-    e.innerHTML='<strong>이 폴더에 남은 메모가 없어요</strong>뒤로 가면 전체 메모로 돌아가요.';
+    e.innerHTML='<strong>빈 폴더예요</strong>여기서 메모를 남기면 이 폴더에 담겨요.';
     add(e); return;
   }
   if(!msgs.length){
     $('#pinbar').innerHTML='';
     const e=el('div','hint');
-    e.innerHTML='<strong>첫 메모를 남겨보세요</strong>사진, 동영상, PDF도 붙여넣거나 끌어다 놓을 수 있어요.<br>메모를 꾹 누르면 여러 기능을 사용할 수 있어요.';
+    e.innerHTML='<strong>첫 메모를 남겨보세요</strong>파일을 끌어다 놓을 수 있어요.<br><br>메모를 꾹 눌러 여러 기능을 사용하거나<br>움직여서 이동할 수 있어요.';
     add(e); return;
   }
   if(grpF) $('#pinbar').innerHTML=''; else drawPinned();
@@ -2548,11 +2610,19 @@ async function moveToRoom(ms,r,quiet){
 let selMode=false; const sel=new Set();
 const BACK_SVG='<svg viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>';
 const X_SVG='<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+const HOME_SVG='<svg viewBox="0 0 24 24"><path d="M4 10.5L12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5H15v-5.5H9v5.5H5.5A1.5 1.5 0 0 1 4 19z"/></svg>';
+/* 왼쪽 위 버튼: 방에서는 홈 아이콘, 폴더 안에서는 방으로 돌아가는 화살표, 여러 개 선택 중에는 X */
+function updBack(){
+  const b=$('#btnBack'); if(!b) return;
+  if(selMode){ b.innerHTML=X_SVG; b.title='선택 끝내기'; }
+  else if(grpF){ b.innerHTML=BACK_SVG; b.title='전체 채팅방으로'; }
+  else{ b.innerHTML=HOME_SVG; b.title='홈으로'; }
+}
 const selList=()=>msgs.filter(x=>sel.has(x.id));
 function enterSel(m){
   selMode=true; sel.clear(); if(m) sel.add(m.id);
   $('#scChat').classList.add('sel');
-  $('#btnBack').innerHTML=X_SVG; $('#btnBack').title='선택 끝내기';
+  updBack();
   closePop&&closePop();
   drawStream(true); updSel();
 }
@@ -2560,7 +2630,7 @@ function exitSel(quiet){
   if(!selMode) return;
   selMode=false; sel.clear();
   $('#scChat').classList.remove('sel');
-  $('#btnBack').innerHTML=BACK_SVG; $('#btnBack').title='';
+  updBack();
   $('#chatName').textContent=cur?cur.name:'';
   if(!quiet) drawStream(true);   /* 그룹 방이면 drawStream이 제목을 다시 맞춘다 */
 }
@@ -2804,7 +2874,7 @@ async function buildBrief(){
 
 async function openBrief(){
   if(selMode) exitSel(true);
-  briefOn=true; cur=null; msgs=[]; grpF=null; $('#scChat').classList.remove('grp');
+  briefOn=true; cur=null; msgs=[]; grpF=null; $('#scChat').classList.remove('grp'); updBack();
   const sc=$('#scChat');
   sc.classList.add('brief'); sc.classList.remove('hide');
   $('#chatName').textContent='어제와 오늘';
@@ -3029,8 +3099,15 @@ async function send(){
     text:t,file,ts:Date.now(),due:pickDue,dueStart:pickDue?pickStart:null,dueTime:pickDue?pickTime:null,done:false});
   txt.value=''; txt.style.height='auto'; clearAtt(); $('#send').disabled=true;
   pickDue=null; pickStart=null; pickTime=null; syncChips(); opened[todayKey()]=true;
-  drawStream(); await persist();
   const last=msgs[msgs.length-1];
+  /* 폴더 안에서 보낸 메모는 그 폴더에 담는다 (내가 넣은 것으로 고정) */
+  const inF=grpF&&last?grpF:null;
+  if(inF) inF.ids.add(last.id);
+  drawStream(); await persist();
+  if(inF){
+    await fileInto(cur,[last.id],{id:inF.gid,name:inF.name,ids:[...inF.ids]});
+    if(lastGrp) await refreshGroups(); else railSoon();
+  }
   if(aiKey&&last) enrich(last, pend?pend.blob:null);
 }
 
@@ -3555,7 +3632,13 @@ async function aiArrange(loose,groups,fresh){
 }
 
 async function computeGroups(fresh){
-  if(!msgs.length) return {groups:[],singles:[],hint:['담을 메모가 없어요','메모를 몇 개 남기면 비슷한 것끼리 모아 보여줘요.']};
+  /* 메모가 없어도 내가 만든 폴더는 빈 폴더로 보여 준다 */
+  if(!msgs.length){
+    const man=await loadMan();
+    const groups=man.groups.map(g=>({id:g.id,name:g.name,manual:true,items:[],hint:[]}));
+    railSoon();
+    return {groups,singles:[],hint:groups.length?null:['담을 메모가 없어요','메모를 몇 개 남기면 비슷한 것끼리 모아 보여줘요.']};
+  }
   const man=await loadMan();
   /* 다시 담기: 지운 그룹에 있던 메모를 풀어서 AI가 다시 나누게 한다 */
   /* 새 메모가 들어와도 풀어 준다 — 지운 그룹에 있던 메모도 새 메모와 함께 다시 묶일 수 있게 */
@@ -3731,8 +3814,9 @@ function drawPop(r){
     gplist.appendChild(gpRow('전체 메모',msgs.length,'all',exitGrp));
     gplist.appendChild(el('div','gpsep'));
   }
-  r.groups.filter(g=>g.items.length).forEach(g=>gplist.appendChild(
-    gpRow(g.name,g.items.length,grpF&&grpF.name===g.name?'on':'',()=>enterGrp(g.name,g.items))));
+  /* 빈 폴더도 열어서 바로 메모를 남길 수 있다 */
+  r.groups.forEach(g=>gplist.appendChild(
+    gpRow(g.name,g.items.length,grpF&&grpF.name===g.name?'on':'',()=>enterGrp(g.name,g.items,g.id))));
   /* 기타(그룹에 속하지 않은 메모)는 말풍선에는 안 보이고 자세히 보기에서만 */
 }
 async function openPop(fresh){
@@ -3801,16 +3885,14 @@ function gvCard(name,items,key,g){
     mv.onclick=e=>{ e.stopPropagation(); askFolderMove(g); };
     /* 이름 · 방으로 가는 화살표 · (맨 오른쪽) 이름 바꾸기 · 다른 방으로 옮기기 · 삭제 */
     ed.classList.add('first');
-    h.append(n);
-    if(items.length) h.append(go);
-    h.append(ed,mv,dl);
+    h.append(n,go,ed,mv,dl);
   }else{
     h.append(n);
     if(items.length) h.append(go);
   }
   card.appendChild(h);
   /* 그룹 이름을 누르면 그 그룹만 있는 방으로 */
-  h.onclick=()=>{ if(!items.length) return; $('#grpview').classList.remove('on'); enterGrp(name,items); };
+  h.onclick=()=>{ if(!g&&!items.length) return; $('#grpview').classList.remove('on'); enterGrp(name,items,g&&g.id); };
   const files=items.filter(x=>x.m.file).length;
   const dues=items.filter(x=>x.m.due&&!x.m.done).length;
   if((files||dues)&&!g){
@@ -3854,6 +3936,8 @@ function drawGroups(r){
   box.scrollTop=top;
 }
 async function openGrpView(fresh){
+  /* 제목: 채팅방 이름 */
+  $('#gvTitle').textContent=cur?cur.name:'폴더';
   $('#grpview').classList.add('on');
   grpOpen=new Set();
   $('#gvList').scrollTop=0;
@@ -4019,16 +4103,16 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape') closePop(); });
 window.addEventListener('resize',()=>{ if(gpop.classList.contains('on')) placePop(); });
 
 /* 그룹을 고르면 그 그룹의 메모만 있는 방으로 바뀐다 */
-function enterGrp(name,items){
-  grpF={name,ids:new Set(items.map(x=>x.m.id))};
+function enterGrp(name,items,gid){
+  grpF={name,gid:gid||null,ids:new Set(items.map(x=>x.m.id))};
   $('#scChat').classList.add('grp');
-  drawStream(); drawRail();
+  drawStream(); drawRail(); updBack();
 }
 function exitGrp(){
   if(!grpF) return;
   grpF=null; $('#scChat').classList.remove('grp');
   $('#chatName').textContent=cur?cur.name:'';
-  drawStream(); drawRail();
+  drawStream(); drawRail(); updBack();
 }
 
 /* ---------- 날짜별 보기 ---------- */
@@ -4123,7 +4207,8 @@ document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('.s
 document.querySelectorAll('.sheet').forEach(sh=>sh.onclick=e=>{if(e.target===sh)sh.classList.remove('on');});
 
 /* ---------- 방 목록 바 숨기기 / 보이기 (이 기기에 기억) ---------- */
-const RAIL_CLOSE='<svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9 4.5v15M15.8 9.6l-2.4 2.4 2.4 2.4"/></svg>', RAIL_OPEN='<svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9 4.5v15M13.4 9.6l2.4 2.4-2.4 2.4"/></svg>';
+/* 바 열고 닫기 — 작대기 세 개 하나로 */
+const RAIL_CLOSE='<svg viewBox="0 0 24 24"><path d="M4 6.5h16M4 12h16M4 17.5h16"/></svg>', RAIL_OPEN=RAIL_CLOSE;
 const railStored=()=>{ try{ return localStorage.getItem('damda:railHide')==='1'; }catch(e){ return false; } };
 /* 넓은 창에서 숨기기·보이기는 이 기기에 기억한다. 폰(덮는 바)은 늘 닫힌 채로 시작 */
 function setRail(hide,keep){
