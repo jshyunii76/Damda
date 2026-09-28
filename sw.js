@@ -1,6 +1,6 @@
 /* 담다 — 오프라인에서도 열리게. 인터넷이 되면 항상 최신 버전을 먼저 받아온다. */
-const CACHE='damda-v1';
-const FILES=['./','index.html','manifest.webmanifest','icon-192.png','icon-512.png','apple-touch-icon.png'];
+const CACHE='damda-v3';
+const FILES=['./','index.html','manifest.webmanifest?v=3','icon-192.png?v=2','icon-512.png?v=2','icon-maskable-512.png?v=2','apple-touch-icon.png?v=2'];
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting()));
 });
