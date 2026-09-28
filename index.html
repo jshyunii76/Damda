@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Damda">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="manifest" href="manifest.webmanifest?v=2">
+<link rel="manifest" href="manifest.webmanifest?v=3">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
 <title>Damda — 주제별 채팅 메모</title>
@@ -361,6 +361,22 @@ body{
 /* 메모를 왼쪽 방 목록으로 끌어 옮기기 */
 .b.armed{transform:scale(1.03);box-shadow:0 6px 18px rgba(27,32,36,.18);transition:transform .12s,box-shadow .12s}
 .b.lift{opacity:.3}
+/* 채팅 순서 바꾸기: 놓을 자리 표시선 */
+.mins{position:absolute;left:12px;right:12px;height:2.5px;border-radius:2px;background:var(--accent);
+  pointer-events:none;display:none;z-index:5}
+.mins.on{display:block}
+/* 끄는 동안 가운데에 뜨는 '맨 아래로 이동하기' — 여기에 놓으면 바로 맨 아래로 */
+.mbot{position:absolute;z-index:20;display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px;
+  transform:translate(-50%,-100%) scale(.85);transform-origin:50% 100%;opacity:0;transition:opacity .15s,transform .15s;pointer-events:none}
+.mbot.on{opacity:1;transform:translate(-50%,-100%) scale(1);pointer-events:auto}
+.mbot .c{width:47px;height:47px;border-radius:50%;background:#EEF1F2;color:var(--accent);display:grid;place-items:center;
+  box-shadow:0 1px 4px rgba(27,32,36,.16);
+  transition:background .12s,color .12s,transform .12s}
+.mbot .c svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.mbot .l{font-size:11px;font-weight:600;color:var(--ink-2);white-space:nowrap}
+.mbot.hot .c{background:var(--accent);color:#fff;transform:scale(1.12)}
+.mbot.hot .l{color:var(--accent)}
+.mins::before{content:'';position:absolute;right:-3px;top:-3px;width:8.5px;height:8.5px;border-radius:50%;background:var(--accent)}
 .mghost{position:absolute;z-index:70;pointer-events:none;max-width:220px;background:var(--mine);
   border-radius:var(--r) 4px var(--r) var(--r);padding:8px 12px;font-size:13.5px;color:var(--ink);
   box-shadow:0 10px 26px rgba(27,32,36,.22);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -2223,9 +2239,12 @@ async function persist(){
   if(ok===false) toast('저장 공간이 부족해요. 오래된 사진을 지워보세요');
 }
 
+/* 채팅 순서: 직접 옮긴 메모는 pos, 아니면 보낸 시각 순. 날짜 구역도 이 값으로 정한다 */
+const okey=m=>m.pos!=null?m.pos:m.ts;
+const oday=m=>dkey(new Date(okey(m)));
 function group(list=msgs){
   const g=new Map();
-  list.forEach(m=>{const k=dkey(new Date(m.ts)); if(!g.has(k))g.set(k,[]); g.get(k).push(m);});
+  list.slice().sort((a,b)=>okey(a)-okey(b)).forEach(m=>{const k=oday(m); if(!g.has(k))g.set(k,[]); g.get(k).push(m);});
   return [...g.entries()].sort((a,b)=>a[0]<b[0]?-1:1);
 }
 
@@ -2291,7 +2310,7 @@ const pinned=()=>msgs.filter(m=>m.pin).sort((a,b)=>(a.pinAt||0)-(b.pinAt||0));
 let foundId=null;
 function jumpTo(m,keep){
   if(grpF&&!grpF.ids.has(m.id)) exitGrp();
-  opened[dkey(new Date(m.ts))]=true;
+  opened[oday(m)]=true;
   if(keep){ foundId=m.id; flashId=null; } else flashId=m.id;
   drawStream();
   const center=()=>{
@@ -2424,7 +2443,8 @@ function bubble(m){
     nb.innerHTML='<svg viewBox="0 0 24 24"><path d="M5 4h9l5 5v11H5z"/><path d="M14 4v5h5M8 13h6"/></svg>';
     st.appendChild(nb);
   }
-  st.appendChild(document.createTextNode(hhmm(m.ts)));
+  const sd=dkey(new Date(m.ts));
+  st.appendChild(document.createTextNode((sd!==oday(m)?md(sd)+' ':'')+hhmm(m.ts)));
   wrap.appendChild(st);
   /* 추가 메모는 말풍선 아래에 세 줄까지 먼저 보여준다.
      펼치고 접을 때는 화면을 다시 그리지 않아 스크롤이 튀지 않는다 */
@@ -2535,8 +2555,15 @@ function mStart(b,m,x,y){
   const gh=el('div','mghost');
   gh.textContent=list.length>1?`메모 ${list.length}개`:(m.file&&!m.text?'[파일] ':'')+mlabel(m);
   $('#phone').appendChild(gh);
-  mdrag={m,list,b,gh,ph,over:null,x,y,vy:0,sp:null,spT:null};
-  if(cur) railPeek(true);   /* 끌기 시작하면 바가 닫혀 있어도 열어서 놓을 곳을 보여 준다 */
+  /* 순서 바꾸기 표시선 */
+  const ln=el('div','mins'); $('#stream').appendChild(ln);
+  /* 가운데 '맨 아래로 이동하기' */
+  const bt=el('div','mbot'), SR=$('#stream').getBoundingClientRect();
+  bt.innerHTML='<div class="l">맨 아래로 이동하기</div><div class="c"><svg viewBox="0 0 24 24"><path d="M12 5.5v13M6.5 13l5.5 5.5 5.5-5.5"/></svg></div>';
+  /* 가운데 아래쪽, 입력창 바로 위 */
+  bt.style.left=(SR.left+SR.width/2-ph.left)+'px'; bt.style.top=(SR.bottom-ph.top)+'px';
+  $('#phone').appendChild(bt); requestAnimationFrame(()=>bt.classList.add('on'));
+  mdrag={m,list,b,gh,ph,over:null,x,y,x0:x,vy:0,svy:0,sp:null,spT:null,ln,slot:null,bt,bot:false};
   b.classList.add('lift'); $('#scChat').classList.add('mdrag');
   mMove(x,y); requestAnimationFrame(mAuto);
 }
@@ -2550,9 +2577,84 @@ function dropTarget(e,d){
   }
   return t;
 }
+/* 끌고 있는 손가락 위치에서 가장 가까운 끼워 넣을 자리 — 말풍선 바로 위 또는 날짜 구역의 맨 아래 */
+function slotAt(y,d){
+  const s=$('#stream'), skip=new Set(d.list.map(m=>m.id));
+  const wraps=[...s.children].filter(c=>c.classList.contains('msg'));
+  const slots=[];
+  wraps.forEach((w,i)=>{
+    const b=w.querySelector('.b'); if(!b) return;
+    const id=b.id.slice(1), R=w.getBoundingClientRect();
+    slots.push({y:R.top-4,before:id});
+    const nx=w.nextElementSibling;
+    if(!nx||!nx.classList.contains('msg')) slots.push({y:R.bottom+2,after:id});
+  });
+  let best=null;
+  slots.forEach(t=>{ const dy=Math.abs(t.y-y); if(!best||dy<best.dy) best={...t,dy}; });
+  if(!best) return null;
+  /* 제자리면 표시하지 않는다 */
+  const view=(grpF?msgs.filter(m=>grpF.ids.has(m.id)):msgs).slice().sort((a,b)=>okey(a)-okey(b));
+  const rest=view.filter(m=>!skip.has(m.id));
+  const idx=best.before?rest.findIndex(m=>m.id===best.before):rest.findIndex(m=>m.id===best.after)+1;
+  const firstI=view.findIndex(m=>skip.has(m.id));
+  const same=d.list.length===1&&idx===firstI&&(best.before?oday(rest[idx])===oday(d.m):(rest[idx-1]&&oday(rest[idx-1])===oday(d.m)));
+  if(same||(best.before&&skip.has(best.before))||(best.after&&skip.has(best.after))) return {none:true,y:best.y};
+  return best;
+}
+/* 끼워 넣을 자리의 앞뒤 값 사이에 고르게 놓는다 (같은 날짜 구역 안에서) */
+async function reorder(list,slot){
+  const skip=new Set(list.map(m=>m.id));
+  const view=(grpF?msgs.filter(m=>grpF.ids.has(m.id)):msgs).filter(m=>!skip.has(m.id)).sort((a,b)=>okey(a)-okey(b));
+  const day0=k=>{ const d=new Date(k); d.setHours(0,0,0,0); return d.getTime(); };
+  const DAY=86400000;
+  let lo,hi,ref;
+  if(slot.before){
+    const i=view.findIndex(m=>m.id===slot.before); ref=view[i];
+    hi=okey(ref); const pv=view[i-1];
+    lo=pv&&oday(pv)===oday(ref)?okey(pv):day0(hi);
+  }else{
+    const i=view.findIndex(m=>m.id===slot.after); ref=view[i];
+    lo=okey(ref); const nx=view[i+1];
+    if(nx&&oday(nx)===oday(ref)) hi=okey(nx);
+    else hi=oday(ref)===todayKey()?Math.max(lo+1,Date.now()):day0(lo)+DAY;
+  }
+  /* 사이가 너무 좁아지면 그 날의 순서를 다시 고르게 편다 */
+  if(hi-lo<0.01*(list.length+1)){
+    const dk=oday(ref), s0=day0(okey(ref)), e0=dk===todayKey()?Date.now():s0+DAY;
+    const all=msgs.filter(m=>oday(m)===dk).sort((a,b)=>okey(a)-okey(b));
+    all.forEach((m,i)=>{ m.pos=s0+(e0-s0)*(i+1)/(all.length+1); });
+    return reorder(list,slot);
+  }
+  const ordered=list.slice().sort((a,b)=>okey(a)-okey(b));
+  ordered.forEach((m,i)=>{ m.pos=lo+(hi-lo)*(i+1)/(ordered.length+1); });
+  const k=oday(ordered[0]); opened[k]=true;
+  if(selMode) exitSel(true);
+  drawStream(true); await persist();
+}
+/* 맨 아래(오늘 가장 마지막)로 보낸다 — 이후에 보내는 메모는 그 아래에 쌓인다 */
+async function toBottom(list){
+  const skip=new Set(list.map(m=>m.id));
+  const rest=msgs.filter(m=>!skip.has(m.id));
+  const now=Date.now();
+  let lo=rest.length?Math.max(...rest.map(okey)):now-1000;
+  if(oday({ts:lo})!==todayKey()) lo=Math.max(lo,new Date(new Date().setHours(0,0,0,0)).getTime());
+  let hi=Math.max(now,lo+1);
+  const ordered=list.slice().sort((a,b)=>okey(a)-okey(b));
+  ordered.forEach((m,i)=>{ m.pos=lo+(hi-lo)*(i+1)/(ordered.length+1); });
+  opened[todayKey()]=true;
+  if(selMode) exitSel(true);
+  drawStream(); await persist(); vib();
+}
 function mMove(x,y){
   const d=mdrag; if(!d) return;
   d.x=x; d.y=y;
+  /* 다른 방으로 옮기기: 화면 왼쪽 50% 안으로 끌고 들어오면 바를 연다. 바 밖(오른쪽)으로 나가면 다시 닫는다 */
+  if(cur){
+    const rel=(x-d.ph.left)/d.ph.width, e0=document.elementFromPoint(x,y);
+    const onBot=!!(e0&&e0.closest&&e0.closest('.mbot'));   /* 가운데 '맨 아래로' 위에서는 바를 열지 않는다 */
+    if(rel<.5&&x<d.x0-30&&!onBot) railPeek(true);
+    else if(railAuto){ const RR=$('#rail').getBoundingClientRect(); if(RR.width&&x>RR.right+12) railPeek(false); }
+  }
   d.gh.style.left=(x-d.ph.left-d.gh.offsetWidth+14)+'px';
   /* 손가락 위쪽에 띄워서 놓을 폴더 이름이 가려지지 않게 */
   d.gh.style.top=(y-d.ph.top-d.gh.offsetHeight-16)+'px';
@@ -2576,18 +2678,32 @@ function mMove(x,y){
   /* 바의 위·아래 끝으로 가면 목록이 스크롤된다 */
   const R=$('#rail').getBoundingClientRect();
   d.vy=(R.width&&x>=R.left&&x<=R.right)?(y<R.top+50?-8:(y>R.bottom-50?8:0)):0;
+  /* 채팅 위에 있으면 순서 바꾸기 — 놓을 자리에 선을 긋는다 */
+  const s=$('#stream'), SR=s.getBoundingClientRect();
+  const bot=!t&&!!(e&&e.closest&&e.closest('.mbot'));
+  if(bot!==d.bot){ d.bot=bot; d.bt.classList.toggle('hot',bot); if(bot) vib(); }
+  const inS=!t&&!bot&&e&&e.closest&&e.closest('#stream');
+  d.slot=inS?slotAt(y,d):null;
+  if(d.slot&&!d.slot.none){
+    d.ln.style.top=(d.slot.y-SR.top+s.scrollTop-1)+'px'; d.ln.classList.add('on');
+  }else d.ln.classList.remove('on');
+  d.svy=!bot&&(inS||(!t&&x>SR.left&&x<SR.right))?(y<SR.top+50?-9:(y>SR.bottom-50?9:0)):0;
 }
 function mAuto(){
   const d=mdrag; if(!d) return;
   if(d.vy){ $('#rail').scrollTop+=d.vy; mMove(d.x,d.y); }
+  else if(d.svy){ const s=$('#stream'), before=s.scrollTop; s.scrollTop+=d.svy; if(s.scrollTop!==before) mMove(d.x,d.y); }
   requestAnimationFrame(mAuto);
 }
 async function mEnd(ok){
   const d=mdrag; if(!d) return;
   clearTimeout(d.spT);
-  mdrag=null; d.gh.remove(); d.b.classList.remove('lift'); $('#scChat').classList.remove('mdrag');
+  mdrag=null; d.gh.remove(); d.ln.remove(); d.b.classList.remove('lift'); $('#scChat').classList.remove('mdrag');
+  d.bt.classList.remove('on'); setTimeout(()=>d.bt.remove(),160);
   if(d.over) d.over.classList.remove('dropok');
   railPeek(false);
+  if(ok&&d.bot){ await toBottom(d.list); return; }
+  if(ok&&!d.over&&d.slot&&!d.slot.none){ await reorder(d.list,d.slot); vib(); return; }
   const t=ok?d.over:null; if(!t) return;
   const r=rooms.find(x=>x.id===t.dataset.rid); if(!r) return;
   if(t.dataset.drop==='folder'&&t._f) await dropToFolder(d.list,r,t._f);
