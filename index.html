@@ -694,6 +694,7 @@ body{
 .b.pic .tx{padding:6px 7px 0}
 .b.done img.ph,.b.done video.ph{opacity:.5}
 .b a{color:var(--accent);word-break:break-all}
+.b a,.b img,.b video,.fcard{-webkit-user-drag:none}
 /* 완료 표시: 꾹 누르면 빨간 줄이 왼쪽에서 오른쪽으로 그어진다 */
 .b{cursor:pointer}
 .b .sx{background-image:linear-gradient(var(--strike),var(--strike));background-size:0 1.6px;
@@ -1320,7 +1321,7 @@ const ddText=n=>n===0?'D-DAY':(n>0?'D-'+n:'D+'+(-n));
 function toast(m){const t=$('#toast'); t.textContent=m; t.classList.add('on');
   clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('on'),1700);}
 const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const linkify=s=>esc(s).replace(/(https?:\/\/[^\s]+)/g,'<a href="$1" target="_blank" rel="noopener">$1</a>');
+const linkify=s=>esc(s).replace(/(https?:\/\/[^\s]+)/g,'<a href="$1" target="_blank" rel="noopener" draggable="false">$1</a>');
 const kb=n=>n<1024?n+' B':(n<1048576?(n/1024).toFixed(0)+' KB':(n/1048576).toFixed(1)+' MB');
 const key=r=>r.code?'room:'+r.code:'msgs:'+r.id;
 const mlabel=m=>m.text?m.text.split('\n')[0]:(m.file?m.file.name:'첨부');
@@ -1720,10 +1721,18 @@ document.addEventListener('paste',e=>{
 });
 const chatEl=$('#scChat'), dropEl=$('#drop');
 let dragN=0;
-chatEl.addEventListener('dragenter',e=>{e.preventDefault(); if(briefOn) return; dragN++; dropEl.classList.add('on');});
-chatEl.addEventListener('dragover',e=>e.preventDefault());
-chatEl.addEventListener('dragleave',()=>{ if(--dragN<=0){dragN=0; dropEl.classList.remove('on');} });
+/* 바깥에서 파일을 끌어올 때만 '여기에 놓으면' 표시 — 앱 안의 링크·글자·사진을 끄는 건 무시한다 */
+const outerFiles=e=>{ const t=e.dataTransfer&&e.dataTransfer.types; return !!t&&[...t].includes('Files'); };
+chatEl.addEventListener('dragenter',e=>{ if(!outerFiles(e)) return; e.preventDefault(); if(briefOn) return; dragN++; dropEl.classList.add('on');});
+chatEl.addEventListener('dragover',e=>{ if(outerFiles(e)) e.preventDefault(); });
+chatEl.addEventListener('dragleave',e=>{ if(!outerFiles(e)) return; if(--dragN<=0){dragN=0; dropEl.classList.remove('on');} });
+/* 말풍선 안의 링크·사진·파일·글자는 브라우저 기본 끌기를 막는다 — 꾹 눌러 옮기기가 끊기지 않게 */
+document.addEventListener('dragstart',e=>{
+  const n=e.target&&e.target.nodeType===3?e.target.parentElement:e.target;
+  if(n&&n.closest&&n.closest('#stream,#rail,.mghost')) e.preventDefault();
+});
 chatEl.addEventListener('drop',e=>{
+  if(!outerFiles(e)) return;
   e.preventDefault(); dragN=0; dropEl.classList.remove('on');
   if(briefOn) return;
   const f=e.dataTransfer.files&&e.dataTransfer.files[0];
@@ -2561,7 +2570,9 @@ function mStart(b,m,x,y){
   const bt=el('div','mbot'), SR=$('#stream').getBoundingClientRect();
   bt.innerHTML='<div class="l">맨 아래로 이동하기</div><div class="c"><svg viewBox="0 0 24 24"><path d="M12 5.5v13M6.5 13l5.5 5.5 5.5-5.5"/></svg></div>';
   /* 가운데 아래쪽, 입력창 바로 위 */
-  bt.style.left=(SR.left+SR.width/2-ph.left)+'px'; bt.style.top=(SR.bottom-ph.top)+'px';
+  /* 오른쪽 스크롤바 자리는 빼고 채팅 내용의 가운데에 맞춘다 (날짜 표시와 같은 가운데) */
+  const sEl=$('#stream');
+  bt.style.left=(SR.left+sEl.clientLeft+sEl.clientWidth/2-ph.left)+'px'; bt.style.top=(SR.bottom-ph.top)+'px';
   $('#phone').appendChild(bt); requestAnimationFrame(()=>bt.classList.add('on'));
   mdrag={m,list,b,gh,ph,over:null,x,y,x0:x,vy:0,svy:0,sp:null,spT:null,ln,slot:null,bt,bot:false};
   b.classList.add('lift'); $('#scChat').classList.add('mdrag');
