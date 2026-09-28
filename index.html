@@ -2665,11 +2665,11 @@ async function toBottom(list){
 function mMove(x,y){
   const d=mdrag; if(!d) return;
   d.x=x; d.y=y;
-  /* 다른 방으로 옮기기: 화면 왼쪽 50% 안으로 끌고 들어오면 바를 연다. 바 밖(오른쪽)으로 나가면 다시 닫는다 */
+  /* 다른 방으로 옮기기: 화면 왼쪽 40% 안으로 끌고 들어오면 바를 연다. 바 밖(오른쪽)으로 나가면 다시 닫는다 */
   if(cur){
     const rel=(x-d.ph.left)/d.ph.width, e0=document.elementFromPoint(x,y);
     const onBot=!!(e0&&e0.closest&&e0.closest('.mbot'));   /* 가운데 '맨 아래로' 위에서는 바를 열지 않는다 */
-    if(rel<.5&&x<d.x0-30&&!onBot) railPeek(true);
+    if(rel<.4&&x<d.x0-30&&!onBot) railPeek(true);
     else if(railAuto){ const RR=$('#rail').getBoundingClientRect(); if(RR.width&&x>RR.right+12) railPeek(false); }
   }
   d.gh.style.left=(x-d.ph.left-d.gh.offsetWidth+14)+'px';
