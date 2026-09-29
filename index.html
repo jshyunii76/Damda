@@ -402,6 +402,8 @@ body{
 .qb:hover{background:var(--soft);color:var(--accent)}
 @media(hover:hover) and (pointer:fine){
   .qa{display:flex}
+  /* PC에는 말풍선 옆 바로가기가 있으니 기능 메뉴에서는 뺀다 (폰은 메뉴에 그대로) */
+  #gNote,#gDue{display:none!important}
   .msg:hover .qa,.qa:focus-within{opacity:1}
   #scChat.sel .qa,#scChat.mdrag .qa{display:none}
 }
@@ -415,11 +417,16 @@ body{
   stroke-linecap:round;stroke-linejoin:round}
 .stamp .nb:hover{opacity:.7}
 .stamp .nb.on{opacity:.55}
-.notebox{display:none;align-self:flex-end;max-width:min(82%,520px);margin:1px 0 9px;padding:8px 11px;
-  background:var(--mute);border-left:3px solid var(--accent);border-radius:9px;
+.bcol{display:flex;flex-direction:column;align-items:flex-end;min-width:0;max-width:min(82%,520px)}
+.bcol .b{max-width:100%}
+/* 추가 메모를 펼치면 말풍선 바로 아래 오른쪽 끝에 맞춰 붙는다 (말풍선 크기는 그대로) — 맞닿는 오른쪽 모서리만 줄인다 */
+.msg.noteon .b{border-bottom-right-radius:5px}
+.notebox{display:none;max-width:100%;box-sizing:border-box;margin-top:2px;padding:7px 12px 8px;
+  background:color-mix(in srgb,var(--mine) 45%,#fff);border:1px solid var(--mine);border-radius:var(--r) 5px var(--r) var(--r);
   font-size:12.5px;color:var(--ink-2);line-height:1.55;cursor:pointer}
 .msg.noteon .notebox{display:block}
-.notebox:hover{background:var(--mute-2)}
+.notebox:hover{background:color-mix(in srgb,var(--mine) 65%,#fff)}
+
 .notebox .tx{white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;
   overflow:hidden}
 .notebox .mo{margin-top:4px;font-size:11.5px;font-weight:600;color:var(--accent)}
@@ -2498,7 +2505,9 @@ function bubble(m){
     qb('qdue',m.due?'날짜 바꾸기':'날짜 지정',
       '<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/></svg>',
       ()=>openCal(m.due||null,m.dueTime||null,m,m.dueStart||null)));
-  row.append(qa,b);
+  /* 말풍선과 펼친 추가 메모를 한 덩어리로 — 추가 메모가 말풍선 바로 아래에 붙는다 */
+  const col=el('div','bcol'); col.appendChild(b);
+  row.append(qa,col);
   wrap.appendChild(row);
   const st=el('div','stamp');
   if(m.pin){
@@ -2543,7 +2552,7 @@ function bubble(m){
         if(over>0) s.scrollTop+=over;
       }
     };
-    wrap.appendChild(box);
+    col.appendChild(box);
   }
   return wrap;
 }
