@@ -392,6 +392,19 @@ body{
 .carry .it .w{font-size:11px;color:var(--ink-3);flex:0 0 auto;margin-top:1px}
 
 .msg{display:flex;flex-direction:column;align-items:flex-end;margin:0 0 9px}
+/* 말풍선 + 왼쪽 바로가기 버튼 줄 */
+.brow{display:flex;align-items:flex-end;justify-content:flex-end;gap:6px;width:100%}
+.qa{display:none;flex:0 0 auto;gap:3px;padding:2px;border-radius:9px;background:rgba(27,32,36,.05);
+  opacity:0;transition:opacity .12s}
+.qb{width:26px;height:26px;border:0;border-radius:7px;padding:0;background:transparent;color:var(--ink-2);
+  display:grid;place-items:center;cursor:pointer}
+.qb svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.qb:hover{background:var(--soft);color:var(--accent)}
+@media(hover:hover) and (pointer:fine){
+  .qa{display:flex}
+  .msg:hover .qa,.qa:focus-within{opacity:1}
+  #scChat.sel .qa,#scChat.mdrag .qa{display:none}
+}
 .stamp{display:flex;align-items:center;gap:3px;font-size:10.5px;color:var(--ink-3);
   margin-top:3px;padding-right:3px}
 .stamp .pm{display:inline-flex;color:var(--pin)}
@@ -790,6 +803,21 @@ body.nosel,body.nosel *{-webkit-user-select:none!important;user-select:none!impo
 .code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:30px;font-weight:700;
   letter-spacing:.2em;text-align:center;padding:18px 15px;background:var(--accent-soft);
   color:var(--accent);border-radius:12px;margin-bottom:10px}
+/* 공유 권한 고르기 */
+.seg{display:flex;gap:3px;background:var(--mute);border-radius:11px;padding:3px;margin-bottom:6px}
+.seg button{flex:1;border:0;background:transparent;font:inherit;font-size:13.5px;font-weight:600;color:var(--ink-2);
+  padding:8px 0;border-radius:8px;cursor:pointer}
+.seg button.on{background:#fff;color:var(--accent);box-shadow:0 1px 3px rgba(27,32,36,.12)}
+.pdesc{font-size:12.5px;color:var(--ink-2);margin:0 0 10px;min-height:1em}
+.pdesc:empty{display:none}
+/* 보기만 가능한 방 */
+#robar{display:none;flex:0 0 auto;align-items:center;justify-content:center;gap:7px;border-top:1px solid var(--line);
+  background:var(--app);padding:14px 12px calc(14px + env(safe-area-inset-bottom));font-size:13px;color:var(--ink-3);font-weight:600}
+#robar svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#scChat.ro #robar{display:flex}
+#scChat.ro #compose,#scChat.ro .qa{display:none!important}
+#scChat.ro.sel #robar{display:none}
+.badge.ro{color:var(--ink-2);background:var(--mute)}
 .note{font-size:12px;color:var(--ink-3);background:var(--mute);border-radius:9px;
   padding:9px 11px;margin-bottom:12px;line-height:1.45}
 
@@ -991,6 +1019,7 @@ body.rzing *{user-select:none!important}
         <button id="send" disabled><svg viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></svg></button>
       </div>
     </div>
+    <div id="robar"><svg viewBox="0 0 24 24"><path d="M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12s-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg>보기만 할 수 있는 방이에요</div>
     <div id="selbar">
       <button class="sbtn" id="sDone"><svg viewBox="0 0 24 24"><path d="M4 12h16"/></svg><span id="sDoneLb">완료</span></button>
       <button class="sbtn" id="sPin"><svg viewBox="0 0 24 24"><path d="M9 4h6l-1 6 4 3v2H6v-2l4-3-1-6zM12 15v5"/></svg><span id="sPinLb">고정</span></button>
@@ -1207,8 +1236,16 @@ body.rzing *{user-select:none!important}
 
   <div class="sheet" id="shShare"><div class="card">
     <h2>공유 코드</h2>
-    <p>이 코드를 받은 사람은 같은 방을 보고 함께 씁니다.</p>
+    <p>이 코드를 받은 사람은 같은 방에 들어올 수 있어요.</p>
     <div class="code" id="shareCode">------</div>
+    <div id="permBox">
+      <div class="seg" id="permSeg" role="radiogroup" aria-label="받는 사람 권한">
+        <button type="button" data-p="edit" role="radio">함께 수정</button>
+        <button type="button" data-p="view" role="radio">보기만</button>
+      </div>
+      <p class="pdesc" id="permDesc"></p>
+    </div>
+    <p class="pdesc" id="permMine"></p>
     <p id="shareWho"></p>
     <div class="note">데모 버전은 서버 없이 동작해 같은 기기 안에서만 공유됩니다.</div>
     <div class="btns"><button class="btn ghost" data-close>닫기</button>
@@ -1330,6 +1367,10 @@ const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&qu
 const linkify=s=>esc(s).replace(/(https?:\/\/[^\s]+)/g,'<a href="$1" target="_blank" rel="noopener" draggable="false">$1</a>');
 const kb=n=>n<1024?n+' B':(n<1048576?(n/1024).toFixed(0)+' KB':(n/1048576).toFixed(1)+' MB');
 const key=r=>r.code?'room:'+r.code:'msgs:'+r.id;
+/* 공유받은 방 중 '보기만'으로 공유된 방 — 메모를 쓰거나 고칠 수 없다 */
+const isRO=r=>!!(r&&r.code&&r.joined&&r._perm==='view');
+const roNow=()=>isRO(cur);
+const roBlock=()=>{ if(!roNow()) return false; toast('보기만 할 수 있는 방이에요'); return true; };
 const mlabel=m=>m.text?m.text.split('\n')[0]:(m.file?m.file.name:'첨부');
 /* 날짜를 지정했고 아직 완료 안 한 메모만 챙길 대상이다 */
 const pending=m=>!!m.due&&!m.done;
@@ -1719,7 +1760,7 @@ $('#chipPic').onclick=()=>$('#file').click();
 $('#file').onchange=e=>{ if(e.target.files[0]) attach(e.target.files[0]); e.target.value=''; };
 
 document.addEventListener('paste',e=>{
-  if($('#scChat').classList.contains('hide')||briefOn) return;
+  if($('#scChat').classList.contains('hide')||briefOn||roNow()) return;
   const items=e.clipboardData&&e.clipboardData.items; if(!items) return;
   for(const it of items){
     if(it.kind==='file'){ e.preventDefault(); attach(it.getAsFile()); return; }
@@ -1729,7 +1770,7 @@ const chatEl=$('#scChat'), dropEl=$('#drop');
 let dragN=0;
 /* 바깥에서 파일을 끌어올 때만 '여기에 놓으면' 표시 — 앱 안의 링크·글자·사진을 끄는 건 무시한다 */
 const outerFiles=e=>{ const t=e.dataTransfer&&e.dataTransfer.types; return !!t&&[...t].includes('Files'); };
-chatEl.addEventListener('dragenter',e=>{ if(!outerFiles(e)) return; e.preventDefault(); if(briefOn) return; dragN++; dropEl.classList.add('on');});
+chatEl.addEventListener('dragenter',e=>{ if(!outerFiles(e)) return; e.preventDefault(); if(briefOn||roNow()) return; dragN++; dropEl.classList.add('on');});
 chatEl.addEventListener('dragover',e=>{ if(outerFiles(e)) e.preventDefault(); });
 chatEl.addEventListener('dragleave',e=>{ if(!outerFiles(e)) return; if(--dragN<=0){dragN=0; dropEl.classList.remove('on');} });
 /* 말풍선 안의 링크·사진·파일·글자는 브라우저 기본 끌기를 막는다 — 꾹 눌러 옮기기가 끊기지 않게 */
@@ -1741,6 +1782,7 @@ chatEl.addEventListener('drop',e=>{
   if(!outerFiles(e)) return;
   e.preventDefault(); dragN=0; dropEl.classList.remove('on');
   if(briefOn) return;
+  if(roBlock()) return;
   const f=e.dataTransfer.files&&e.dataTransfer.files[0];
   if(f) attach(f); else toast('파일을 넣어주세요');
 });
@@ -1759,7 +1801,7 @@ const saveRooms=()=>S.set('rooms',rooms);
 async function readList(r){
   const d=await S.get(key(r),!!r.code);
   /* 공유한 방은 참여 인원도 같이 읽어 둔다 */
-  if(r.code) r._members=(d&&d.members)||1;
+  if(r.code){ r._members=(d&&d.members)||1; r._perm=(d&&d.perm)||'edit'; }
   return (r.code?(d&&d.messages):d)||[];
 }
 
@@ -1782,6 +1824,7 @@ async function countDue(){
 
 /* 어느 방이든 목록을 저장하고 방 정보를 갱신한다 */
 async function saveList(r,list){
+  if(isRO(r)) return true;   /* 보기만 가능한 방은 공유 데이터를 고치지 않는다 */
   let ok;
   if(r.code){
     const d=await S.get('room:'+r.code,true)||{};
@@ -2106,7 +2149,7 @@ function drawRooms(){
     b.innerHTML=`<span class="av"${avStyle(r)}>${iniHTML(r.name)}${dueDot(r)}</span>
       <span class="mid">
         <span class="nm">${esc(r.name)}
-          ${r.code&&r._members>1?'<span class="badge">공유 중</span>':''}
+          ${isRO(r)?'<span class="badge ro">보기 전용</span>':(r.code&&r._members>1?'<span class="badge">공유 중</span>':'')}
           ${r._due?`<span class="badge due">기한 지남 ${r._due}</span>`:''}
         </span>
         <span class="pv">${r.preview?esc(r.preview):'비어 있음'}</span>
@@ -2243,6 +2286,7 @@ async function openRoom(id){
   /* 내가 펼쳐 둔 날짜는 오늘 안에는 그대로 — 다음 날이 되면 다시 접힌다 */
   try{ const o=await S.get('open:'+cur.id); if(o&&o.day===todayKey()) (o.keys||[]).forEach(k=>{ opened[k]=true; }); }catch(e){}
   msgs=await readList(cur);
+  $('#scChat').classList.toggle('ro',roNow());
   drawStream();
   /* PC에서만 입력창에 바로 커서 — 폰은 키보드가 튀어 올라와서 하지 않는다 */
   if(matchMedia('(pointer:fine)').matches) setTimeout(()=>$('#txt').focus(),260);
@@ -2384,7 +2428,7 @@ function openPinList(){
     go.innerHTML=`<div class="m">${dlabel(dkey(new Date(m.ts)))} · ${hhmm(m.ts)}${m.file?' · 첨부':''}</div>
       <div class="t">${esc(mlabel(m))}</div>`;
     go.onclick=()=>{$('#pinlist').classList.remove('on'); jumpTo(m);};
-    const un=el('button','ic'); un.title='고정 해제';
+    const un=el('button','ic'); un.title='고정 해제'; if(roNow()) un.style.display='none';
     un.innerHTML='<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>';
     un.onclick=async()=>{
       m.pin=false; delete m.pinAt;
@@ -2444,7 +2488,18 @@ function bubble(m){
   /* 꾹 누르고 떼면 메뉴, 꾹 누른 채 움직이면 다른 방으로 끌어 옮기기 */
   bubblePress(b,m);
 
-  wrap.appendChild(b);
+  /* PC: 마우스를 올리면 말풍선 왼쪽 아래에 추가 메모·날짜 지정 바로가기 */
+  const row=el('div','brow'), qa=el('div','qa');
+  const qb=(cls,title,svg,fn)=>{ const x=el('button','qb '+cls); x.type='button'; x.title=title; x.setAttribute('aria-label',title);
+    x.innerHTML=svg; x.onclick=e=>{ e.stopPropagation(); if(selMode||mdrag) return; fn(); }; return x; };
+  qa.append(
+    qb('qnote',m.note&&m.note.trim()?'추가 메모 보기':'추가 메모',
+      '<svg viewBox="0 0 24 24"><path d="M5 4h9l5 5v11H5z"/><path d="M14 4v5h5M8 13h8M8 16.5h5"/></svg>',()=>openNote(m)),
+    qb('qdue',m.due?'날짜 바꾸기':'날짜 지정',
+      '<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/></svg>',
+      ()=>openCal(m.due||null,m.dueTime||null,m,m.dueStart||null)));
+  row.append(qa,b);
+  wrap.appendChild(row);
   const st=el('div','stamp');
   if(m.pin){
     const p=el('span','pm');
@@ -2563,6 +2618,7 @@ document.addEventListener('selectstart',e=>{ if(msgArmed||mdrag||document.body.c
   setTimeout(()=>{ if(!msgArmed&&!mdrag) noSel(false); },80);
 }));
 function mStart(b,m,x,y){
+  if(roNow()) return;   /* 보기만 가능한 방은 순서 바꾸기·옮기기 없음 (꾹 눌렀다 떼면 메뉴) */
   const ph=$('#phone').getBoundingClientRect();
   /* 선택 중이면 고른 메모 전부를 함께 옮긴다 */
   if(selMode&&!sel.has(m.id)){ sel.add(m.id); b.classList.add('picked'); updSel(); }
@@ -2816,6 +2872,7 @@ function updSel(){
   const L=selList(), n=L.length;
   $('#chatName').textContent=n?`${n}개 선택`:'메모를 골라주세요';
   ['#sDone','#sPin','#sMove','#sShare','#sDel'].forEach(x=>{ $(x).disabled=!n; });
+  if(roNow()) ['#sDone','#sPin','#sMove','#sDel'].forEach(x=>{ $(x).disabled=true; });
   $('#sDoneLb').textContent=n&&L.every(x=>x.done)?'완료 취소':'완료';
   $('#sPinLb').textContent=n&&L.every(x=>x.pin)?'고정 해제':'고정';
   const view=grpF?msgs.filter(x=>grpF.ids.has(x.id)):msgs;
@@ -2956,6 +3013,15 @@ function askMsg(m){
   /* 사진·파일만 있는 메모는 수정 대신 추가 메모를 쓴다 */
   $('#gEdit').style.display=m.text?'':'none';
   $('#gCopy').style.display=m.text?'':'none';
+  /* 보기만 가능한 방: 읽기·복사·공유·여러 개 선택만 */
+  if(roNow()){
+    ['#gDone','#gDue','#gPin','#gEdit','#gDel'].forEach(x=>{ $(x).style.display='none'; });
+    const hasN=!!(m.note&&m.note.trim());
+    $('#gNote').style.display=hasN?'':'none'; $('#gNoteLb').textContent='추가 메모 보기';
+  }else{
+    ['#gDone','#gDue','#gPin','#gDel','#gNote'].forEach(x=>{ $(x).style.display=''; });
+    $('#gNoteLb').textContent='추가 메모';
+  }
   open('#shMsg');
 }
 /* 이미 보낸 메모의 날짜를 새로 지정하거나 바꾼다 */
@@ -3135,6 +3201,7 @@ function bline(r,list,m,opt){
   row.appendChild(tx);
   if(m.due){const w=el('span'); w.innerHTML=dueHtml(m); row.appendChild(w.firstChild);}
   press(row,async()=>{
+    if(isRO(r)){ toast('보기만 할 수 있는 방이에요'); return; }
     m.done=!m.done;
     if(m.done) m.doneAt=Date.now(); else delete m.doneAt;
     briefKeep.add(m.id);
@@ -3306,7 +3373,7 @@ txt.addEventListener('keydown',e=>{
 $('#send').onclick=send;
 
 async function send(){
-  if(!cur) return;
+  if(!cur||roBlock()) return;
   const t=txt.value.trim();
   if(!t && !pendImg) return;
   const pend=pendImg;
@@ -3658,9 +3725,10 @@ function openNote(m){
   const src=$('#nvSrc');
   src.innerHTML=`<b>${dlabel(dkey(new Date(m.ts)))} · ${hhmm(m.ts)}</b>${esc(mlabel(m))}`;
   $('#nvText').value=m.note||'';
-  $('#nvSave').textContent='';
+  const ro=roNow(); $('#nvText').readOnly=ro;
+  $('#nvSave').textContent=ro?'보기만 할 수 있어요':'';
   $('#noteview').classList.add('on');
-  setTimeout(()=>$('#nvText').focus(),80);
+  if(!ro) setTimeout(()=>$('#nvText').focus(),80);
 }
 $('#nvClose').onclick=()=>{ saveNote(true); $('#noteview').classList.remove('on'); };
 $('#nvText').addEventListener('input',()=>{
@@ -3668,7 +3736,7 @@ $('#nvText').addEventListener('input',()=>{
   clearTimeout(noteTimer); noteTimer=setTimeout(()=>saveNote(),700);
 });
 async function saveNote(quiet){
-  if(!noteTarget) return;
+  if(!noteTarget||roNow()) return;
   const v=$('#nvText').value;
   if((noteTarget.note||'')===v){ if(!quiet)$('#nvSave').textContent='저장됨'; return; }
   noteTarget.note=v;
@@ -4288,7 +4356,7 @@ function askFolderMove(g){
   open('#shMove');
 }
 async function moveFolderToRoom(g,r){
-  if(!cur||r.id===cur.id) return;
+  if(!cur||r.id===cur.id||roBlock()) return;
   const ms=g.items.map(x=>x.m);
   /* 1) 메모를 고른 방에 넣는다 */
   const list=await readList(r), have=new Set(list.map(x=>x.id));
@@ -4524,17 +4592,38 @@ function makeCode(){
 $('#btnShare').onclick=async()=>{
   if(!cur) return;
   if(!cur.code){
-    cur.code=makeCode(); cur._members=1;
-    await S.set('room:'+cur.code,{name:cur.name,messages:msgs,members:1},true);
+    cur.code=makeCode(); cur._members=1; cur._perm='edit';
+    await S.set('room:'+cur.code,{name:cur.name,messages:msgs,members:1,perm:'edit'},true);
     await S.del('msgs:'+cur.id);
     await saveRooms(); drawRooms(); $('#btnShare').classList.add('hl');
   }
   $('#shareCode').textContent=cur.code;
+  /* 권한: 방을 공유한 사람만 고를 수 있다. 참여한 사람에게는 자기 권한만 보여 준다 */
+  const d=await S.get('room:'+cur.code,true)||{};
+  cur._perm=d.perm||'edit';
+  $('#permBox').style.display=cur.joined?'none':'';
+  $('#permMine').textContent=cur.joined?(cur._perm==='view'?'이 방은 보기만 할 수 있게 공유됐어요.':'이 방은 함께 수정할 수 있게 공유됐어요.'):'';
+  drawPerm();
   $('#shareWho').textContent=(cur._members>1)
     ? `지금 ${cur._members}명이 이 방을 함께 보고 있어요.`
     : '아직 이 코드로 들어온 사람이 없어요. 코드를 받은 사람이 참여하면 방 목록에 “공유 중”이 표시돼요.';
   open('#shShare');
 };
+const PERM_DESC={edit:'받은 사람도 메모를 쓰고, 고치고, 지울 수 있어요.',
+  view:'받은 사람은 메모를 읽기만 할 수 있어요. 쓰기·수정·삭제·완료 표시는 막혀요.'};
+function drawPerm(){
+  const p=(cur&&cur._perm)||'edit';
+  document.querySelectorAll('#permSeg button').forEach(b=>{ const on=b.dataset.p===p; b.classList.toggle('on',on); b.setAttribute('aria-checked',on); });
+  $('#permDesc').textContent=PERM_DESC[p]+(cur&&cur._members>1?' 이미 참여한 사람에게도 바로 적용돼요.':'');
+}
+document.querySelectorAll('#permSeg button').forEach(b=>b.onclick=async()=>{
+  if(!cur||!cur.code||cur.joined) return;
+  const p=b.dataset.p; if(p===cur._perm) return;
+  const d=await S.get('room:'+cur.code,true)||{};
+  d.perm=p; await S.set('room:'+cur.code,d,true);
+  cur._perm=p; drawPerm();
+  toast(p==='view'?'보기만 할 수 있게 바꿨어요':'함께 수정할 수 있게 바꿨어요');
+});
 $('#doCopy').onclick=async()=>{
   try{await navigator.clipboard.writeText(cur.code); toast('코드를 복사했어요');}
   catch(e){toast('코드: '+cur.code);}
@@ -4549,8 +4638,9 @@ $('#doJoin').onclick=async()=>{
   d.members=(d.members||1)+1;
   await S.set('room:'+c,d,true);
   rooms.unshift({id:'r'+Date.now(),name:d.name,preview:'',at:null,code:c,pin:false,_due:0,
-    _members:d.members});
-  normalize(); await saveRooms(); await countDue(); drawRooms(); close('#shJoin'); toast('방에 참여했어요');
+    _members:d.members,joined:true,_perm:d.perm||'edit'});
+  normalize(); await saveRooms(); await countDue(); drawRooms(); close('#shJoin');
+  toast(d.perm==='view'?'방에 참여했어요 · 보기만 할 수 있어요':'방에 참여했어요');
 };
 
 loadRooms();
