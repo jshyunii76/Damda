@@ -404,7 +404,7 @@ body{
   .qa{display:flex}
   /* PC에는 말풍선 옆 바로가기가 있으니 기능 메뉴에서는 뺀다 (폰은 메뉴에 그대로) */
   #gNote,#gDue{display:none!important}
-  .msg:hover .qa,.qa:focus-within{opacity:1}
+  .brow:hover .qa,.qa:focus-within{opacity:1}
   #scChat.sel .qa,#scChat.mdrag .qa{display:none}
 }
 .stamp{display:flex;align-items:center;gap:3px;font-size:10.5px;color:var(--ink-3);
@@ -417,15 +417,14 @@ body{
   stroke-linecap:round;stroke-linejoin:round}
 .stamp .nb:hover{opacity:.7}
 .stamp .nb.on{opacity:.55}
-.bcol{display:flex;flex-direction:column;align-items:flex-end;min-width:0;max-width:min(82%,520px)}
-.bcol .b{max-width:100%}
+.bcol{display:flex;flex-direction:column;align-items:flex-end;width:100%}
 /* 추가 메모를 펼치면 말풍선 바로 아래 오른쪽 끝에 맞춰 붙는다 (말풍선 크기는 그대로) — 맞닿는 오른쪽 모서리만 줄인다 */
 .msg.noteon .b{border-bottom-right-radius:5px}
-.notebox{display:none;max-width:100%;box-sizing:border-box;margin-top:2px;padding:7px 12px 8px;
-  background:color-mix(in srgb,var(--mine) 45%,#fff);border:1px solid var(--mine);border-radius:var(--r) 5px var(--r) var(--r);
+.notebox{display:none;max-width:min(82%,520px);box-sizing:border-box;margin-top:2px;padding:7px 12px 8px;
+  background:var(--mute);border:1px solid var(--line);border-radius:var(--r) 5px var(--r) var(--r);
   font-size:12.5px;color:var(--ink-2);line-height:1.55;cursor:pointer}
 .msg.noteon .notebox{display:block}
-.notebox:hover{background:color-mix(in srgb,var(--mine) 65%,#fff)}
+.notebox:hover{background:var(--mute-2)}
 
 .notebox .tx{white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;
   overflow:hidden}
@@ -2506,9 +2505,10 @@ function bubble(m){
       '<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/></svg>',
       ()=>openCal(m.due||null,m.dueTime||null,m,m.dueStart||null)));
   /* 말풍선과 펼친 추가 메모를 한 덩어리로 — 추가 메모가 말풍선 바로 아래에 붙는다 */
-  const col=el('div','bcol'); col.appendChild(b);
-  row.append(qa,col);
-  wrap.appendChild(row);
+  /* 줄(바로가기+말풍선) 아래에 추가 메모 — 바로가기는 말풍선 옆에만, 추가 메모 위에서는 뜨지 않는다 */
+  const col=el('div','bcol');
+  row.append(qa,b); col.appendChild(row);
+  wrap.appendChild(col);
   const st=el('div','stamp');
   if(m.pin){
     const p=el('span','pm');
