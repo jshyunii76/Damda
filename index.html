@@ -2033,7 +2033,7 @@ function toggleRoom(id){
   saveRailOpen(); drawRail(); railSoon();
 }
 /* 폰에서는 방이나 폴더를 고르면 바를 닫는다 */
-const railDone=()=>{ railAuto=false; if(railOvl()) setRail(true); };
+const railDone=()=>{ railAuto=false; setRail(true,true); };   /* 화면 크기와 상관없이 고르면 닫는다 */
 async function goRoom(r){
   railDone();
   if(cur&&cur.id===r.id){ if(grpF) exitGrp(); return; }
@@ -4989,8 +4989,8 @@ function railPeek(on){
     if($('#scChat').classList.contains('norail')){ railAuto=true; setRail(false,true); }
   }else if(railAuto){ railAuto=false; setRail(true,true); }
 }
-setRail(railOvl()?true:railStored(),true);
-const railMode=()=>{ railAuto=false; setRail(railOvl()?true:railStored(),true); };
+setRail(true,true);   /* 방 목록 바는 늘 닫힌 채로 시작하고 ☰를 눌러야 나온다 */
+const railMode=()=>{ railAuto=false; setRail(true,true); };
 if(railMQ.addEventListener) railMQ.addEventListener('change',railMode); else railMQ.addListener(railMode);
 $('#railTog').onclick=()=>{ railAuto=false; setRail(!$('#scChat').classList.contains('norail')); };
 $('#railScrim').onclick=()=>{ railAuto=false; setRail(true); };
@@ -5041,7 +5041,7 @@ railWApply();
   });
 })();
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'&&railOvl()&&!$('#scChat').classList.contains('norail')){ railAuto=false; setRail(true); }
+  if(e.key==='Escape'&&!$('#scChat').classList.contains('norail')){ railAuto=false; setRail(true); }
 });
 
 $('#btnBack').onclick=()=>{ if(selMode){ exitSel(); return; }
