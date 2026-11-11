@@ -354,6 +354,9 @@ body{
 .selall:hover{background:var(--soft)}
 #scChat.sel .selall{display:block}
 #mvList{max-height:46vh;overflow-y:auto;margin:0 -4px 8px}
+.mvnew{display:flex;gap:8px;align-items:center;margin:8px 4px 2px}
+.mvnew input[type=text]{flex:1;margin:0!important}
+.mvnew .btn{flex:0 0 auto;padding:11px 14px}
 .mvrow{display:flex;align-items:center;gap:12px;width:100%;border:0;background:transparent;font:inherit;
   color:var(--ink);text-align:left;padding:9px 8px;border-radius:10px;cursor:pointer}
 .mvrow:hover{background:var(--mute)}
@@ -433,8 +436,64 @@ body{
 /* ===== 어제·오늘 요약방 ===== */
 #btnRefresh{display:none}
 #scChat.brief #btnRefresh{display:grid}
-#scChat.brief #compose,#scChat.brief #pinbar,#scChat.brief #btnSearch,
+#scChat.brief #pinbar,#scChat.brief #btnSearch,#scChat.brief #btnBack,
 #scChat.brief #btnCal,#scChat.brief #btnShare,#scChat.brief #btnGroup{display:none}
+/* 홈(요약) 화면에서만: 모든 방 일정 · AI 설정 · 입력창 옆 돋보기 */
+#btnHomeCal,#btnAI,#hSearch,#hFile,#hChat,#whenHint{display:none}
+#scChat.brief #btnHomeCal,#scChat.brief #btnAI{display:grid}
+.pill{flex:1;min-width:0;display:flex;gap:9px;align-items:flex-end}
+/* 홈 하단: 돋보기와 채팅 아이콘만. 채팅 아이콘을 누르면 왼쪽으로 늘어나 입력창이 된다 */
+#scChat.brief .chips{display:none}
+#scChat.brief #compose{background:var(--field);border-top:0;padding:8px 16px calc(16px + env(safe-area-inset-bottom))}
+#scChat.brief .row{justify-content:center;align-items:flex-end;gap:10px}
+#scChat.brief #hSearch{order:2}
+#hSearch svg,#hFile svg,#hChat svg,#whenHint svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+#scChat.brief #hSearch{display:grid;place-items:center;flex:0 0 auto;width:50px;height:50px;padding:0;overflow:hidden;
+  border:1px solid var(--line);border-radius:25px;background:#fff;color:var(--ink-2);cursor:pointer;
+  box-shadow:0 2px 8px rgba(27,32,36,.08);
+  transition:width .34s cubic-bezier(.32,.72,0,1),margin .34s cubic-bezier(.32,.72,0,1),opacity .2s,border-width .34s}
+#scChat.brief #hSearch svg{width:22px;height:22px;flex:0 0 auto}
+#scChat.brief #hSearch:hover{color:var(--accent)}
+#scChat.brief .pill{flex:0 0 auto;width:50px;height:50px;min-height:50px;gap:0;position:relative;overflow:hidden;
+  border:1px solid var(--accent);border-radius:25px;background:var(--accent);box-shadow:0 2px 8px rgba(27,32,36,.12);
+  transition:width .34s cubic-bezier(.32,.72,0,1),background .2s,border-color .2s}
+#scChat.brief #hChat{display:grid;place-items:center;position:absolute;right:0;bottom:0;width:48px;height:48px;padding:0;
+  border:0;background:transparent;color:#fff;cursor:pointer;transition:opacity .15s}
+#scChat.brief #hChat svg{width:23px;height:23px}
+#scChat.brief #hFile{display:grid;place-items:center;flex:0 0 auto;width:40px;height:40px;margin:4px 0 4px 4px;padding:0;
+  border:0;border-radius:50%;background:transparent;color:var(--ink-2);cursor:pointer}
+#scChat.brief #hFile:hover{background:var(--mute);color:var(--accent)}
+#scChat.brief #hFile svg{width:21px;height:21px}
+#scChat.brief #txt{min-width:0;border:0;border-radius:0;background:transparent;padding:13px 6px}
+#scChat.brief #send{width:40px;height:40px;border-radius:50%;margin:4px 4px 4px 0}
+#scChat.brief .pill>#hFile,#scChat.brief .pill>#txt,#scChat.brief .pill>#send{opacity:0;pointer-events:none;transition:opacity .1s}
+#scChat.brief.hopen #hSearch{width:0;margin-left:-10px;opacity:0;border-width:0;pointer-events:none}
+#scChat.brief.hopen .pill{width:100%;height:auto;background:#fff;border-color:var(--line)}
+#scChat.brief.hopen .pill:focus-within{border-color:var(--accent)}
+#scChat.brief.hopen #hChat{opacity:0;pointer-events:none}
+#scChat.brief.hopen .pill>#hFile,#scChat.brief.hopen .pill>#txt,#scChat.brief.hopen .pill>#send{opacity:1;pointer-events:auto;
+  transition:opacity .2s .18s}
+@media(prefers-reduced-motion:reduce){#scChat.brief .pill,#scChat.brief #hSearch{transition:none}}
+/* 문장에서 찾은 날짜 — 이대로 보내면 일정으로 들어간다 */
+#scChat.brief.hopen #whenHint.on{display:inline-flex}
+#whenHint{align-items:center;gap:6px;margin:0 0 8px 6px;padding:4px 4px 4px 10px;border-radius:14px;
+  background:var(--tint);border:1px solid var(--tint-line);color:var(--accent);font-size:12.5px;font-weight:600}
+#whenHint>svg{width:14px;height:14px}
+#whenX{display:grid;place-items:center;width:22px;height:22px;padding:0;border:0;border-radius:50%;background:transparent;
+  color:var(--ink-3);cursor:pointer}
+#whenX:hover{background:var(--mute)}
+#whenX svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;stroke-width:2.2}
+/* 방을 고른 뒤 뜨는 알림 — 열기 · 바꾸기 */
+#rtoast{position:absolute;left:50%;bottom:86px;transform:translate(-50%,6px);display:flex;align-items:center;gap:4px;
+  max-width:calc(100% - 32px);background:var(--ink);color:#fff;padding:6px 6px 6px 14px;border-radius:12px;
+  font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:61;white-space:nowrap}
+#rtoast.on{opacity:1;pointer-events:auto;transform:translate(-50%,0)}
+#rtoast .rt-t{overflow:hidden;text-overflow:ellipsis;min-width:0;padding-right:4px}
+#rtoast button{flex:0 0 auto;border:0;background:rgba(255,255,255,.14);color:#fff;font:inherit;font-weight:600;
+  font-size:12.5px;padding:6px 10px;border-radius:8px;cursor:pointer}
+#rtoast button:hover{background:rgba(255,255,255,.24)}
+#rtoast.busy button{display:none}
+#rtoast.busy{padding-right:14px}
 .ingrp{display:flex;gap:9px;align-items:flex-start;margin:0 0 4px}
 /* 요약방 프로필 — 방 목록의 요약방 아이콘과 같은 모양 */
 .bav{width:34px;height:34px;border-radius:11px;flex:0 0 auto;background:var(--accent);color:#fff;
@@ -905,6 +964,7 @@ body.nosel,body.nosel *{-webkit-user-select:none!important;user-select:none!impo
 
 #search{position:absolute;inset:0;background:var(--app);z-index:25;display:none;flex-direction:column}
 #search.on{display:flex}
+.hit .srm{color:var(--accent);font-weight:700}
 #sres{flex:1;overflow-y:auto;padding:6px 0 20px}
 .hit{padding:12px 16px;border-bottom:1px solid var(--line);cursor:pointer}
 .hit:hover{background:var(--mute)}
@@ -967,12 +1027,6 @@ body.rzing *{user-select:none!important}
   <section class="screen" id="scHome">
     <div class="bar">
       <h1 class="logo"><svg class="lgm" viewBox="322.9 -41.0 3267.1 1032" role="img" aria-label="Damda"><g fill="currentColor" transform="translate(0 1152) scale(.1 -.1)"><path fill-rule="evenodd" d="M7230 9717 L7230 9003 L7293 8904 C8046 7720 8038 5787 7274 4611 C7226 4535 7188 4440 6637 2957 C6314 2092 6052 1381 6053 1378 C6054 1374 6296 1593 6591 1864 C6886 2135 7204 2425 7297 2509 C7391 2594 7576 2763 7708 2884 L7949 3107 L9482 3108 C11066 3108 11119 3109 11285 3144 C12145 3329 12869 4293 13144 5617 C13293 6342 13296 7147 13153 7878 C12918 9069 12316 9990 11565 10309 C11519 10328 11435 10358 11375 10374 C11165 10435 11267 10432 9146 10432 L7230 10432 L7230 9717z M9118.5 7102.8H11369.6A272 272 0 0 1 11369.6 7646.8H9118.5A272 272 0 0 1 9118.5 7102.8z M9118.5 5893.3H10445.6A272 272 0 0 1 10445.6 6437.3H9118.5A272 272 0 0 1 9118.5 5893.3z"/><path transform="translate(-195.37 0) translate(7495 6753) scale(0.9025) translate(-7495 -6753)" d="M3046 6753 L3049 3965 L4466 3965 C5788 3965 5889 3966 5969 3981 C6668 4113 7249 4910 7436 5990 C7486 6280 7495 6400 7495 6750 C7495 7118 7482 7274 7422 7587 C7242 8540 6734 9282 6127 9481 C5952 9539 6061 9535 4482 9538 L3044 9541 L3046 6753z"/><path fill-rule="evenodd" transform="translate(16058 4121.4) scale(0.95)" d="M5 0 L0 5576 L2606 5569 L2787 5565 L2883 5560 L2962 5551 L3017 5538 L3128 5500 L3218 5462 L3306 5417 L3391 5363 L3475 5303 L3557 5236 L3636 5161 L3674 5122 L3749 5038 L3821 4948 L3924 4802 L3988 4697 L4049 4588 L4134 4414 L4185 4292 L4232 4166 L4276 4035 L4314 3901 L4349 3763 L4387 3576 L4418 3392 L4434 3261 L4444 3129 L4449 2983 L4451 2812 L4450 2620 L4446 2467 L4438 2350 L4422 2217 L4392 2025 L4361 1865 L4324 1710 L4282 1559 L4259 1486 L4209 1343 L4154 1206 L4094 1075 L4030 950 L3961 831 L3888 718 L3812 613 L3731 515 L3647 425 L3560 342 L3469 268 L3376 202 L3280 144 L3181 96 L3131 75 L3029 41 L2925 16 L2865 9 L2763 4 L2203 0z M2684 4799 L2634 4809 L2585 4814 L2380 4820 L671 4822 L671 794 L2641 801 L2787 850 L2845 875 L2901 903 L2957 935 L3011 970 L3064 1008 L3140 1071 L3190 1118 L3238 1167 L3307 1246 L3351 1303 L3413 1393 L3452 1456 L3526 1591 L3575 1699 L3620 1812 L3664 1943 L3691 2037 L3715 2131 L3735 2226 L3753 2321 L3767 2417 L3778 2512 L3785 2608 L3790 2704 L3792 2799 L3787 2987 L3780 3081 L3758 3265 L3743 3355 L3705 3531 L3683 3617 L3629 3783 L3599 3864 L3566 3942 L3531 4017 L3494 4091 L3455 4161 L3413 4229 L3369 4294 L3323 4356 L3275 4415 L3225 4471 L3173 4523 L3119 4571 L3063 4616 L3005 4657 L2946 4693 L2885 4726 L2822 4754 L2757 4778z M6077 906 L6133 871 L6195 840 L6253 818 L6310 802 L6350 798 L6665 798 L6717 807 L6760 819 L6808 836 L6849 855 L6904 887 L6951 922 L6998 965 L7044 1018 L7055 1022 L7066 1024 L7077 1021 L7085 1016 L7094 1004 L7097 990 L7097 119 L7096 108 L7090 98 L7079 89 L7043 76 L6989 58 L6916 38 L6860 26 L6786 13 L6672 2 L6598 0 L6374 1 L6127 5 L6068 11 L5994 28 L5956 39 L5919 51 L5849 81 L5778 117 L5711 159 L5676 182 L5580 261 L5488 351 L5402 453 L5323 565 L5250 688 L5205 775 L5164 866 L5109 1010 L5062 1163 L5024 1323 L4992 1508 L4982 1587 L4976 1654 L4973 1741 L4971 1859 L4975 2101 L4986 2243 L5012 2402 L5045 2560 L5069 2653 L5097 2745 L5145 2877 L5180 2960 L5219 3042 L5282 3158 L5326 3230 L5374 3299 L5449 3396 L5529 3483 L5614 3560 L5673 3607 L5764 3666 L5857 3714 L5954 3751 L6009 3768 L6041 3775 L6098 3781 L6167 3785 L6446 3788 L8137 3792 L8149 3790 L8157 3785 L8168 3773 L8171 3758 L8167 34 L8165 22 L8161 14 L8148 3 L8134 0 L7534 0 L7522 2 L7512 8 L7505 16 L7501 27 L7500 3038 L6493 3037 L6368 3034 L6302 3027 L6249 3013 L6174 2985 L6136 2966 L6066 2923 L6001 2871 L5969 2842 L5911 2778 L5857 2707 L5808 2630 L5786 2589 L5746 2504 L5727 2459 L5696 2367 L5670 2270 L5650 2171 L5643 2120 L5633 2016 L5630 1911 L5631 1858 L5639 1751 L5654 1645 L5664 1592 L5690 1487 L5733 1361 L5779 1258 L5833 1163 L5869 1111 L5908 1061 L5948 1016 L5991 975 L6035 937z M8691 2378 L8697 2484 L8706 2555 L8717 2625 L8740 2729 L8769 2830 L8806 2930 L8850 3026 L8899 3118 L8955 3206 L8996 3262 L9039 3316 L9108 3392 L9182 3463 L9261 3527 L9343 3586 L9430 3637 L9520 3682 L9581 3707 L9644 3730 L9707 3749 L9804 3771 L9902 3785 L10001 3792 L10100 3790 L10198 3781 L10296 3764 L10392 3739 L10486 3707 L10578 3668 L10667 3621 L10752 3567 L10834 3507 L10911 3440 L10983 3367 L11041 3301 L11122 3392 L11196 3463 L11275 3527 L11330 3567 L11386 3604 L11474 3653 L11565 3695 L11658 3730 L11722 3749 L11786 3764 L11884 3781 L11949 3788 L12015 3792 L12114 3790 L12213 3781 L12310 3764 L12406 3739 L12469 3719 L12531 3695 L12622 3653 L12681 3621 L12739 3586 L12821 3527 L12874 3485 L12925 3440 L12974 3392 L13043 3316 L13086 3262 L13127 3206 L13165 3148 L13217 3057 L13248 2994 L13289 2897 L13313 2830 L13333 2763 L13358 2660 L13371 2590 L13381 2519 L13387 2449 L13391 2378 L13391 0 L12720 0 L12720 2342 L12715 2425 L12700 2507 L12675 2587 L12641 2663 L12597 2734 L12546 2799 L12487 2857 L12421 2907 L12350 2949 L12290 2976 L12211 3002 L12130 3017 L12065 3022 L11999 3020 L11917 3009 L11853 2993 L11791 2970 L11732 2942 L11661 2898 L11609 2857 L11551 2799 L11509 2747 L11472 2692 L11441 2633 L11410 2555 L11397 2507 L11386 2458 L11380 2409 L11377 2359 L11376 0 L10706 0 L10706 2342 L10700 2425 L10689 2491 L10677 2539 L10654 2602 L10626 2663 L10601 2706 L10573 2747 L10531 2799 L10485 2846 L10447 2878 L10407 2907 L10350 2942 L10306 2964 L10244 2988 L10197 3002 L10149 3012 L10083 3020 L10034 3022 L9984 3020 L9919 3012 L9871 3002 L9823 2988 L9762 2964 L9717 2942 L9661 2907 L9620 2878 L9583 2846 L9536 2799 L9494 2747 L9466 2706 L9441 2663 L9413 2602 L9391 2539 L9378 2491 L9367 2425 L9362 2342 L9362 0 L8691 0z M17111 5576 L17107 0 L15486 0 L15087 4 L15017 9 L14933 28 L14860 51 L14788 81 L14718 117 L14650 159 L14584 207 L14520 260 L14458 319 L14399 383 L14315 489 L14263 565 L14190 688 L14146 775 L14104 866 L14066 962 L14032 1060 L14002 1163 L13976 1268 L13948 1406 L13926 1553 L13915 1678 L13911 1876 L13914 2087 L13922 2205 L13937 2320 L13963 2463 L13997 2606 L14037 2744 L14085 2876 L14139 3002 L14200 3120 L14266 3230 L14338 3333 L14416 3426 L14497 3510 L14554 3560 L14613 3606 L14673 3647 L14735 3684 L14798 3715 L14862 3740 L14942 3766 L14991 3777 L15088 3784 L15270 3788 L16440 3791 L16440 5576z M15151 3000 L15077 2966 L15041 2946 L14973 2898 L14910 2842 L14880 2811 L14823 2744 L14772 2670 L14748 2631 L14705 2548 L14686 2504 L14651 2414 L14622 2319 L14610 2270 L14590 2170 L14583 2119 L14573 2016 L14570 1964 L14571 1858 L14574 1805 L14585 1698 L14604 1592 L14616 1539 L14646 1434 L14691 1319 L14719 1258 L14751 1200 L14797 1128 L14848 1062 L14916 988 L14976 936 L15038 892 L15104 855 L15172 825 L15260 798 L16440 794 L16440 3038 L15589 3038 L15336 3035 L15280 3032 L15246 3028 L15190 3013z M18737 906 L18793 871 L18855 840 L18913 818 L18970 802 L19010 798 L19325 798 L19377 807 L19420 819 L19468 836 L19509 855 L19564 887 L19611 922 L19658 965 L19704 1018 L19715 1022 L19726 1024 L19737 1021 L19745 1016 L19754 1004 L19757 990 L19757 119 L19756 108 L19750 98 L19739 89 L19703 76 L19649 58 L19576 38 L19520 26 L19446 13 L19332 2 L19258 0 L19034 1 L18787 5 L18728 11 L18654 28 L18616 39 L18579 51 L18509 81 L18438 117 L18371 159 L18336 182 L18240 261 L18148 351 L18062 453 L17983 565 L17910 688 L17865 775 L17824 866 L17769 1010 L17722 1163 L17684 1323 L17652 1508 L17642 1587 L17636 1654 L17633 1741 L17631 1859 L17635 2101 L17646 2243 L17672 2402 L17705 2560 L17729 2653 L17757 2745 L17805 2877 L17840 2960 L17879 3042 L17942 3158 L17986 3230 L18034 3299 L18109 3396 L18189 3483 L18274 3560 L18333 3607 L18424 3666 L18517 3714 L18614 3751 L18669 3768 L18701 3775 L18758 3781 L18827 3785 L19106 3788 L20797 3792 L20809 3790 L20817 3785 L20828 3773 L20831 3758 L20827 34 L20825 22 L20821 14 L20808 3 L20794 0 L20194 0 L20182 2 L20172 8 L20165 16 L20161 27 L20160 3038 L19153 3037 L19028 3034 L18962 3027 L18909 3013 L18834 2985 L18796 2966 L18726 2923 L18661 2871 L18629 2842 L18571 2778 L18517 2707 L18468 2630 L18446 2589 L18406 2504 L18387 2459 L18356 2367 L18330 2270 L18310 2171 L18303 2120 L18293 2016 L18290 1911 L18291 1858 L18299 1751 L18314 1645 L18324 1592 L18350 1487 L18393 1361 L18439 1258 L18493 1163 L18529 1111 L18568 1061 L18608 1016 L18651 975 L18695 937z"/></g></svg></h1>
-      <button class="ic" id="btnHomeCal" title="모든 방 일정">
-        <svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/></svg>
-      </button>
-      <button class="ic" id="btnAI" title="AI 설정">
-        <svg viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.8.8-4.2 4.1 1 5.8L12 16.8l-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z"/></svg>
-      </button>
       <button class="ic" id="btnJoin" title="코드로 참여">
         <svg viewBox="0 0 24 24"><path d="M15 7h3a4 4 0 0 1 0 8h-3M9 7H6a4 4 0 0 0 0 8h3M8 11h8"/></svg>
       </button>
@@ -980,7 +1034,7 @@ body.rzing *{user-select:none!important}
     <div id="rooms"></div>
   </section>
 
-  <section class="screen hide" id="scChat">
+  <section class="screen brief" id="scChat">
     <button class="ic" id="railTog" title="방 목록 숨기기"><svg viewBox="0 0 24 24"><path d="M4 6.5h16M4 12h16M4 17.5h16"/></svg></button>
     <nav id="rail" aria-label="방 목록"></nav>
     <div id="railScrim"></div>
@@ -991,6 +1045,12 @@ body.rzing *{user-select:none!important}
       <h1 id="chatName">방</h1>
       <button class="ic" id="btnRefresh" title="다시 정리">
         <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></svg>
+      </button>
+      <button class="ic" id="btnHomeCal" title="모든 방 일정">
+        <svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/></svg>
+      </button>
+      <button class="ic" id="btnAI" title="AI 설정">
+        <svg viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.8.8-4.2 4.1 1 5.8L12 16.8l-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z"/></svg>
       </button>
       <button class="ic" id="btnSearch" title="검색">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
@@ -1020,9 +1080,15 @@ body.rzing *{user-select:none!important}
         <button class="chip" id="chipDate">날짜 지정</button>
         <button class="chip" id="chipPic">파일</button>
       </div>
+      <div id="whenHint"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/></svg><span class="wt"></span><button id="whenX" title="일정으로 넣지 않기" aria-label="일정으로 넣지 않기"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
       <div class="row">
-        <textarea id="txt" rows="1" placeholder="메시지 입력"></textarea>
-        <button id="send" disabled><svg viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></svg></button>
+        <button id="hSearch" title="모든 방에서 찾기" aria-label="모든 방에서 찾기"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button>
+        <div class="pill">
+          <button id="hFile" title="파일 첨부" aria-label="파일 첨부"><svg viewBox="0 0 24 24"><path d="M20.5 11.5l-8.3 8.3a5 5 0 0 1-7.1-7.1l8.6-8.6a3.3 3.3 0 0 1 4.7 4.7l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"/></svg></button>
+          <textarea id="txt" rows="1" placeholder="메시지 입력"></textarea>
+          <button id="send" disabled><svg viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></svg></button>
+          <button id="hChat" title="메모 쓰기" aria-label="메모 쓰기"><svg viewBox="0 0 24 24"><path d="M20.5 11.6a8 8 0 0 1-11.9 7l-4.6 1.4 1.4-4.4a8 8 0 1 1 15.1-4z"/></svg></button>
+        </div>
       </div>
     </div>
     <div id="robar"><svg viewBox="0 0 24 24"><path d="M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12s-3.5 6.5-9.5 6.5S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg>보기만 할 수 있는 방이에요</div>
@@ -1291,6 +1357,7 @@ body.rzing *{user-select:none!important}
   </div></div>
 
   <div class="toast" id="toast"></div>
+  <div id="rtoast" role="status"><span class="rt-t"></span><button class="rt-o" id="rtOpen">열기</button><button class="rt-c" id="rtChange">바꾸기</button></div>
 
   <div class="rz n"  data-d="n"></div>
   <div class="rz s"  data-d="s"></div>
@@ -1460,6 +1527,7 @@ const VEC='g:';                          /* Gemini 벡터 저장 키 접두어 *
 let aiKey='', gTextOk=null, gEmbOk=null;
 const vecCache=new Map();
 const nVec=new Map();      /* 추가 메모만 따로 만든 벡터 */
+const gVec=new Map(), gNVec=new Map();   /* 모든 방의 메모 벡터 — 홈에서 방 고르기·전체 검색에 쓴다 */
 const NBOOST=1.12;         /* 검색에서 추가 메모에 주는 가산점 */
 
 const TAG_SYS=`너는 개인 메모를 나중에 찾기 쉽게 정리하는 도우미다.
@@ -1629,15 +1697,15 @@ async function embed(m){
     m.file?m.file.name:'', note].join('\n').trim();
   if(base){
     const v=await aiEmbed(base);
+    vecCache.set(m.id,v); gVec.set(m.id,v);
     await IDB.put(VEC+m.id,{vec:v});
-    vecCache.set(m.id,v);
   }
   if(note){
     const nv=await aiEmbed(note);
     await IDB.put(VEC+'n:'+m.id,{vec:nv});
-    nVec.set(m.id,nv);
+    nVec.set(m.id,nv); gNVec.set(m.id,nv);
   }else{
-    await IDB.del(VEC+'n:'+m.id); nVec.delete(m.id);
+    await IDB.del(VEC+'n:'+m.id); nVec.delete(m.id); gNVec.delete(m.id);
   }
 }
 
@@ -1665,6 +1733,7 @@ updAIBtn();
 function aiStat(){
   const box=$('#aiStat');
   if(!aiKey){ box.innerHTML='아직 <b>꺼져 있습니다.</b> 아래에 키를 넣으면 켜집니다.'; return; }
+  if(!cur){ box.innerHTML='<b>켜져 있습니다.</b> 홈에 적은 메모를 AI가 알맞은 방에 나눠 담아요.'; return; }
   const done=msgs.filter(m=>m.tags&&m.tags.length).length;
   box.innerHTML=`켜져 있습니다. 이 방에서 <b>${done}개</b> / ${msgs.length}개 메모가 정리됐습니다.`;
 }
@@ -1747,6 +1816,7 @@ async function attach(file){
   $('#attName').textContent=pendImg.name;
   $('#attSize').textContent=kb(pendImg.size)+(isImg(file.type)&&blob!==file?' · 자동 축소됨':'');
   $('#att').classList.add('on');
+  if(briefOn) hOpen();
   $('#send').disabled=false; $('#txt').focus();
 }
 function clearAtt(){
@@ -1766,7 +1836,7 @@ $('#chipPic').onclick=()=>$('#file').click();
 $('#file').onchange=e=>{ if(e.target.files[0]) attach(e.target.files[0]); e.target.value=''; };
 
 document.addEventListener('paste',e=>{
-  if($('#scChat').classList.contains('hide')||briefOn||roNow()) return;
+  if($('#scChat').classList.contains('hide')||roNow()) return;
   const items=e.clipboardData&&e.clipboardData.items; if(!items) return;
   for(const it of items){
     if(it.kind==='file'){ e.preventDefault(); attach(it.getAsFile()); return; }
@@ -1776,7 +1846,7 @@ const chatEl=$('#scChat'), dropEl=$('#drop');
 let dragN=0;
 /* 바깥에서 파일을 끌어올 때만 '여기에 놓으면' 표시 — 앱 안의 링크·글자·사진을 끄는 건 무시한다 */
 const outerFiles=e=>{ const t=e.dataTransfer&&e.dataTransfer.types; return !!t&&[...t].includes('Files'); };
-chatEl.addEventListener('dragenter',e=>{ if(!outerFiles(e)) return; e.preventDefault(); if(briefOn||roNow()) return; dragN++; dropEl.classList.add('on');});
+chatEl.addEventListener('dragenter',e=>{ if(!outerFiles(e)) return; e.preventDefault(); if(roNow()) return; dragN++; dropEl.classList.add('on');});
 chatEl.addEventListener('dragover',e=>{ if(outerFiles(e)) e.preventDefault(); });
 chatEl.addEventListener('dragleave',e=>{ if(!outerFiles(e)) return; if(--dragN<=0){dragN=0; dropEl.classList.remove('on');} });
 /* 말풍선 안의 링크·사진·파일·글자는 브라우저 기본 끌기를 막는다 — 꾹 눌러 옮기기가 끊기지 않게 */
@@ -1787,7 +1857,6 @@ document.addEventListener('dragstart',e=>{
 chatEl.addEventListener('drop',e=>{
   if(!outerFiles(e)) return;
   e.preventDefault(); dragN=0; dropEl.classList.remove('on');
-  if(briefOn) return;
   if(roBlock()) return;
   const f=e.dataTransfer.files&&e.dataTransfer.files[0];
   if(f) attach(f); else toast('파일을 넣어주세요');
@@ -1990,7 +2059,7 @@ function drawRail(){
   br.onclick=()=>{ railAuto=false; setRail(true); };
   hd.appendChild(br); rail.appendChild(hd);
   const bf=el('button','rrow rbf'+(briefOn?' on':''));
-  bf.innerHTML=`<span class="rico">${SUN}</span><span class="rnm">어제와 오늘</span>`;
+  bf.innerHTML=`<span class="rico">${SUN}</span><span class="rnm">홈</span>`;
   bf.onclick=()=>{ railDone(); if(!briefOn) openBrief(); };
   rail.appendChild(bf);
   rail.appendChild(el('div','rsep'));
@@ -2037,6 +2106,16 @@ function drawRail(){
       g.appendChild(kids);
     }
     rail.appendChild(g);
+  });
+  /* 맨 아래: 직접 방 만들기 · 코드로 참여 */
+  rail.appendChild(el('div','rsep'));
+  [['<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>','새 방 만들기',()=>openNew()],
+   ['<svg viewBox="0 0 24 24"><path d="M15 7h3a4 4 0 0 1 0 8h-3M9 7H6a4 4 0 0 0 0 8h3M8 11h8"/></svg>','코드로 참여',()=>$('#btnJoin').click()]
+  ].forEach(([ic,nm,fn])=>{
+    const b=el('button','rrow rbf rtool');
+    b.innerHTML=`<span class="rico">${ic}</span><span class="rnm">${nm}</span>`;
+    b.onclick=()=>{ railDone(); fn(); };
+    rail.appendChild(b);
   });
   rail.scrollTop=top;
   if(miss) railSoon();
@@ -2293,6 +2372,8 @@ async function openRoom(id){
   try{ const o=await S.get('open:'+cur.id); if(o&&o.day===todayKey()) (o.keys||[]).forEach(k=>{ opened[k]=true; }); }catch(e){}
   msgs=await readList(cur);
   $('#scChat').classList.toggle('ro',roNow());
+  $('#txt').placeholder='메시지 입력';
+  hClose(); $('#whenHint').classList.remove('on');
   drawStream();
   /* PC에서만 입력창에 바로 커서 — 폰은 키보드가 튀어 올라와서 하지 않는다 */
   if(matchMedia('(pointer:fine)').matches) setTimeout(()=>$('#txt').focus(),260);
@@ -3175,8 +3256,11 @@ async function openBrief(){
   if(selMode) exitSel(true);
   briefOn=true; cur=null; msgs=[]; grpF=null; $('#scChat').classList.remove('grp'); updBack();
   const sc=$('#scChat');
-  sc.classList.add('brief'); sc.classList.remove('hide');
-  $('#chatName').textContent='어제와 오늘';
+  sc.classList.add('brief'); sc.classList.remove('hide','ro');
+  $('#chatName').textContent='';
+  $('#txt').placeholder=aiKey?'적으면 AI가 알아서 담아요':'떠오른 걸 바로 적으세요';
+  if(!txt.value.trim()&&!pendImg) hClose();
+  updWhen();
   $('#pinbar').innerHTML=''; clearAtt(); closeOverlays();
   drawRail();
   briefData=await buildBrief();
@@ -3357,7 +3441,9 @@ function drawBrief(fresh,force){
   const add=n=>s.appendChild(n);
   if(!briefData.all.length){
     const b=el('div','bi');
-    b.innerHTML='<div class="bh">아직 방이 없어요</div><p class="bnone">방을 만들고 메모를 남기면 어제와 오늘 담은 것을 여기에 모아 보여줘요.</p>';
+    b.innerHTML='<div class="bh">아래 입력창에 바로 적어보세요</div><p class="bnone">'+(aiKey
+      ?'적은 메모는 AI가 내용을 보고 알맞은 방에 담아요. 처음 보는 주제면 방을 새로 만들어요.'
+      :'적은 메모는 ‘미분류’ 방에 담겨요. 위의 별(AI 설정)에서 키를 넣으면 AI가 주제별 방으로 나눠 담아요.')+'</p>';
     add(botGroup([b])); return;
   }
   const sy=el('div','daysep'); sy.innerHTML=`<span>어제 · ${mdw(briefData.y)}</span>`; add(sy);
@@ -3372,9 +3458,19 @@ function drawBrief(fresh,force){
 
 /* ---------- 작성 ---------- */
 const txt=$('#txt');
+/* 입력칸 높이를 글 길이에 맞춘다. 홈에서 입력창이 아직 늘어나는 중이면 한 줄로 두고, 다 늘어난 뒤 맞춘다 */
+function fitTxt(){
+  txt.style.height='auto';
+  if(briefOn){
+    const p=$('.pill');
+    if(!$('#scChat').classList.contains('hopen')||p.offsetWidth<p.parentElement.offsetWidth-4) return;
+  }
+  txt.style.height=Math.min(txt.scrollHeight,110)+'px';
+}
 txt.addEventListener('input',()=>{
-  txt.style.height='auto'; txt.style.height=Math.min(txt.scrollHeight,110)+'px';
+  fitTxt();
   $('#send').disabled=!txt.value.trim() && !pendImg;
+  if(briefOn) updWhen();
 });
 txt.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&!e.shiftKey&&window.innerWidth>480){e.preventDefault(); send();}
@@ -3382,6 +3478,7 @@ txt.addEventListener('keydown',e=>{
 $('#send').onclick=send;
 
 async function send(){
+  if(briefOn){ homeSend(); return; }
   if(!cur||roBlock()) return;
   const t=txt.value.trim();
   if(!t && !pendImg) return;
@@ -3409,6 +3506,342 @@ async function send(){
     if(lastGrp) await refreshGroups(); else railSoon();
   }
   if(aiKey&&last) enrich(last, pend?pend.blob:null);
+}
+
+/* =====================================================
+   문장 속 날짜·시간 알아듣기
+   '5월 4일', '내일까지', '2시간 안에', '다음 주 금요일 오후 3시' 같은 말을 찾아
+   메모의 날짜(due)·시작일(dueStart)·시각(dueTime)으로 넣는다. 못 찾으면 null.
+   ===================================================== */
+const KNUM={'한':1,'두':2,'세':3,'네':4,'다섯':5,'여섯':6,'일곱':7,'여덟':8,'아홉':9,'열':10,'열한':11,'열두':12};
+const WDAYS='일월화수목금토';
+function parseWhen(src,now){
+  now=now?new Date(now):new Date();
+  const s=String(src||'')
+    .replace(/(^|\s)(열한|열두|다섯|여섯|일곱|여덟|아홉|한|두|세|네|열)\s*(시간|시|주|달)/g,(a,b,n,u)=>b+KNUM[n]+u);
+  const today=new Date(now); today.setHours(0,0,0,0);
+  const day=n=>{ const d=new Date(today); d.setDate(d.getDate()+n); return d; };
+  const hm=d=>String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  const ok=(y,m,d)=>{ const x=new Date(y,m-1,d); return x.getMonth()===m-1&&x.getDate()===d?x:null; };
+  /* 연도 없이 쓴 날짜: 지났으면 내년. 단 두 달 안쪽으로 지난 날짜는 지난 일을 적은 것으로 보고 넣지 않는다 */
+  const ahead=(m,d)=>{
+    let x=ok(today.getFullYear(),m,d); if(!x) return null;
+    if(x<today){ if((today-x)/86400000<=60) return undefined; x=ok(today.getFullYear()+1,m,d); }
+    return x;
+  };
+
+  /* 1) 'N시간 안에' 'N분 뒤' — 날짜와 시각이 함께 정해진다 */
+  let r=s.match(/(\d{1,3})\s*시간\s*(반\s*)?(안에|안으로|이내|내로|내에|후에|후|뒤에|뒤|있다가|지나서)/);
+  if(r){ const d=new Date(now.getTime()+(+r[1]*60+(r[2]?30:0))*60000); return {due:dkey(d),start:null,time:hm(d)}; }
+  r=s.match(/(\d{1,3})\s*분\s*(안에|이내|내로|내에|후에|후|뒤에|뒤|있다가)/);
+  if(r){ const d=new Date(now.getTime()+ +r[1]*60000); return {due:dkey(d),start:null,time:hm(d)}; }
+
+  /* 2) 날짜 */
+  let due=null,start=null,skip=false;
+  const wk=(base,w)=>{ const mon=new Date(base); mon.setDate(mon.getDate()-((mon.getDay()+6)%7)); const d=new Date(mon); d.setDate(d.getDate()+((w+6)%7)); return d; };
+  const tries=[
+    [/(\d{4})\s*[.\-/년]\s*(\d{1,2})\s*[.\-/월]\s*(\d{1,2})/,x=>ok(+x[1],+x[2],+x[3])],
+    [/(\d{1,2})\s*월\s*(\d{1,2})\s*일(?:\s*(?:~|-|부터)\s*(?:(\d{1,2})\s*월\s*)?(\d{1,2})\s*일)?/,x=>{
+      const a=ahead(+x[1],+x[2]); if(a===undefined){ skip=true; return null; }
+      if(a&&x[4]){ const b=ok(a.getFullYear(),x[3]?+x[3]:+x[1],+x[4]); if(b&&b>a){ start=a; return b; } }
+      return a; }],
+    [/(?<![\d/.:])(\d{1,2})\/(\d{1,2})(?:\s*~\s*(?:(\d{1,2})\/)?(\d{1,2}))?(?![\d/])/,x=>{
+      if(+x[1]<1||+x[1]>12) return null;
+      const a=ahead(+x[1],+x[2]); if(a===undefined){ skip=true; return null; }
+      if(a&&x[4]){ const b=ok(a.getFullYear(),x[3]?+x[3]:+x[1],+x[4]); if(b&&b>a){ start=a; return b; } }
+      return a; }],
+    [/(이번|다음|담|다다음)\s*달\s*(\d{1,2})\s*일/,x=>{
+      const add=x[1]==='이번'?0:(x[1]==='다다음'?2:1);
+      return ok(today.getFullYear(),today.getMonth()+1+add,+x[2])||null; }],
+    [/(이번|다음|담|다다음)\s*주\s*([일월화수목금토])(?:요일|욜)/,x=>{
+      const add=x[1]==='이번'?0:(x[1]==='다다음'?14:7);
+      const d=wk(day(add),WDAYS.indexOf(x[2])); return d<today?null:d; }],
+    [/(이번|다음|담|다다음)\s*주\s*(?:까지|안에|안으로|중|내로|내에)/,x=>{
+      const add=x[1]==='이번'?0:(x[1]==='다다음'?14:7); return wk(day(add),0); }],
+    [/(다음\s*|담\s*)?주말/,x=>{ const d=wk(day(x[1]?7:0),6); return d<today?wk(day(7),6):d; }],
+    [/([일월화수목금토])(?:요일|욜)/,x=>{ const w=WDAYS.indexOf(x[1]); return day((w-today.getDay()+7)%7); }],
+    [/내일\s*모레|모레/,()=>day(2)],
+    [/글피/,()=>day(3)],
+    [/내일/,()=>day(1)],
+    [/(\d{1,3})\s*일\s*(?:안에|안으로|이내|내로|내에|후에|후|뒤에|뒤)/,x=>day(+x[1])],
+    [/(\d{1,2})\s*주\s*(?:안에|안으로|이내|내로|내에|후에|후|뒤에|뒤)/,x=>day(7*x[1])],
+    [/(\d{1,2})\s*(?:달|개월)\s*(?:안에|안으로|이내|내로|내에|후에|후|뒤에|뒤)/,x=>{ const d=new Date(today); d.setMonth(d.getMonth()+ +x[1]); return d; }],
+    [/(?<![\d월])(\d{1,2})\s*일\s*(?=까지|에|날|마감|자정|오전|오후|아침|저녁|밤|\d{1,2}\s*시)/,x=>{
+      let d=ok(today.getFullYear(),today.getMonth()+1,+x[1]); if(!d) return null;
+      if(d<today) d=ok(today.getFullYear(),today.getMonth()+2,+x[1]);
+      return d; }],
+    [/오늘\s*(?:까지|중|중으로|안에|안으로|마감|자정)|오늘\s*(?=오전|오후|아침|점심|저녁|밤|낮|\d{1,2}\s*시)/,()=>day(0)]
+  ];
+  for(const [re,fn] of tries){
+    const x=s.match(re); if(!x) continue;
+    const d=fn(x); if(skip) return null;
+    if(d){ due=d; break; }
+  }
+
+  /* 3) 시각 */
+  let time=null;
+  const TM=/(오전|오후|아침|점심|저녁|밤|낮|새벽)?\s*(\d{1,2})\s*시(?=$|[^가-힣]|반|에|까|부|쯤|정|전|로)\s*(?:(\d{1,2})\s*분|(반))?/;
+  const CL=/(오전|오후|아침|점심|저녁|밤|낮|새벽)?\s*(?<![\d:])(\d{1,2}):(\d{2})(?![\d:])/;
+  let t=s.match(TM), h=null, mi=0, mer=null;
+  if(t){ mer=t[1]; h=+t[2]; mi=t[3]?+t[3]:(t[4]?30:0); }
+  else if((t=s.match(CL))){ mer=t[1]; h=+t[2]; mi=+t[3]; }
+  else if(/정오/.test(s)){ h=12; mer='낮'; }
+  else if(/자정/.test(s)){ time='23:59'; }
+  if(h!=null&&h<=24&&mi<60){
+    if(/오후|저녁|밤/.test(mer||'')){ if(h<12) h+=12; else if(mer==='밤'&&h===12) h=24; }
+    else if(/낮|점심/.test(mer||'')){ if(h<=6) h+=12; }
+    else if(/오전|아침|새벽/.test(mer||'')){ if(h===12) h=0; }
+    else if(h>=1&&h<=7) h+=12;
+    time=h>=24?'23:59':String(h).padStart(2,'0')+':'+String(mi).padStart(2,'0');
+  }
+  if(!due&&!time) return null;
+  if(!due){ /* 시각만 적었으면 오늘, 이미 지났으면 내일 */
+    const [hh,mm]=time.split(':').map(Number), d=new Date(today); d.setHours(hh,mm);
+    due=d<=now?day(1):day(0);
+  }
+  return {due:dkey(due),start:start?dkey(start):null,time};
+}
+const whenLabel=w=>(w.start?md(w.start)+'~'+md(w.due):mdw(w.due))+(w.time?' '+fmtT(w.time):'');
+
+
+/* =====================================================
+   홈에서 바로 담기
+   홈 입력창에 적은 메모는 AI가 알맞은 방을 골라 넣는다.
+   1) 메모를 태그·설명으로 정리하고 의미 벡터를 만든다
+   2) 방마다 가장 비슷한 메모 3개의 평균으로 후보 방을 고른다
+   3) Gemini가 후보 중 하나를 고르거나, 맞는 방이 없으면 새 방 이름을 짓는다
+   AI가 꺼져 있거나 고르지 못하면 '미분류' 방에 둔다. 담은 뒤 알림에서 바로 바꿀 수 있다.
+   ===================================================== */
+const ROUTE_SYS=`너는 메모 앱 'Damda'에서 새 메모를 넣을 채팅방을 고르는 도우미다.
+새 메모와 기존 방 목록을 보고 메모를 넣을 방을 하나 정한다.
+
+규칙
+- 새 메모가 기존 방의 주제와 맞으면 그 방 이름을 room에 글자 그대로 쓴다. 비슷한 정도는 참고만 한다.
+- 맞는 방이 없으면 new에 새 방 이름을 쓴다. 2~8글자 명사형. 예) 과제, 장 볼 것, 여행 준비, 회로 실험, 아이디어
+- 새 방 이름은 이 메모 하나에만 맞게 좁게 짓지 말고, 같은 주제의 메모가 계속 들어올 수 있게 짓는다.
+- 인사말이나 의미 없는 글처럼 주제를 알 수 없으면 둘 다 빈 문자열로 둔다.
+- JSON만 출력한다.
+
+출력 형식
+{"room":"기존 방 이름 또는 빈 문자열","new":"새 방 이름 또는 빈 문자열"}`;
+const INBOX='미분류', ROUTE_TH=0.62;
+const routable=r=>!isRO(r)&&r.name!==INBOX;
+
+async function vecOf(id){
+  if(gVec.has(id)) return gVec.get(id);
+  try{ const r=await IDB.get(VEC+id); if(r&&r.vec){ gVec.set(id,r.vec); return r.vec; } }catch(e){}
+  return null;
+}
+async function nvecOf(id){
+  if(gNVec.has(id)) return gNVec.get(id);
+  try{ const r=await IDB.get(VEC+'n:'+id); if(r&&r.vec){ gNVec.set(id,r.vec); return r.vec; } }catch(e){}
+  return null;
+}
+
+/* 방마다 새 메모와 가장 비슷한 메모 3개의 평균 */
+async function roomScores(v){
+  const out=[];
+  for(const r of rooms.filter(routable)){
+    const list=await readList(r), sims=[];
+    if(v) for(const m of list.slice(-120)){ const x=await vecOf(m.id); if(x) sims.push(cos(v,x)); }
+    sims.sort((a,b)=>b-a);
+    const top=sims.slice(0,3);
+    out.push({r,list,s:top.length?top.reduce((a,b)=>a+b,0)/top.length:0});
+  }
+  return out.sort((a,b)=>b.s-a.s||(b.r.at||0)-(a.r.at||0));
+}
+
+const memoBrief=m=>[mlabel(m),m.desc?'설명: '+m.desc:'',(m.tags||[]).length?'태그: '+m.tags.join(', '):'']
+  .filter(Boolean).join(' / ');
+
+/* {room}이면 기존 방, {name}이면 새로 만들 방, null이면 미분류 */
+async function pickRoom(m,v){
+  const sc=await roomScores(v);
+  const cand=sc.slice(0,4), top=sc[0]||null;
+  const lines=cand.map(c=>{
+    const ex=c.list.slice(-5).map(x=>mlabel(x).slice(0,40)).join(' / ');
+    return `- ${c.r.name} (비슷한 정도 ${Math.round(c.s*100)}%) 최근 메모: ${ex||'없음'}`;
+  });
+  const rest=sc.slice(4).map(c=>c.r.name);
+  const prompt=`새 메모: ${memoBrief(m)}\n\n`
+    +(lines.length?`비슷한 방\n${lines.join('\n')}\n`:'아직 방이 없다.\n')
+    +(rest.length?`\n그 밖의 방: ${rest.join(', ')}\n`:'');
+  try{
+    const raw=await gText({system:ROUTE_SYS,parts:[{text:prompt}],json:true,temperature:0.1,maxTokens:256});
+    const o=JSON.parse(raw.replace(/^```(?:json)?\s*|\s*```$/g,''));
+    const clean=x=>String(x||'').replace(/^[\s\[\]'"‘’]+|[\s\[\]'"‘’]+$/g,'').slice(0,20);
+    const want=clean(o.room), nn=clean(o.new);
+    const norm=n=>n.replace(/\s/g,'').toLowerCase();
+    const find=n=>n&&rooms.find(r=>routable(r)&&norm(r.name)===norm(n));
+    const hit=find(want)||find(nn);
+    if(hit) return {room:hit};
+    if(nn&&nn!==INBOX) return {name:nn};
+    return null;
+  }catch(e){
+    console.error(e);
+    /* 이름을 못 받으면 충분히 비슷한 방에만 넣는다 */
+    if(top&&top.s>=ROUTE_TH) return {room:top.r};
+    throw e;
+  }
+}
+
+/* 이름으로 방을 찾고, 없으면 새로 만든다 (ai: AI가 만든 방) */
+async function ensureRoom(name,ai){
+  let r=rooms.find(x=>x.name===name&&!isRO(x));
+  if(r) return r;
+  const used=new Set(rooms.map(x=>x.color));
+  const pal=COLORS.slice(0,-1);
+  const color=name===INBOX?COLORS[COLORS.length-1]:(pal.find(c=>!used.has(c))||pal[rooms.length%pal.length]);
+  r={id:'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name,preview:'',at:null,code:null,
+    pin:false,_due:0,color,ai:!!ai};
+  rooms.unshift(r); normalize(); await saveRooms();
+  return r;
+}
+
+let homeQ=Promise.resolve(), lastRoute=null;
+async function homeSend(){
+  const t=txt.value.trim();
+  if(!t && !pendImg) return;
+  const pend=pendImg;
+  let file=null;
+  if(pendImg){
+    const fid='f'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    try{
+      await IDB.put(fid,{blob:pendImg.blob,name:pendImg.name,type:pendImg.type});
+      file={id:fid,name:pendImg.name,type:pendImg.type,size:pendImg.size};
+      urlCache.set(fid,URL.createObjectURL(pendImg.blob));
+    }catch(e){ toast('파일을 저장하지 못했어요'); return; }
+  }
+  const m={id:'m'+Date.now().toString(36)+Math.random().toString(36).slice(2,4),type:'memo',
+    text:t,file,ts:Date.now(),due:pickDue,dueStart:pickDue?pickStart:null,dueTime:pickDue?pickTime:null,done:false};
+  /* '5월 4일', '내일까지', '2시간 안에'처럼 적었으면 그 날짜로 일정에 넣는다 */
+  const w=!pickDue&&!whenOff?parseWhen(t):null;
+  if(w){ m.due=w.due; m.dueStart=w.start; m.dueTime=w.time; }
+  txt.value=''; txt.style.height='auto'; clearAtt(); $('#send').disabled=true;
+  pickDue=null; pickStart=null; pickTime=null; syncChips();
+  whenOff=false; updWhen();
+  const blob=pend?pend.blob:null;
+  /* 빨리 여러 개를 적어도 같은 새 방이 두 번 생기지 않게 차례로 처리한다 */
+  homeQ=homeQ.then(()=>routeMemo(m,blob)).catch(e=>console.error(e));
+}
+
+async function routeMemo(m,blob){
+  rtShow(aiKey?'담을 방을 고르는 중…':'담는 중…',true);
+  let r=null, made=false, why='';
+  if(aiKey){
+    try{
+      const tg=await aiTag(m,blob);
+      if(tg){ m.tags=tg.tags; m.desc=tg.desc; }
+      let v=null;
+      try{ await embed(m); v=gVec.get(m.id)||null; }catch(e){ console.error(e); }
+      m.ai='ok';
+      const p=await pickRoom(m,v);
+      if(p&&p.room) r=p.room;
+      else if(p&&p.name){ made=!rooms.some(x=>x.name===p.name&&!isRO(x)); r=await ensureRoom(p.name,true); }
+    }catch(e){ console.error(e); if(!m.tags) m.ai='err'; why=aiWhy(e); }
+  }
+  if(!r) r=await ensureRoom(INBOX,false);
+  const list=await readList(r);
+  list.push(m);
+  await saveList(r,list);
+  lastRoute={m,r};
+  const dd=m.due?` · ${m.dueStart?md(m.dueStart)+'~':''}${md(m.due)}${m.dueTime?' '+fmtT(m.dueTime):''} 일정`:'';
+  rtShow((made?`새 방 ‘${r.name}’에 담았어요`:`‘${r.name}’ 방에 담았어요`)+dd);
+  if(why) setTimeout(()=>toast(why),2600);
+  if(briefOn){ briefData=await buildBrief(); drawBrief(true); }
+}
+
+/* 문장에서 찾은 날짜 미리보기 — X를 누르면 이번 메모는 일정 없이 담는다 */
+let whenOff=false;
+function updWhen(){
+  const h=$('#whenHint'), t=txt.value.trim();
+  if(!t) whenOff=false;
+  const w=briefOn&&t&&!whenOff?parseWhen(t):null;
+  h.classList.toggle('on',!!w);
+  if(w) h.querySelector('.wt').textContent=whenLabel(w)+' 일정으로 담아요';
+}
+$('#whenX').onclick=()=>{ whenOff=true; updWhen(); txt.focus(); };
+
+/* 홈 하단: 채팅 아이콘을 누르면 입력창으로 늘어나고, 비운 채로 바깥을 누르면 다시 아이콘으로 */
+function hOpen(){
+  if(!briefOn) return;
+  $('#scChat').classList.add('hopen');
+  txt.focus();
+}
+function hClose(){ $('#scChat').classList.remove('hopen'); txt.style.height='auto'; }
+$('#hChat').onclick=hOpen;
+/* 늘어나는 도중에 입력하면 좁은 폭 기준으로 높이가 잡히므로, 다 늘어난 뒤 다시 맞춘다 */
+$('.pill').addEventListener('transitionend',e=>{
+  if(e.propertyName!=='width'||!briefOn) return;
+  fitTxt();
+});
+$('#hFile').onclick=()=>$('#file').click();
+document.addEventListener('pointerdown',e=>{
+  if(!briefOn||!$('#scChat').classList.contains('hopen')) return;
+  if(e.target.closest('#compose,#rtoast,.sheet,#search,#calview')) return;
+  if(!txt.value.trim()&&!pendImg){ hClose(); txt.blur(); }
+});
+txt.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&briefOn&&!txt.value.trim()&&!pendImg){ hClose(); txt.blur(); }
+});
+
+/* 담은 뒤 알림 — 열기 · 바꾸기 */
+let rtT=null;
+function rtShow(t,busy){
+  const b=$('#rtoast');
+  b.querySelector('.rt-t').textContent=t;
+  b.classList.toggle('busy',!!busy); b.classList.add('on');
+  clearTimeout(rtT);
+  if(!busy) rtT=setTimeout(()=>b.classList.remove('on'),5000);
+}
+const rtHide=()=>{ clearTimeout(rtT); $('#rtoast').classList.remove('on'); };
+$('#rtOpen').onclick=async()=>{
+  const x=lastRoute; rtHide(); if(!x) return;
+  await openRoom(x.r.id);
+  const m=msgs.find(y=>y.id===x.m.id); if(m) setTimeout(()=>jumpTo(m),40);
+};
+$('#rtChange').onclick=()=>{
+  const x=lastRoute; if(!x) return;
+  rtHide();
+  $('#mvHd').textContent='다른 방에 담기';
+  $('#mvP').textContent=`지금은 ‘${x.r.name}’ 방에 들어가 있어요. 넣을 방을 고르세요.`;
+  const box=$('#mvList'); box.innerHTML='';
+  rooms.filter(r=>r.id!==x.r.id&&!isRO(r)).forEach(r=>{
+    const b=el('button','mvrow');
+    b.innerHTML=`<span class="av"${avStyle(r)}>${iniHTML(r.name)}</span><span class="nm">${esc(r.name)}</span>`;
+    b.onclick=async()=>{ close('#shMove'); await rehome(x,r); };
+    box.appendChild(b);
+  });
+  /* 맞는 방이 없으면 이름을 적어 새 방으로 */
+  const nw=el('div','mvnew');
+  nw.innerHTML='<input type="text" placeholder="새 방 이름" maxlength="20"><button class="btn">새 방에 담기</button>';
+  box.appendChild(nw);
+  const inp=nw.querySelector('input');
+  const go=async()=>{
+    const n=inp.value.trim(); if(!n){ toast('방 이름을 입력하세요'); return; }
+    close('#shMove'); const r=await ensureRoom(n,true); await rehome(x,r);
+  };
+  nw.querySelector('button').onclick=go;
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter') go(); });
+  open('#shMove');
+};
+async function rehome(x,to){
+  const from=rooms.find(r=>r.id===x.r.id);
+  if(!from||from.id===to.id) return;
+  const a=await readList(from), i=a.findIndex(y=>y.id===x.m.id);
+  if(i<0){ toast('메모를 찾지 못했어요'); return; }
+  const [mv]=a.splice(i,1);
+  const b=await readList(to); b.push(mv); b.sort((p,q)=>p.ts-q.ts);
+  await saveList(to,b);
+  /* 자동으로 만든 방이 이 메모 하나로 비게 되면 방도 지운다 */
+  if(!a.length&&(from.ai||from.name===INBOX)&&!from.code){
+    await S.del(key(from)); rooms=rooms.filter(r=>r.id!==from.id);
+    await saveRooms(); await countDue(); drawRooms();
+  }else await saveList(from,a);
+  lastRoute={m:mv,r:to};
+  rtShow(`‘${to.name}’ 방으로 옮겼어요`);
+  if(cur&&(cur.id===from.id||cur.id===to.id)){ msgs=await readList(cur); drawStream(true); }
+  if(briefOn){ briefData=await buildBrief(); drawBrief(false); }
 }
 
 function syncChips(){
@@ -3611,8 +4044,14 @@ ruler.addEventListener('pointercancel',endDrag);
 $('#tpClear').onclick=()=>{ calTime=null; showTime(); };
 
 /* ---------- 검색 ---------- */
-function openSearch(q){
+/* 홈에서 열면 모든 방을, 방 안에서 열면 그 방만 찾는다 */
+let sAll=null;
+const sPool=()=>sAll||msgs.map(m=>({r:cur,m}));
+async function openSearch(q,all){
+  sAll=null;
+  if(all){ sAll=[]; for(const r of rooms){ (await readList(r)).forEach(m=>sAll.push({r,m})); } }
   $('#search').classList.add('on');
+  $('#sq').placeholder=all?'모든 방에서 단어나 설명으로 찾기':'단어나 설명으로 찾기';
   $('#sq').value=q||''; $('#sres').innerHTML='';
   $('#sq').focus();
   if(q) runSearch(); else searchIntro();
@@ -3621,7 +4060,7 @@ function openSearch(q){
 function searchIntro(){
   const box=$('#sres'); box.innerHTML='';
   const d=el('div','sintro');
-  d.innerHTML=`<strong>기억나는 대로 적어보세요</strong>
+  d.innerHTML=`<strong>${sAll?'모든 방에서 찾아요':'기억나는 대로 적어보세요'}</strong>
     <p class="lead">AI가 글자는 물론 사진에 찍힌 것까지 읽어둬서<br>어렴풋한 설명만으로도 찾아줘요.</p>
     <div class="exh">이렇게 찾아보세요</div>
     <div class="exs"></div>`
@@ -3637,7 +4076,8 @@ function searchIntro(){
   box.appendChild(d);
 }
 $('#btnSearch').onclick=()=>openSearch('');
-$('#sClose').onclick=()=>$('#search').classList.remove('on');
+$('#hSearch').onclick=()=>openSearch('',true);
+$('#sClose').onclick=()=>{ $('#search').classList.remove('on'); sAll=null; };
 
 let sTimer=null;
 $('#sq').addEventListener('input',()=>{
@@ -3646,18 +4086,27 @@ $('#sq').addEventListener('input',()=>{
   if(aiKey) sTimer=setTimeout(runSemantic,450);
 });
 
-function hitRow(m,q,sim,byNote){
+function hitRow(m,q,sim,byNote,r){
   const d=el('div','hit');
   const base=mlabel(m);
   const mk=q?esc(base).replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig'),
     '<mark>$1</mark>'):esc(base);
-  d.innerHTML=`<div class="m"><span class="sp">${dlabel(dkey(new Date(m.ts)))} · ${hhmm(m.ts)}`
+  d.innerHTML=`<div class="m"><span class="sp">${sAll&&r?'<b class="srm">'+esc(r.name)+'</b> · ':''}${dlabel(dkey(new Date(m.ts)))} · ${hhmm(m.ts)}`
     +`${m.file?' · 첨부':''}${m.done?' · 완료':''}${byNote?' · 추가 메모에서 찾음':''}</span>`
     +(sim!=null?`<span class="sim">${Math.min(100,Math.round(sim*100))}%</span>`:'')+`</div>${mk}`
     +(byNote&&m.note?`<div class="m nt">${esc(m.note.trim().split('\n')[0])}</div>`
       :(m.desc?`<div class="m" style="margin:4px 0 0">${esc(m.desc)}</div>`:''));
   d.dataset.id=m.id;
-  d.onclick=()=>{$('#search').classList.remove('on'); jumpTo(m,true);};
+  d.onclick=async()=>{
+    $('#search').classList.remove('on');
+    if(sAll&&r){
+      sAll=null;
+      if(!cur||cur.id!==r.id) await openRoom(r.id);
+      const x=msgs.find(y=>y.id===m.id); if(x) setTimeout(()=>jumpTo(x,true),40);
+      return;
+    }
+    jumpTo(m,true);
+  };
   return d;
 }
 function sechd(t){
@@ -3668,20 +4117,20 @@ function runSearch(){
   const q=$('#sq').value.trim().toLowerCase(), box=$('#sres');
   box.innerHTML='';
   if(!q){ searchIntro(); return; }
-  const hits=msgs.filter(m=>
+  const hits=sPool().filter(({m})=>
     (m.text||'').toLowerCase().includes(q)
     ||(m.file&&(m.file.name||'').toLowerCase().includes(q))
     ||(m.tags||[]).some(t=>t.toLowerCase().includes(q))
     ||(m.desc||'').toLowerCase().includes(q)
     ||(m.note||'').toLowerCase().includes(q)
-  ).reverse();
+  ).sort((a,b)=>b.m.ts-a.m.ts);
   if(hits.length){
     box.appendChild(sechd('바로 찾음'));
     /* 추가 메모에서 걸린 것은 그렇게 표시한다 */
-    hits.forEach(m=>{
+    hits.forEach(({r,m})=>{
       const inNote=(m.note||'').toLowerCase().includes(q)
         && !(m.text||'').toLowerCase().includes(q);
-      box.appendChild(hitRow(m,q,null,inNote));
+      box.appendChild(hitRow(m,q,null,inNote,r));
     });
   }
   if(!hits.length&&!aiKey){
@@ -3700,25 +4149,32 @@ async function runSemantic(){
   zone.appendChild(sechd('뜻이 비슷한 메모'));
   const sp=el('div','spin'); zone.appendChild(sp); box.appendChild(zone);
   try{
-    await loadVecs();
+    const pool=sPool();
+    if(!sAll) await loadVecs();
     const qv=await aiEmbed(q);
+    if($('#sq').value.trim()!==q) return;
     const shown=new Set([...box.querySelectorAll('.hit')].map(x=>x.dataset.id));
     /* 추가 메모에 적어 둔 내용은 가산점을 줘서 먼저 올린다 */
-    const scored=msgs.filter(m=>vecCache.has(m.id)||nVec.has(m.id))
-      .map(m=>{
-        const s=vecCache.has(m.id)?cos(qv,vecCache.get(m.id)):0;
-        const ns=nVec.has(m.id)?cos(qv,nVec.get(m.id))*NBOOST:0;
-        return {m,s:Math.max(s,ns),note:ns>s};
+    const vs=[];
+    for(const x of pool){
+      const v=sAll?await vecOf(x.m.id):vecCache.get(x.m.id);
+      const nv=sAll?(x.m.note?await nvecOf(x.m.id):null):nVec.get(x.m.id);
+      if(v||nv) vs.push({x,v,nv});
+    }
+    const scored=vs.map(({x,v,nv})=>{
+        const s=v?cos(qv,v):0;
+        const ns=nv?cos(qv,nv)*NBOOST:0;
+        return {m:x.m,r:x.r,s:Math.max(s,ns),note:ns>s};
       })
       .filter(x=>x.s>0.24&&!shown.has(x.m.id))
-      .sort((a,b)=>b.s-a.s).slice(0,8);
+      .sort((a,b)=>b.s-a.s).slice(0,sAll?12:8);
     sp.remove();
     if(!scored.length){
       const e=el('div','hint');
       e.innerHTML='<strong>비슷한 메모가 없어요</strong>정리되지 않은 메모는 검색되지 않습니다.';
       zone.appendChild(e); return;
     }
-    scored.forEach(x=>zone.appendChild(hitRow(x.m,'',x.s,x.note)));
+    scored.forEach(x=>zone.appendChild(hitRow(x.m,'',x.s,x.note,x.r)));
   }catch(e){
     sp.remove();
     const d=el('div','hint'); d.innerHTML='<strong>의미 검색 실패</strong>'; d.appendChild(document.createTextNode(aiWhy(e)));
@@ -4489,7 +4945,7 @@ function drawCV(){
   box.appendChild(hd);
   if(!sel.length){
     const e=el('div','hint');
-    e.innerHTML='<strong>이 날짜에 지정된 메모가 없어요</strong>메모를 보낼 때 날짜 지정을 누르면 여기에 모입니다.';
+    e.innerHTML='<strong>이 날짜에 지정된 메모가 없어요</strong>메모에 ‘5월 4일’, ‘내일까지’처럼 적으면 여기에 모여요.';
     box.appendChild(e); return;
   }
   sel.forEach(({r:room,m})=>{
@@ -4590,7 +5046,7 @@ document.addEventListener('keydown',e=>{
 
 $('#btnBack').onclick=()=>{ if(selMode){ exitSel(); return; }
   if(grpF){ exitGrp(); return; }
-  $('#scChat').classList.add('hide'); cur=null; briefOn=false; };
+  openBrief(); };
 
 /* ---------- 공유 ---------- */
 function makeCode(){
@@ -4652,7 +5108,7 @@ $('#doJoin').onclick=async()=>{
   toast(d.perm==='view'?'방에 참여했어요 · 보기만 할 수 있어요':'방에 참여했어요');
 };
 
-loadRooms();
+loadRooms().then(openBrief);
 })();
 </script>
 
