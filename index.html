@@ -1202,7 +1202,7 @@ body.rzing *{user-select:none!important}
   </div></div>
 
   <div class="toast" id="toast"></div>
-  <div id="rtoast" role="status"><span class="rt-t"></span><button class="rt-o" id="rtOpen">열기</button><button class="rt-c" id="rtChange">바꾸기</button></div>
+  <div id="rtoast" role="status"><span class="rt-t"></span><button class="rt-o" id="rtOpen">열기</button><button class="rt-c" id="rtChange">수정</button></div>
 
   <div class="rz n"  data-d="n"></div>
   <div class="rz s"  data-d="s"></div>
@@ -3454,7 +3454,11 @@ txt.addEventListener('input',()=>{ if(briefOn) schedulePreview(); });
 
 /* 수정: 방과 일정을 바로 바꾼다 */
 let calHome=false;
-function drawRouteSheet(){
+/* rtSent: 이미 담은 메모를 토스트의 '수정'으로 열었으면 그 메모({m,r}), 보내기 전이면 null */
+let rtSent=null;
+function drawRouteSheet(sent){
+  rtSent=sent||null;
+  if(rtSent){ drawSentSheet(rtSent); return; }
   const t=txt.value.trim();
   const box=$('#rtRooms'); box.innerHTML='';
   /* 지금 담길 방(직접 고른 방 > AI가 고른 방 > 미분류)을 채워서 보여 준다 */
@@ -3473,16 +3477,47 @@ function drawRouteSheet(){
   const w=t?curWhen(t):(hWhen||null);
   $('#rtWhenLb').textContent=w?whenLabel(w):'일정 없음';
 }
+function drawSentSheet(x){
+  const box=$('#rtRooms'); box.innerHTML='';
+  rooms.filter(r=>!isRO(r)).forEach(r=>{
+    const b=el('button',r.id===x.r.id?'on':'');
+    b.textContent=r.name;
+    b.onclick=async()=>{ rtSent=null; close('#shRoute'); if(r.id!==x.r.id) await rehome(x,r); };
+    box.appendChild(b);
+  });
+  $('#rtNew').value='';
+  const m=x.m;
+  $('#rtWhenLb').textContent=m.due?whenLabel({due:m.due,start:m.dueStart||null,time:m.dueTime||null}):'일정 없음';
+}
+/* 이미 담은 메모의 일정을 그 메모가 있는 방에 바로 저장한다 */
+async function setSentWhen(x,due,time,start){
+  const r=rooms.find(y=>y.id===x.r.id); if(!r) return;
+  const a=await readList(r), m=a.find(y=>y.id===x.m.id);
+  if(!m){ toast('메모를 찾지 못했어요'); return; }
+  start=due?(start||null):null; time=due?(time||null):null;
+  if((m.due||null)===due&&(m.dueTime||null)===time&&(m.dueStart||null)===start) return;
+  m.due=due; m.dueTime=time; m.dueStart=start;
+  await saveList(r,a); await countDue(); drawRooms();
+  lastRoute={m,r};
+  if(cur&&cur.id===r.id){ msgs=await readList(cur); drawStream(true); }
+  if(briefOn){ briefData=await buildBrief(); drawBrief(false); }
+  toast(due?'날짜를 바꿨어요':'날짜를 뺐어요');
+}
 $('#whenEdit').onclick=()=>{ drawRouteSheet(); open('#shRoute'); };
-const rtNewGo=()=>{
+const rtNewGo=async()=>{
   const n=$('#rtNew').value.trim(); if(!n){ toast('방 이름을 입력하세요'); return; }
+  if(rtSent){ const x=rtSent; rtSent=null; close('#shRoute'); const r=await ensureRoom(n,true); await rehome(x,r); return; }
   const ex=rooms.find(r=>r.name===n&&!isRO(r));
   hRoom=ex?{room:ex}:{name:n}; close('#shRoute'); updWhen(); txt.focus();
 };
 $('#rtNewGo').onclick=rtNewGo;
 $('#rtNew').addEventListener('keydown',e=>{ if(e.key==='Enter') rtNewGo(); });
-$('#rtWhenNone').onclick=()=>{ hWhen=null; close('#shRoute'); updWhen(); txt.focus(); };
+$('#rtWhenNone').onclick=()=>{
+  if(rtSent){ const x=rtSent; rtSent=null; close('#shRoute'); setSentWhen(x,null,null,null); return; }
+  hWhen=null; close('#shRoute'); updWhen(); txt.focus(); };
 $('#rtWhenEdit').onclick=()=>{
+  if(rtSent){ const x=rtSent; rtSent=null; close('#shRoute'); calSent=x;
+    openCal(x.m.due||null,x.m.dueTime||null,x.m,x.m.dueStart||null); return; }
   const t=txt.value.trim(), w=t?curWhen(t):(hWhen||null);
   close('#shRoute'); calHome=true;
   openCal(w?w.due:null,w?w.time:null,null,w?w.start:null);
@@ -3545,22 +3580,7 @@ $('#rtOpen').onclick=async()=>{
 };
 $('#rtChange').onclick=()=>{
   const x=lastRoute; if(!x) return;
-  rtHide();
-  $('#mvHd').textContent='다른 방에 담기';
-  const box=$('#mvList'); box.innerHTML='';
-  rooms.filter(r=>r.id!==x.r.id&&!isRO(r)).forEach(r=>box.appendChild(mvRoom(r,async()=>{ close('#shMove'); await rehome(x,r); })));
-  /* 맞는 방이 없으면 이름을 적어 새 방으로 */
-  const nw=el('div','mvnew');
-  nw.innerHTML='<input type="text" placeholder="새 방 이름" maxlength="20"><button class="btn">새 방에 담기</button>';
-  box.appendChild(nw);
-  const inp=nw.querySelector('input');
-  const go=async()=>{
-    const n=inp.value.trim(); if(!n){ toast('방 이름을 입력하세요'); return; }
-    close('#shMove'); const r=await ensureRoom(n,true); await rehome(x,r);
-  };
-  nw.querySelector('button').onclick=go;
-  inp.addEventListener('keydown',e=>{ if(e.key==='Enter') go(); });
-  open('#shMove');
+  rtHide(); drawRouteSheet(x); open('#shRoute');
 };
 async function rehome(x,to){
   const from=rooms.find(r=>r.id===x.r.id);
@@ -3583,8 +3603,11 @@ async function rehome(x,to){
 
 /* calEdit: 이미 보낸 메모를 고치는 중이면 그 메모, 새 메모 작성 중이면 null */
 let calEdit=null;
+/* calSent: 홈에서 담은 메모를 고치는 중이면 {m,r} — 지금 연 방이 아니라 그 메모의 방에 저장한다 */
+let calSent=null;
 function openCal(due,time,edit,start){
   if(edit) calHome=false;
+  if(!edit||!calSent||calSent.m!==edit) calSent=null;
   calEdit=edit||null; calSel=due; calTime=time; calStart=due&&start&&start!==due?start:null;
   calCursor=due?new Date(due+'T00:00'):new Date(); calCursor.setDate(1);
   $('#calHead').textContent=calEdit&&calEdit.due?'날짜 바꾸기':'날짜 지정';
@@ -3594,6 +3617,7 @@ function openCal(due,time,edit,start){
 async function applyEdit(due,time,start){
   const m=calEdit; calEdit=null; close('#shCal');
   if(!m) return;
+  if(calSent){ const x=calSent; calSent=null; await setSentWhen(x,due,time,start); return; }
   start=due?(start||null):null;
   const same=(m.due||null)===due&&(m.dueTime||null)===time&&(m.dueStart||null)===start;
   m.due=due; m.dueTime=due?time:null; m.dueStart=start;
