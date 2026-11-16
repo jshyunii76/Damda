@@ -3860,6 +3860,8 @@ async function runSemantic(){
   if(!q||q.length<2||!aiKey) return;
   const box=$('#sres');
   const old=box.querySelector('.semzone'); if(old) old.remove();
+  /* 글자로 찾은 메모가 있으면 뜻으로는 찾지 않는다 — 글자로 못 찾았을 때만 */
+  if(box.querySelector('.hit')) return;
   const zone=el('div','semzone');
   zone.appendChild(sechd('뜻이 비슷한 메모'));
   const sp=el('div','spin'); zone.appendChild(sp); box.appendChild(zone);
@@ -3868,7 +3870,6 @@ async function runSemantic(){
     if(!sAll) await loadVecs();
     const qv=await aiEmbed(q);
     if($('#sq').value.trim()!==q) return;
-    const shown=new Set([...box.querySelectorAll('.hit')].map(x=>x.dataset.id));
     /* 추가 메모에 적어 둔 내용은 가산점을 줘서 먼저 올린다 */
     const vs=[];
     for(const x of pool){
@@ -3881,7 +3882,7 @@ async function runSemantic(){
         const ns=nv?cos(qv,nv)*NBOOST:0;
         return {m:x.m,r:x.r,s:Math.max(s,ns),note:ns>s};
       })
-      .filter(x=>x.s>0.24&&!shown.has(x.m.id))
+      .filter(x=>x.s>=0.6)   /* 60% 미만은 관련 없다고 본다 */
       .sort((a,b)=>b.s-a.s).slice(0,sAll?12:8);
     sp.remove();
     if(!scored.length){
