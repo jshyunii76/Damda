@@ -86,16 +86,6 @@ html.kb body{align-items:flex-start}
 .screen.hide{transform:translateX(100%);pointer-events:none}
 @media(prefers-reduced-motion:reduce){.screen{transition:none}}
 
-/* 방 아이콘 글자 — 아이콘 폭에 맞춰 크게(cqw = 아이콘 폭의 %), 글자 사이는 띄워서.
-   3글자까지 한 줄, 4글자는 두 줄. 글자 수가 달라도 크기 차이가 크지 않게 맞춘다.
-   글자 뒤에 붙는 간격만큼 앞에도 넣어 가운데를 맞춘다 */
-.mvrow .av{container-type:size}
-.ini{display:block;text-align:center;line-height:1.08;white-space:nowrap;
-  font-size:34cqw;letter-spacing:.1em;padding-left:.1em}
-.ini.n1{font-size:38cqw;letter-spacing:0;padding-left:0}
-.ini.n3{font-size:29cqw;letter-spacing:.04em;padding-left:.04em}
-.ini.n4{font-size:32cqw}
-.ini.nl{font-size:30cqw;letter-spacing:.06em;padding-left:.06em}
 .mrow{display:flex;align-items:center;gap:11px;width:100%;padding:12px 8px;border:0;
   background:transparent;cursor:pointer;font:inherit;color:var(--ink);text-align:left;border-radius:10px}
 .mrow:hover{background:var(--mute)}
@@ -309,7 +299,7 @@ html.kb body{align-items:flex-start}
   padding:6px 8px calc(8px + env(safe-area-inset-bottom))}
 #scChat.sel #selbar{display:flex}
 #scChat.sel #compose,#scChat.sel #pinbar,#scChat.sel #btnCal,
-#scChat.sel #btnGroup,#scChat.sel #btnShare,#scChat.sel #btnRefresh{display:none}
+#scChat.sel #btnGroup,#scChat.sel #btnShare{display:none}
 .sbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;border:0;background:transparent;
   font:inherit;font-size:11.5px;font-weight:600;color:var(--ink-2);padding:6px 0;border-radius:10px;cursor:pointer}
 .sbtn:hover{background:var(--mute)}
@@ -325,12 +315,10 @@ html.kb body{align-items:flex-start}
 .mvnew{display:flex;gap:8px;align-items:center;margin:8px 4px 2px}
 .mvnew input[type=text]{flex:1;margin:0!important}
 .mvnew .btn{flex:0 0 auto;padding:11px 14px}
-.mvrow{display:flex;align-items:center;gap:12px;width:100%;border:0;background:transparent;font:inherit;
-  color:var(--ink);text-align:left;padding:9px 8px;border-radius:10px;cursor:pointer}
-.mvrow:hover{background:var(--mute)}
-.mvrow .av{width:38px;height:38px;border-radius:11px;flex:0 0 auto;display:grid;place-items:center;
-  background:var(--soft);color:var(--accent);font-weight:700;font-size:13px;letter-spacing:-.04em}
-.mvrow .nm{flex:1;min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mvrow{display:flex;align-items:center;gap:10px;width:100%;min-height:46px;border:0;background:transparent;font:inherit;
+  font-size:16px;color:var(--ink);text-align:left;padding:6px 10px;border-radius:10px;cursor:pointer}
+@media(hover:hover){.mvrow:hover{background:rgba(46,106,99,.07)}}
+.mvrow .nm{flex:1;min-width:0;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* 메모를 왼쪽 방 목록으로 끌어 옮기기 */
 .b.armed{transform:scale(1.03);box-shadow:0 6px 18px rgba(27,32,36,.18);transition:transform .12s,box-shadow .12s}
 .b.lift{opacity:.3}
@@ -402,8 +390,6 @@ html.kb body{align-items:flex-start}
 .notebox .mo{margin-top:4px;font-size:11.5px;font-weight:600;color:var(--accent)}
 
 /* ===== 어제·오늘 요약방 ===== */
-#btnRefresh{display:none}
-#scChat.brief #btnRefresh{display:grid}
 #scChat.brief #pinbar,#scChat.brief #btnBack,
 #scChat.brief #btnCal,#scChat.brief #btnShare,#scChat.brief #btnGroup{display:none}
 /* 홈(요약) 화면에서만: 모든 방 일정 · AI 설정 */
@@ -475,15 +461,13 @@ html.kb body{align-items:flex-start}
 #rtoast button:hover{background:rgba(255,255,255,.24)}
 #rtoast.busy button{display:none}
 #rtoast.busy{padding-right:14px}
-.sintro{padding:40px 24px 18px;text-align:center;color:var(--ink-3);font-size:13.5px;line-height:1.6}
-.sintro strong{display:block;color:var(--ink);font-size:16px;margin-bottom:6px;font-weight:600}
 /* 홈 제목은 로고와 같은 글씨체 */
 #scChat.brief #chatName{font-family:'Gowun Batang','Nanum Myeongjo','AppleMyungjo','Batang',serif;
   letter-spacing:.04em}
 #scChat.brief #chatName{font-size:20px}
 /* ===== 홈: 할 일 목록 + 던져 보기 ===== */
 .hm{max-width:540px;margin:0 auto;padding:22px 10px 28px}
-.hm-date{text-align:center;font-size:15px;font-weight:600;color:var(--ink-3)}
+.hm-date{text-align:center;font-size:15px;font-weight:400;color:var(--ink-3)}
 .hm-big{text-align:center;font-size:30px;font-weight:700;letter-spacing:-.02em;margin:2px 0 14px;color:var(--ink)}
 .hm-big b{color:var(--accent)}
 .hm-list{display:flex;flex-direction:column}
@@ -493,17 +477,12 @@ html.kb body{align-items:flex-start}
   border:1.8px solid var(--ink-3);border-radius:7px;background:transparent;color:transparent}
 .hm-ck:hover{border-color:var(--accent)}
 .hm-ck svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
-.hm-row.dn .hm-ck{background:var(--accent);border-color:var(--accent);color:#fff}
 .hm-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .hm-tx .t{font-size:15px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hm-tx .s{font-size:12px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.hm-row.dn .t{text-decoration:line-through;color:var(--ink-3)}
 .hm-dd{flex:0 0 auto;font-size:12px;font-weight:700;padding:3px 8px;border-radius:7px;background:var(--tint);color:var(--accent)}
 .hm-dd.soon{background:var(--warn-soft);color:#B07D00}
 .hm-dd.over{background:var(--danger-soft);color:var(--strike)}
-.hm-dd.fin{background:var(--mute);color:var(--ink-3)}
-.hm-more{align-self:flex-start;margin:8px 0 0;padding:6px 6px;border:0;background:transparent;font:inherit;font-size:13px;
-  font-weight:600;color:var(--accent);cursor:pointer}
 .stamp.in{padding:0 0 4px 45px;margin-top:0}
 
 /* 추가 메모 */
@@ -583,10 +562,6 @@ html.kb body{align-items:flex-start}
   color:var(--ink-3);display:grid;place-items:center}
 .gadd .fplus svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
 .gadd:hover .fplus{background:var(--soft);color:var(--accent)}
-.mvrow .av.fav{background:transparent;border-radius:0;padding:3px 1px}
-.mvrow .av.fav svg{width:100%;height:auto;display:block}
-.mvrow .av.fav.out{background:var(--mute);border-radius:11px;padding:0;color:var(--ink-2)}
-.mvrow .av.fav.out svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
 .gdiv{display:flex;align-items:center;gap:10px;margin:22px 2px 10px;font-size:11.5px;font-weight:700;color:var(--ink-3)}
 .gdiv::before,.gdiv::after{content:'';flex:1;height:1px;background:var(--ctrl)}
 .gnote{margin:0 2px 12px;padding:9px 11px;background:var(--mute);border-radius:10px;font-size:12.5px;
@@ -657,9 +632,6 @@ html.kb body{align-items:flex-start}
 .aistat{font-size:12px;color:var(--ink-2);background:var(--mute);border-radius:9px;
   padding:9px 11px;margin-bottom:12px;line-height:1.5}
 .aistat b{color:var(--accent)}
-.bar2{display:flex;height:5px;border-radius:3px;background:var(--line);
-  overflow:hidden;margin-top:7px}
-.bar2 i{background:var(--accent);transition:width .25s}
 .b img.ph{-webkit-user-drag:none;-webkit-touch-callout:none;user-select:none;display:block;width:100%;max-width:260px;border-radius:10px;cursor:zoom-in}
 .b video.ph{display:block;width:100%;max-width:260px;border-radius:10px;background:#000}
 .fcard{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;
@@ -940,9 +912,6 @@ body.rzing *{user-select:none!important}
     <div class="bar">
       <button class="ic" id="btnBack" title="홈으로"><svg viewBox="0 0 24 24"><path d="M4 10.5L12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5H15v-5.5H9v5.5H5.5A1.5 1.5 0 0 1 4 19z"/></svg></button>
       <h1 id="chatName">방</h1>
-      <button class="ic" id="btnRefresh" title="다시 정리">
-        <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></svg>
-      </button>
       <button class="ic" id="btnHomeCal" title="모든 방 일정">
         <svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/></svg>
       </button>
@@ -1058,23 +1027,14 @@ body.rzing *{user-select:none!important}
 
   <div class="sheet" id="shAI"><div class="card">
     <h2>AI 정리</h2>
-    <p>Gemini가 메모에 태그를 붙이고, 설명만으로 찾을 수 있게 합니다.
-       사진은 무엇이 찍혔는지 읽어서 함께 저장하고, 요약방에 한 줄 요약도 씁니다.
-       키는 Google AI Studio에서 무료로 만들 수 있어요.</p>
     <div class="aistat" id="aiStat"></div>
     <div class="keyrow">
       <input type="text" id="aiKey" placeholder="AIza... (Gemini API 키)" autocomplete="off">
       <button class="btn" id="aiSave" style="flex:0 0 auto;padding:11px 16px">저장</button>
     </div>
-    <div class="note">키는 이 브라우저에만 저장되고 다른 곳으로 전송되지 않습니다.
-      다만 브라우저에서 직접 호출하는 방식이라 개인용으로만 쓰고 배포하지 마세요.</div>
     <button class="mrow" id="aiTest">
       <svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg>
       <span id="aiTestLb">연결 확인하기</span></button>
-    <button class="mrow" id="aiRun">
-      <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/></svg>
-      <span id="aiRunLb">아직 정리 안 된 메모 처리하기</span></button>
-    <div class="bar2" id="aiBar" style="display:none"><i style="width:0"></i></div>
     <div class="btns"><button class="btn ghost" data-close>닫기</button></div>
   </div></div>
 
@@ -1119,9 +1079,6 @@ body.rzing *{user-select:none!important}
     <button class="mrow" id="gNote">
       <svg viewBox="0 0 24 24"><path d="M5 4h9l5 5v11H5z"/><path d="M14 4v5h5M8 13h8M8 16.5h5"/></svg>
       <span id="gNoteLb">추가 메모</span></button>
-    <button class="mrow" id="gFolder">
-      <svg viewBox="0 0 24 24"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg>
-      다른 폴더로</button>
     <button class="mrow" id="gPin">
       <svg viewBox="0 0 24 24"><path d="M9 4h6l-1 6 4 3v2H6v-2l4-3-1-6zM12 15v5"/></svg>
       <span id="gPinLb">상단 고정</span></button>
@@ -1159,7 +1116,6 @@ body.rzing *{user-select:none!important}
 
   <div class="sheet" id="shMove"><div class="card">
     <h2 id="mvHd">다른 방으로 옮기기</h2>
-    <p id="mvP">옮긴 메모는 이 방에서 사라지고, 고른 방에 들어가요.</p>
     <div id="mvList"></div>
     <div class="btns"><button class="btn ghost" data-close>취소</button></div>
   </div></div>
@@ -1199,7 +1155,6 @@ body.rzing *{user-select:none!important}
     </div>
     <p class="pdesc" id="permMine"></p>
     <p id="shareWho"></p>
-    <div class="note">데모 버전은 서버 없이 동작해 같은 기기 안에서만 공유됩니다.</div>
     <div class="btns"><button class="btn ghost" data-close>닫기</button>
       <button class="btn" id="doCopy">코드 복사</button></div>
   </div></div>
@@ -1295,7 +1250,7 @@ const S={
 let rooms=[],cur=null,msgs=[],folded={},calTime=null,strikeId=null;
 let calStart=null;
 let calCursor=new Date(),calSel=null,flashId=null,delTarget=null,pendImg=null,msgTarget=null;
-let briefOn=false,briefData=null,briefKeep=new Set();
+let briefOn=false,briefData=null;
 let editTarget=null;
 
 const $=s=>document.querySelector(s);
@@ -1650,27 +1605,6 @@ $('#aiTest').onclick=async()=>{
   }
   lb.textContent='연결 확인하기';
 };
-$('#aiRun').onclick=async()=>{
-  if(!aiKey){ toast('먼저 키를 저장해주세요'); return; }
-  if(!cur){ toast('방을 열고 실행해주세요'); return; }
-  const todo=msgs.filter(m=>!m.tags||!m.tags.length);
-  if(!todo.length){ toast('이미 전부 정리됐어요'); return; }
-  const bar=$('#aiBar'); bar.style.display='flex';
-  const btn=$('#aiRun'); btn.disabled=true;
-  for(let i=0;i<todo.length;i++){
-    const m=todo[i];
-    let blob=null;
-    if(m.file&&isImg(m.file.type)){
-      try{ const r=await IDB.get(m.file.id); blob=r&&r.blob; }catch(e){}
-    }
-    $('#aiRunLb').textContent=`정리 중 ${i+1} / ${todo.length}`;
-    bar.firstElementChild.style.width=Math.round((i+1)/todo.length*100)+'%';
-    await enrich(m,blob);
-  }
-  $('#aiRunLb').textContent='아직 정리 안 된 메모 처리하기';
-  bar.style.display='none'; bar.firstElementChild.style.width='0';
-  btn.disabled=false; aiStat(); toast('정리를 마쳤어요');
-};
 
 /* ---------- 첨부 ---------- */
 const MAXPX=1400, QUAL=0.78, MAXMB=40;
@@ -1839,22 +1773,16 @@ function fgOf(h){
   const sat=Math.max(r,g,b)-Math.min(r,g,b);
   return sat<0.04 ? '#3A4046' : `hsl(${Math.round(hueOf(h))},46%,29%)`;
 }
-const avStyle=r=>r.color?` style="background:${r.color};color:${fgOf(r.color)}"`:'';
-
-/* 앞 4글자를 쓰되, 그 안의 공백은 글자 수에서 뺀다 ('PAC 대회' → PAC) */
-const iniChars=n=>[...String(n).trim()].slice(0,4).filter(c=>c.trim());
-const initial=n=>iniChars(n).join('')||'·';
-/* 방 아이콘 글자: 3자까지 한 줄, 4자는 두 줄로 (영문만이면 한 줄) */
-function iniHTML(n){
-  const c=iniChars(n);
-  if(!c.length) return '<span class="ini">·</span>';
-  if(c.length===1) return `<span class="ini n1">${esc(c[0])}</span>`;
-  if(c.length===2) return `<span class="ini">${esc(c.join(''))}</span>`;
-  /* 영문·숫자처럼 폭이 좁은 글자만 있으면 4글자도 한 줄 */
-  if(c.every(x=>/[\x21-\x7e]/.test(x))) return `<span class="ini nl">${esc(c.join(''))}</span>`;
-  if(c.length===3) return `<span class="ini n3">${esc(c.join(''))}</span>`;
-  return `<span class="ini n4">${esc(c.slice(0,2).join(''))}<br>${esc(c.slice(2).join(''))}</span>`;
+/* 방을 고르는 목록의 한 줄 — 왼쪽 바와 같은 방 아이콘과 이름 */
+function mvRoom(r,fn){
+  const b=el('button','mvrow');
+  const ic=el('span','rico'); ic.innerHTML=ROOM_IC;
+  if(r.color){ ic.style.setProperty('--c',r.color); ic.style.setProperty('--k',lum(r.color)<=0.45?'transparent':fgOf(r.color)); }
+  const nm=el('span','nm'); nm.textContent=r.name;
+  b.append(ic,nm); b.onclick=fn;
+  return b;
 }
+
 /* 고정한 방은 고정한 순서대로 위에 쌓인다 */
 const normalize=()=>{
   const pin=rooms.filter(r=>r.pin).sort((a,b)=>(a.pinAt||0)-(b.pinAt||0));
@@ -2916,16 +2844,10 @@ $('#sPin').onclick=async()=>{
 $('#sMove').onclick=()=>{
   const L=selList(); if(!L.length) return;
   $('#mvHd').textContent=`메모 ${L.length}개를 다른 방으로`;
-  $('#mvP').textContent='옮긴 메모는 이 방에서 사라지고, 고른 방에 들어가요.';
   const box=$('#mvList'); box.innerHTML='';
   const others=rooms.filter(r=>!cur||r.id!==cur.id);
   if(!others.length){ box.innerHTML='<p style="margin:4px 8px 10px">옮길 다른 방이 없어요. 방을 먼저 만들어주세요.</p>'; }
-  others.forEach(r=>{
-    const b=el('button','mvrow');
-    b.innerHTML=`<span class="av"${avStyle(r)}>${iniHTML(r.name)}</span><span class="nm">${esc(r.name)}</span>`;
-    b.onclick=async()=>{ close('#shMove'); await moveToRoom(selList(),r); };
-    box.appendChild(b);
-  });
+  others.forEach(r=>box.appendChild(mvRoom(r,async()=>{ close('#shMove'); await moveToRoom(selList(),r); })));
   open('#shMove');
 };
 $('#sDel').onclick=()=>{
@@ -2961,46 +2883,15 @@ function askMsg(m){
   $('#gCopy').style.display=m.text?'':'none';
   /* 보기만 가능한 방: 읽기·복사·공유·여러 개 선택만 */
   if(roNow()){
-    ['#gDone','#gDue','#gPin','#gEdit','#gDel','#gFolder'].forEach(x=>{ $(x).style.display='none'; });
+    ['#gDone','#gDue','#gPin','#gEdit','#gDel'].forEach(x=>{ $(x).style.display='none'; });
     const hasN=!!(m.note&&m.note.trim());
     $('#gNote').style.display=hasN?'':'none'; $('#gNoteLb').textContent='추가 메모 보기';
   }else{
-    ['#gDone','#gDue','#gPin','#gDel','#gNote','#gFolder'].forEach(x=>{ $(x).style.display=''; });
+    ['#gDone','#gDue','#gPin','#gDel','#gNote'].forEach(x=>{ $(x).style.display=''; });
     $('#gNoteLb').textContent='추가 메모';
   }
   open('#shMsg');
 }
-/* 메모를 이 방의 다른 폴더로 (또는 폴더에서 빼기) */
-$('#gFolder').onclick=async()=>{
-  const m=msgTarget; close('#shMsg');
-  if(!cur||roBlock()) return;
-  const r=lastGrp||(lastGrp=await computeGroups(false));
-  const from=r.groups.find(g=>g.items.some(x=>x.m.id===m.id))||'none';
-  $('#mvHd').textContent='다른 폴더로';
-  $('#mvP').textContent=from==='none'?'지금은 폴더에 들어 있지 않아요.':`지금은 ‘${from.name}’ 폴더에 있어요.`;
-  const box=$('#mvList'); box.innerHTML='';
-  const done=async(to,msg)=>{
-    close('#shMove'); await moveMemo(m,from,to); await refreshGroups();
-    if(grpF){ const g=lastGrp.groups.find(x=>x.name===grpF.name); if(g) enterGrp(g.name,g.items,g.id); }
-    toast(msg);
-  };
-  r.groups.filter(g=>g!==from).forEach(g=>{
-    const [bk,fr]=fcol(g.name);
-    const b=el('button','mvrow');
-    b.innerHTML=`<span class="av fav">${folderSVG(bk,fr,false)}</span><span class="nm"></span>`;
-    b.lastChild.textContent=g.name;
-    b.onclick=()=>done(g,`‘${g.name}’ 폴더로 옮겼어요`);
-    box.appendChild(b);
-  });
-  if(from!=='none'){
-    const b=el('button','mvrow');
-    b.innerHTML='<span class="av fav out"><svg viewBox="0 0 24 24"><path d="M6 12h12"/></svg></span><span class="nm">폴더에서 빼기</span>';
-    b.onclick=()=>done('none','폴더에서 뺐어요');
-    box.appendChild(b);
-  }
-  if(!box.children.length) box.innerHTML='<p style="margin:4px 8px 10px">옮길 폴더가 없어요. 폴더 화면에서 먼저 만들어 주세요.</p>';
-  open('#shMove');
-};
 /* 이미 보낸 메모의 날짜를 새로 지정하거나 바꾼다 */
 $('#gDue').onclick=()=>{
   const m=msgTarget; close('#shMsg');
@@ -3117,7 +3008,6 @@ function dueHtml(m){
 async function buildBrief(){
   const all=[];
   for(const r of rooms) all.push({r,list:await readList(r)});
-  briefKeep=new Set();
   return {t:todayKey(),all,at:Date.now()};
 }
 
@@ -3135,9 +3025,6 @@ async function openBrief(){
   briefData=await buildBrief();
   drawBrief(true);
 }
-$('#btnRefresh').onclick=async()=>{
-  briefData=await buildBrief(); drawBrief(true); toast('다시 정리했어요');
-};
 
 async function goMsg(r,id){
   await openRoom(r.id);
@@ -3153,44 +3040,36 @@ function drawBrief(fresh){
   const box=el('div','hm'); s.appendChild(box);
   const dt=el('div','hm-date'); dt.textContent=briefData.t.slice(0,4)+'년 '+mdw(briefData.t); box.appendChild(dt);
 
-  /* 날짜가 들어간 메모 중 아직 안 한 것 (방금 완료한 것은 이번에는 줄을 그어 남겨 둔다) */
+  /* 날짜가 들어간 메모 중 아직 안 한 것 전부. 완료하면 여기서는 빠지고 방에는 완료 표시로 남는다 */
   const pool=briefData.all.flatMap(({r,list})=>list
-      .filter(m=>m.due&&(!m.done||briefKeep.has(m.id))).map(m=>({r,list,m})))
+      .filter(m=>m.due&&!m.done).map(m=>({r,list,m})))
     .sort((a,b)=>dueKey(a.m)<dueKey(b.m)?-1:(dueKey(a.m)>dueKey(b.m)?1:0));
-  const left=pool.filter(x=>!x.m.done).length;
-  const h=el('div','hm-big'); h.innerHTML=`할 일 <b>${left}</b>`; box.appendChild(h);
+  const h=el('div','hm-big'); h.innerHTML=`할 일 <b>${pool.length}</b>`; box.appendChild(h);
   const ul=el('div','hm-list'); box.appendChild(ul);
-  const MAX=6;
-  pool.slice(0,MAX).forEach(x=>ul.appendChild(todoRow(x)));
-  if(pool.length>MAX){
-    const mo=el('button','hm-more'); mo.textContent=`나머지 ${pool.length-MAX}개 달력에서 보기`;
-    mo.onclick=openCalView; ul.appendChild(mo);
-  }
+  pool.forEach(x=>ul.appendChild(todoRow(x)));
 
   s.scrollTop=fresh?0:keep;
 }
 
 const CHECK_SVG='<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
-/* 할 일 한 줄: 네모를 누르면 완료, 줄을 누르면 그 메모로 간다 */
+/* 할 일 한 줄: 네모를 누르면 완료(목록에서 빠짐), 줄을 누르면 그 메모로 간다 */
 function todoRow({r,list,m}){
-  const row=el('div','hm-row'+(m.done?' dn':''));
+  const row=el('div','hm-row');
   const ck=el('button','hm-ck'); ck.innerHTML=CHECK_SVG;
-  ck.setAttribute('aria-label',m.done?'완료 취소':'완료로 표시');
+  ck.setAttribute('aria-label','완료로 표시');
   ck.onclick=async e=>{
     e.stopPropagation();
     if(isRO(r)){ toast('보기만 할 수 있는 방이에요'); return; }
-    m.done=!m.done;
-    if(m.done) m.doneAt=Date.now(); else delete m.doneAt;
-    briefKeep.add(m.id);
+    m.done=true; m.doneAt=Date.now();
     await saveList(r,list);
     drawBrief(false);
-    toast(m.done?'완료 표시했어요':'완료를 취소했어요');
+    toast('완료 표시했어요');
   };
   const tx=el('div','hm-tx');
   tx.innerHTML=`<span class="t">${esc(mlabel(m))}</span><span class="s">${esc(r.name)}${m.dueTime?' · '+fmtT(m.dueTime):''}</span>`;
   const n=ddays(m.due);
-  const d=el('span','hm-dd'+(m.done?' fin':(n<=0?' over':(n<=3?' soon':''))));
-  d.textContent=m.done?'완료':ddText(n);
+  const d=el('span','hm-dd'+(n<=0?' over':(n<=3?' soon':'')));
+  d.textContent=ddText(n);
   row.append(ck,tx,d);
   row.onclick=()=>goMsg(r,m.id);
   return row;
@@ -3671,14 +3550,8 @@ $('#rtChange').onclick=()=>{
   const x=lastRoute; if(!x) return;
   rtHide();
   $('#mvHd').textContent='다른 방에 담기';
-  $('#mvP').textContent=`지금은 ‘${x.r.name}’ 방에 들어가 있어요. 넣을 방을 고르세요.`;
   const box=$('#mvList'); box.innerHTML='';
-  rooms.filter(r=>r.id!==x.r.id&&!isRO(r)).forEach(r=>{
-    const b=el('button','mvrow');
-    b.innerHTML=`<span class="av"${avStyle(r)}>${iniHTML(r.name)}</span><span class="nm">${esc(r.name)}</span>`;
-    b.onclick=async()=>{ close('#shMove'); await rehome(x,r); };
-    box.appendChild(b);
-  });
+  rooms.filter(r=>r.id!==x.r.id&&!isRO(r)).forEach(r=>box.appendChild(mvRoom(r,async()=>{ close('#shMove'); await rehome(x,r); })));
   /* 맞는 방이 없으면 이름을 적어 새 방으로 */
   const nw=el('div','mvnew');
   nw.innerHTML='<input type="text" placeholder="새 방 이름" maxlength="20"><button class="btn">새 방에 담기</button>';
@@ -3915,14 +3788,7 @@ async function openSearch(q,all){
   $('#sTitle').textContent=all?'모든 방에서 찾기':(cur?cur.name+'에서 찾기':'찾기');
   $('#sq').value=q||''; $('#sres').innerHTML='';
   $('#sq').focus();
-  if(q) runSearch(); else searchIntro();
-}
-/* 검색어가 없을 때 보이는 안내 */
-function searchIntro(){
-  const box=$('#sres'); box.innerHTML='';
-  const d=el('div','sintro');
-  d.innerHTML=`<strong>${sAll?'모든 방에서 찾아요':'기억나는 대로 적어보세요'}</strong>`;
-  box.appendChild(d);
+  if(q) runSearch();
 }
 /* 입력창 옆 돋보기: 홈에서는 모든 방, 방에서는 그 방 안에서 찾는다 */
 $('#hSearch').onclick=()=>openSearch('',briefOn);
@@ -3965,7 +3831,7 @@ function sechd(t){
 function runSearch(){
   const q=$('#sq').value.trim().toLowerCase(), box=$('#sres');
   box.innerHTML='';
-  if(!q){ searchIntro(); return; }
+  if(!q) return;
   const hits=sPool().filter(({m})=>
     (m.text||'').toLowerCase().includes(q)
     ||(m.file&&(m.file.name||'').toLowerCase().includes(q))
@@ -4644,16 +4510,10 @@ $('#doGrpName').onclick=async()=>{
    메모는 이 방에서 빠져 고른 방으로 가고, 고른 방에 같은 이름 폴더가 있으면 합친다 */
 function askFolderMove(g){
   $('#mvHd').textContent=`‘${g.name}’ 폴더를 다른 방으로`;
-  $('#mvP').textContent='폴더 안 메모가 모두 다른 방의 폴더로 이동해요.';
   const box=$('#mvList'); box.innerHTML='';
   const others=rooms.filter(r=>!cur||r.id!==cur.id);
   if(!others.length) box.innerHTML='<p style="margin:4px 8px 10px">옮길 다른 방이 없어요. 방을 먼저 만들어주세요.</p>';
-  others.forEach(r=>{
-    const b=el('button','mvrow');
-    b.innerHTML=`<span class="av"${avStyle(r)}>${iniHTML(r.name)}</span><span class="nm">${esc(r.name)}</span>`;
-    b.onclick=async()=>{ close('#shMove'); await moveFolderToRoom(g,r); };
-    box.appendChild(b);
-  });
+  others.forEach(r=>box.appendChild(mvRoom(r,async()=>{ close('#shMove'); await moveFolderToRoom(g,r); })));
   open('#shMove');
 }
 async function moveFolderToRoom(g,r){
@@ -4904,7 +4764,7 @@ $('#btnShare').onclick=async()=>{
   drawPerm();
   $('#shareWho').textContent=(cur._members>1)
     ? `지금 ${cur._members}명이 이 방을 함께 보고 있어요.`
-    : '아직 이 코드로 들어온 사람이 없어요. 코드를 받은 사람이 참여하면 방 목록에 “공유 중”이 표시돼요.';
+    : '';
   open('#shShare');
 };
 const PERM_DESC={edit:'받은 사람도 메모를 쓰고, 고치고, 지울 수 있어요.',
