@@ -551,13 +551,13 @@ html.kb body{align-items:flex-start}
 .gi.ghost .hd{display:grid;place-items:center;color:var(--ink-3)}
 .gi.ghost .hd svg{width:15px;height:15px;fill:currentColor}
 /* 폴더 격자 — 실제 폴더 모양, 숫자는 폴더 앞면에 */
-.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:18px 8px;padding:6px 0 4px}
+.fgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px 8px;padding:6px 0 4px}
 .gtile{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;border:0;background:transparent;
   font:inherit;color:var(--ink);cursor:pointer;padding:6px 4px;border-radius:14px;
   -webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
 @media(hover:hover){.gtile:hover{background:rgba(46,106,99,.06)}}
 .gtile.press{background:rgba(46,106,99,.1)}
-.gtile .fic{position:relative;width:84px;height:67px;display:block;transition:transform .15s}
+.gtile .fic{position:relative;width:100%;max-width:84px;height:auto;aspect-ratio:84/67;display:block;transition:transform .15s}
 .gtile .fic svg{width:100%;height:100%;display:block;filter:drop-shadow(0 2px 3px rgba(27,32,36,.12))}
 .gtile .fcnt{position:absolute;left:0;right:0;top:46%;bottom:0;display:grid;place-items:center;
   font-size:21px;font-weight:700;font-variant-numeric:tabular-nums;text-shadow:0 1px 2px rgba(0,0,0,.08)}
