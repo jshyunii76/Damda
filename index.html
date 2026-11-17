@@ -121,6 +121,9 @@ html.kb body{align-items:flex-start}
 .rtogsp{flex:0 0 auto;height:37px;display:flex;align-items:center;padding-left:2px;margin-bottom:3px;
   font-size:12px;font-weight:700;color:var(--ink-3);letter-spacing:.02em;white-space:nowrap}
 #scChat.norail #chatMain>.bar{padding-left:56px}
+/* 맨 위 Damda 줄은 오른쪽 상단 바와 높이를 맞추고, 방 목록은 그 경계선 바로 아래에서 시작한다 (값은 JS가 채움) */
+#rail{padding-top:0!important}
+#rail>.rtogsp{height:var(--bh,54px);padding-top:var(--bpt,9px);padding-bottom:var(--bpb,9px);margin-bottom:4px}
 #railScrim{display:none}
 .rrow{display:flex;align-items:center;gap:9px;width:100%;min-height:39px;padding:5px 8px;border:0;border-radius:9px;
   background:transparent;font:inherit;font-size:16px;color:var(--ink);text-align:left;cursor:pointer;
@@ -404,25 +407,25 @@ html.kb body{align-items:flex-start}
 /* 홈 하단: 돋보기와 채팅 아이콘만. 채팅 아이콘을 누르면 왼쪽으로 늘어나 입력창이 된다 */
 #scChat.brief .row{justify-content:center;align-items:flex-end;gap:10px}
 #hSearch svg,#hFold svg,#hFile svg,#hChat svg,#whenHint svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
-#hSearch,#hFold{order:2;display:grid;place-items:center;flex:0 0 auto;width:50px;height:50px;padding:0;overflow:hidden;
-  border:1px solid var(--line);border-radius:25px;background:#fff;color:var(--ink-2);cursor:pointer;
+#hSearch,#hFold{order:2;display:grid;place-items:center;flex:0 0 auto;width:55px;height:55px;padding:0;overflow:hidden;
+  border:1px solid var(--line);border-radius:27.5px;background:#fff;color:var(--ink-2);cursor:pointer;
   box-shadow:0 2px 8px rgba(27,32,36,.08);
   transition:width .34s cubic-bezier(.32,.72,0,1),margin .34s cubic-bezier(.32,.72,0,1),opacity .2s,border-width .34s}
-#hSearch svg,#hFold svg{width:22px;height:22px;flex:0 0 auto}
+#hSearch svg,#hFold svg{width:24.2px;height:24.2px;flex:0 0 auto}
 #hSearch:hover,#hFold:hover{color:var(--accent)}
-#scChat.brief .pill{flex:0 0 auto;width:50px;height:50px;min-height:50px;gap:0;position:relative;overflow:hidden;
-  border:1px solid var(--accent);border-radius:25px;background:var(--accent);box-shadow:0 2px 8px rgba(27,32,36,.12);
+#scChat.brief .pill{flex:0 0 auto;width:55px;height:55px;min-height:55px;gap:0;position:relative;overflow:hidden;
+  border:1px solid var(--accent);border-radius:27.5px;background:var(--accent);box-shadow:0 2px 8px rgba(27,32,36,.12);
   transition:width .34s cubic-bezier(.32,.72,0,1),background .2s,border-color .2s}
-#scChat.brief #hChat{display:grid;place-items:center;position:absolute;right:0;bottom:0;width:48px;height:48px;padding:0;
+#scChat.brief #hChat{display:grid;place-items:center;position:absolute;right:0;bottom:0;width:53px;height:53px;padding:0;
   border:0;background:transparent;color:#fff;cursor:pointer;transition:opacity .15s}
-#scChat.brief #hChat svg{width:23px;height:23px}
+#scChat.brief #hChat svg{width:25.3px;height:25.3px}
 #hFile{display:grid;place-items:center;flex:0 0 auto;width:40px;height:40px;margin:4px 0 4px 4px;padding:0;
   border:0;border-radius:50%;background:transparent;color:var(--ink-2);cursor:pointer}
 #hFile:hover{background:var(--mute);color:var(--accent)}
 #hFile svg{width:21px;height:21px}
 #scChat.brief .pill>#hFile,#scChat.brief .pill>#txt,#scChat.brief .pill>#send{opacity:0;pointer-events:none;transition:opacity .1s}
 #scChat.brief.hopen #hSearch,#scChat.brief.hopen #hFold{width:0;margin-left:-10px;opacity:0;border-width:0;pointer-events:none}
-#scChat.brief.hopen .pill{width:100%;height:auto;background:#fff;border-color:var(--line)}
+#scChat.brief.hopen .pill{width:100%;height:auto;min-height:50px;border-radius:25px;background:#fff;border-color:var(--line)}
 #scChat.brief.hopen .pill:focus-within{border-color:var(--accent)}
 #scChat.brief.hopen #hChat{opacity:0;pointer-events:none}
 #scChat.brief.hopen .pill>#hFile,#scChat.brief.hopen .pill>#txt,#scChat.brief.hopen .pill>#send{opacity:1;pointer-events:auto;
@@ -1785,10 +1788,11 @@ function mvRoom(r,fn){
   return b;
 }
 
-/* 고정한 방은 고정한 순서대로 위에 쌓인다 */
+/* 고정한 방은 고정한 순서대로 위에 쌓인다. '미분류' 방은 고정·끌어 옮기기와 상관없이 늘 맨 아래 */
 const normalize=()=>{
-  const pin=rooms.filter(r=>r.pin).sort((a,b)=>(a.pinAt||0)-(b.pinAt||0));
-  rooms=[...pin,...rooms.filter(r=>!r.pin)];
+  const inb=r=>r.name==='미분류';
+  const pin=rooms.filter(r=>r.pin&&!inb(r)).sort((a,b)=>(a.pinAt||0)-(b.pinAt||0));
+  rooms=[...pin,...rooms.filter(r=>!r.pin&&!inb(r)),...rooms.filter(inb)];
 };
 const repin=()=>{
   let t=1; rooms.filter(r=>r.pin).forEach(r=>{r.pinAt=t++;});
@@ -2110,7 +2114,7 @@ $('#doRen').onclick=async()=>{
   const r=delTarget;
   r.name=n; r.color=renColor;
   if(r.code){ const list=await readList(r); await saveList(r,list); }
-  await saveRooms(); drawRooms();
+  normalize(); repin(); await saveRooms(); drawRooms();
   if(cur&&cur.id===r.id) $('#chatName').textContent=n;
   close('#shRename'); toast('이름을 바꿨어요');
 };
@@ -3175,9 +3179,28 @@ function parseWhen(src,now){
     [/(이번|다음|담|다다음)\s*달\s*(\d{1,2})\s*일/,x=>{
       const add=x[1]==='이번'?0:(x[1]==='다다음'?2:1);
       return ok(today.getFullYear(),today.getMonth()+1+add,+x[2])||null; }],
-    [/(이번|다음|담|다다음)\s*주\s*([일월화수목금토])(?:요일|욜)/,x=>{
+    /* '다음 주 금요일', '다음주 월, 화', '이번 주 수~금' — 주 뒤에서는 '요일' 없이 한 글자로 써도 요일로 본다.
+       이어진 날이면 기간(시작~끝), 떨어진 날이면 가장 이른 날 */
+    [/(이번|다음|담|다다음)\s*주\s*(?=[일월화수목금토])/,x=>{
       const add=x[1]==='이번'?0:(x[1]==='다다음'?14:7);
-      const d=wk(day(add),WDAYS.indexOf(x[2])); return d<today?null:d; }],
+      const one=/^([일월화수목금토])(?:요일|욜)?(?:에는|에도|에|엔|까지|부터|은|는|도)?(?=[일월화수목금토]|[^가-힣]|$)/;
+      const sep=/^\s*(~|-|부터|,|·|ㆍ|\/|및|그리고|이랑|랑|하고|와|과)?\s*/;
+      let rest=s.slice(x.index+x[0].length), ws=[], range=false, glued=false;
+      for(;;){
+        const m=rest.match(one);
+        if(!m){ if(glued) return null; break; }
+        ws.push(WDAYS.indexOf(m[1])); if(/부터|까지/.test(m[0])) range=true;
+        rest=rest.slice(m[0].length);
+        const sp=rest.match(sep); if(sp[1]&&/~|-|부터/.test(sp[1])) range=true;
+        glued=!sp[0]&&/^[일월화수목금토]/.test(rest);
+        rest=rest.slice(sp[0].length);
+      }
+      const ds=ws.map(w=>wk(day(add),w)).filter(d=>d>=today).sort((a,b)=>a-b);
+      if(!ds.length) return null;
+      const last=ds[ds.length-1];
+      const run=ds.every((d,i)=>!i||Math.round((d-ds[i-1])/86400000)===1);
+      if(ds.length>1&&(range||run)){ start=ds[0]; return last; }
+      return ds[0]; }],
     [/(이번|다음|담|다다음)\s*주\s*(?:까지|안에|안으로|중|내로|내에)/,x=>{
       const add=x[1]==='이번'?0:(x[1]==='다다음'?14:7); return wk(day(add),0); }],
     [/(다음\s*|담\s*)?주말/,x=>{ const d=wk(day(x[1]?7:0),6); return d<today?wk(day(7),6):d; }],
@@ -4705,6 +4728,12 @@ const railMode=()=>{ railAuto=false; setRail(true,true); };
 if(railMQ.addEventListener) railMQ.addEventListener('change',railMode); else railMQ.addListener(railMode);
 $('#railTog').onclick=()=>{ railAuto=false; setRail(!$('#scChat').classList.contains('norail')); };
 $('#railScrim').onclick=()=>{ railAuto=false; setRail(true); };
+/* 상단 바의 높이·위아래 여백을 바 맨 위 줄에 그대로 옮긴다 */
+(()=>{ const bar=$('#chatMain>.bar'), rail=$('#rail'); if(!bar||!rail) return;
+  const sync=()=>{ const cs=getComputedStyle(bar), h=bar.getBoundingClientRect().height; if(!h) return;
+    rail.style.setProperty('--bh',h+'px'); rail.style.setProperty('--bpt',cs.paddingTop); rail.style.setProperty('--bpb',cs.paddingBottom); };
+  sync(); if(window.ResizeObserver) new ResizeObserver(sync).observe(bar); else addEventListener('resize',sync);
+})();
 
 /* ---------- 바 폭 조절 — 넓은 창(px)과 폰(화면 %)을 따로 기억한다 ---------- */
 const RW_KEY='damda:railW3', RWM_KEY='damda:railWm3';
