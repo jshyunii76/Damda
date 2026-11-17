@@ -315,6 +315,8 @@ html.kb body{align-items:flex-start}
 .mvnew{display:flex;gap:8px;align-items:center;margin:8px 4px 2px}
 .mvnew input[type=text]{flex:1;margin:0!important}
 .mvnew .btn{flex:0 0 auto;padding:11px 14px}
+#rtNewGo{width:46px;align-self:stretch;padding:0;display:grid;place-items:center}
+#rtNewGo svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
 .mvrow{display:flex;align-items:center;gap:10px;width:100%;min-height:46px;border:0;background:transparent;font:inherit;
   font-size:16px;color:var(--ink);text-align:left;padding:6px 10px;border-radius:10px;cursor:pointer}
 @media(hover:hover){.mvrow:hover{background:rgba(46,106,99,.07)}}
@@ -467,6 +469,9 @@ html.kb body{align-items:flex-start}
 #scChat.brief #chatName{font-size:20px}
 /* ===== 홈: 할 일 목록 + 던져 보기 ===== */
 .hm{max-width:540px;margin:0 auto;padding:22px 10px 28px}
+/* 할 일이 없으면 화면 가운데, 늘어날수록 위로 올라가고 넘치면 위에서부터 스크롤 */
+#scChat.brief #stream{display:flex;flex-direction:column}
+#scChat.brief #stream>.hm{margin:auto;width:100%;flex:0 0 auto}
 .hm-date{text-align:center;font-size:15px;font-weight:400;color:var(--ink-3)}
 .hm-big{text-align:center;font-size:30px;font-weight:700;letter-spacing:-.02em;margin:2px 0 14px;color:var(--ink)}
 .hm-big b{color:var(--accent)}
@@ -1162,7 +1167,7 @@ body.rzing *{user-select:none!important}
     <h2>수정</h2>
     <div class="swlb">방</div>
     <div class="rtrooms" id="rtRooms"></div>
-    <div class="mvnew" style="margin:0 0 16px"><input type="text" id="rtNew" placeholder="새 방 이름" maxlength="20"><button class="btn" id="rtNewGo">새 방</button></div>
+    <div class="mvnew" style="margin:0 0 16px"><input type="text" id="rtNew" placeholder="새 방 이름" maxlength="20"><button class="btn" id="rtNewGo" aria-label="새 방" title="새 방"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div>
     <div class="swlb">일정</div>
     <div class="rtwhen"><span class="lb" id="rtWhenLb"></span>
       <button class="chip" id="rtWhenEdit">날짜 바꾸기</button><button class="chip" id="rtWhenNone">일정 없음</button></div>
