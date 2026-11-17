@@ -80,9 +80,9 @@ html.kb body{align-items:flex-start}
   stroke-linecap:round;stroke-linejoin:round}
 .ic.hl{color:var(--accent)}
 #btnAI.aion svg{fill:#F5C542;stroke:#D9A21B}
-/* 상단 바 아이콘(좌측 바 메뉴, 홈 달력·별, 방 안 홈·달력·폴더·공유)은 홈 하단 아이콘과 같은 크기 — 버튼 칸 크기는 그대로 */
-#railTog,#btnHomeCal,#btnAI,#btnBack,#btnCal,#btnGroup,#btnShare{padding:5.4px}
-#railTog svg,#btnHomeCal svg,#btnAI svg,#btnBack svg,#btnCal svg,#btnGroup svg,#btnShare svg{width:24.2px;height:24.2px;stroke-width:1.9}
+/* 상단 바 아이콘(좌측 바 메뉴, 홈 달력·별, 방 안 홈·달력·폴더·공유, 각 화면의 뒤로가기)은 홈 하단 아이콘과 같은 크기 — 버튼 칸 크기는 그대로 */
+#railTog,#btnHomeCal,#btnAI,#btnBack,#btnCal,#btnGroup,#btnShare,#sClose,#nvClose,#cvClose,#gvClose,#afClose,#plClose{padding:5.4px}
+#railTog svg,#btnHomeCal svg,#btnAI svg,#btnBack svg,#btnCal svg,#btnGroup svg,#btnShare svg,#sClose svg,#nvClose svg,#cvClose svg,#gvClose svg,#afClose svg,#plClose svg{width:24.2px;height:24.2px;stroke-width:1.9}
 
 .screen{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--app);
   transition:transform .22s cubic-bezier(.32,.72,0,1)}
@@ -422,18 +422,20 @@ html.kb body{align-items:flex-start}
 #scChat.brief #hChat{display:grid;place-items:center;position:absolute;right:0;bottom:0;width:53px;height:53px;padding:0;
   border:0;background:transparent;color:#fff;cursor:pointer;transition:opacity .15s}
 #scChat.brief #hChat svg{width:25.3px;height:25.3px}
-#hFile{display:grid;place-items:center;flex:0 0 auto;width:40px;height:40px;margin:4px 0 4px 4px;padding:0;
+#hFile{display:grid;place-items:center;flex:0 0 auto;width:40px;height:40px;margin:6.5px 0 6.5px 6.5px;padding:0;
   border:0;border-radius:50%;background:transparent;color:var(--ink-2);cursor:pointer}
 #hFile:hover{background:var(--mute);color:var(--accent)}
 #hFile svg{width:21px;height:21px}
 #scChat.brief .pill>#hFile,#scChat.brief .pill>#txt,#scChat.brief .pill>#send{opacity:0;pointer-events:none;transition:opacity .1s}
 #scChat.brief.hopen #hSearch,#scChat.brief.hopen #hFold{width:0;margin-left:-10px;opacity:0;border-width:0;pointer-events:none}
-#scChat.brief.hopen .pill{width:100%;height:auto;min-height:50px;border-radius:25px;background:#fff;border-color:var(--line)}
+#scChat.brief.hopen .pill{width:100%;height:auto;min-height:55px;border-radius:25px;background:#fff;border-color:var(--line)}
 #scChat.brief.hopen .pill:focus-within{border-color:var(--accent)}
 #scChat.brief.hopen #hChat{opacity:0;pointer-events:none}
 #scChat.brief.hopen .pill>#hFile,#scChat.brief.hopen .pill>#txt,#scChat.brief.hopen .pill>#send{opacity:1;pointer-events:auto;
   transition:opacity .2s .18s}
 @media(prefers-reduced-motion:reduce){#scChat.brief .pill,#scChat.brief #hSearch,#scChat.brief #hFold{transition:none}}
+/* 입력칸은 방 안·홈 모두 돋보기(55px)와 같은 높이 — 안의 버튼은 가운데에 */
+#scChat:not(.brief) .pill{min-height:55px}
 /* 문장에서 찾은 날짜 — 이대로 보내면 일정으로 들어간다 */
 #scChat.brief.hopen #whenHint.on{display:inline-flex}
 #whenHint{align-items:center;gap:6px;margin:0 0 8px 6px;padding:4px 4px 4px 10px;border-radius:14px;
@@ -710,10 +712,10 @@ body.nosel,body.nosel *{-webkit-user-select:none!important;user-select:none!impo
   background:#fff;color:var(--ink-2);cursor:pointer;font-family:inherit}
 .chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .row{display:flex;gap:10px;align-items:flex-end}
-#txt{flex:1;min-width:0;border:0;border-radius:0;padding:13px 6px;font:inherit;
+#txt{flex:1;min-width:0;border:0;border-radius:0;padding:15.25px 6px;font:inherit;
   resize:none;max-height:110px;background:transparent;color:inherit}
 #txt:focus{outline:none}
-#send{border:0;border-radius:50%;width:40px;height:40px;margin:4px 4px 4px 0;flex:0 0 auto;cursor:pointer;
+#send{border:0;border-radius:50%;width:40px;height:40px;margin:6.5px 6.5px 6.5px 0;flex:0 0 auto;cursor:pointer;
   background:var(--accent);color:#fff;display:grid;place-items:center}
 #send:disabled{background:var(--ctrl);cursor:default}
 #send svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;
@@ -3169,6 +3171,8 @@ async function send(){
    ===================================================== */
 const KNUM={'한':1,'두':2,'세':3,'네':4,'다섯':5,'여섯':6,'일곱':7,'여덟':8,'아홉':9,'열':10,'열한':11,'열두':12};
 const WDAYS='일월화수목금토';
+/* 할 일 모양 끝맺음: ~하기 / 사기·가기·내기… (붙여 써도: '달걀사기') / ~야 함·해야 돼 / ~할 것 / ~하자 */
+const TODO_END=/(?:[가-힣]*하기|(?:^|\s)주기|[가-힣]*(?:사기|사오기|가기|오기|내기|보내기|받기|찾기|챙기기|넣기|빼기|돌려주기|두기|쓰기|읽기|먹기|끄기|켜기|바꾸기|만나기|맡기기|붙이기|타기|싸기|놓기|닦기|치기|자르기|갚기|맞추기|고치기|외우기|풀기|만들기|끝내기|버리기|채우기|보기|알아보기|씻기|빨기|걸기|부치기|뽑기|사두기|맡기기|가져가기|가져오기|데려가기|데려오기|잊지\s*말기))$|[가-힣]야\s*(?:함|해|돼|됨|된다|한다|하는데|지|해요|돼요|겠다)$|할\s*것$|(?:하|사|가|내|보|먹|만나|끝내|보내)자$|잊지\s*말자$/;
 function parseWhen(src,now){
   now=now?new Date(now):new Date();
   const s=String(src||'')
@@ -3243,7 +3247,9 @@ function parseWhen(src,now){
       let d=ok(today.getFullYear(),today.getMonth()+1,+x[1]); if(!d) return null;
       if(d<today) d=ok(today.getFullYear(),today.getMonth()+2,+x[1]);
       return d; }],
-    [/오늘\s*(?:까지|중|중으로|안에|안으로|마감|자정)|오늘\s*(?=오전|오후|아침|점심|저녁|밤|낮|\d{1,2}\s*시)/,()=>day(0)]
+    [/오늘\s*(?:까지|중|중으로|안에|안으로|마감|자정)|오늘\s*(?=오전|오후|아침|점심|저녁|밤|낮|\d{1,2}\s*시)/,()=>day(0)],
+    /* '오늘'만 있을 때는 문장이 할 일 모양으로 끝날 때만 ('오늘 달걀 사기', '오늘 보고서 내야 함') — '오늘 본 영화 재밌었음'은 그대로 */
+    [/오늘/,()=>TODO_END.test(s.replace(/[\s.!~?ㅎㅋ^]+$/,''))?day(0):null]
   ];
   /* 반복: 요일 여럿('월 수 금', '월수금', '매주 화요일', '화요일마다') + 기간('8월 동안', '다음 달', '4주 동안', '12/1~12/20') */
   const rdays=(()=>{
