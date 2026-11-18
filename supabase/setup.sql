@@ -56,3 +56,14 @@ create policy files_update on storage.objects for update to authenticated
   with check (bucket_id = 'files' and (storage.foldername(name))[1] = auth.uid()::text);
 create policy files_delete on storage.objects for delete to authenticated
   using (bucket_id = 'files' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- 4) 계정 삭제: 로그인한 본인 계정만 지운다 (kv 기록은 on delete cascade로 같이 지워진다)
+--    사진·파일은 앱이 먼저 Storage API로 지운 뒤 이 함수를 부른다
+create or replace function public.delete_me() returns void
+language plpgsql security definer set search_path = '' as $$
+begin
+  if auth.uid() is null then raise exception 'not signed in'; end if;
+  delete from auth.users where id = auth.uid();
+end $$;
+revoke all on function public.delete_me() from public, anon;
+grant execute on function public.delete_me() to authenticated;
