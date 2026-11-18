@@ -411,7 +411,7 @@ html.kb body{align-items:flex-start}
 .pill:focus-within{border-color:var(--accent)}
 /* 홈 하단: 돋보기와 채팅 아이콘만. 채팅 아이콘을 누르면 왼쪽으로 늘어나 입력창이 된다 */
 #scChat.brief .row{justify-content:center;align-items:flex-end;gap:10px}
-#hSearch svg,#hFold svg,#hFile svg,#hChat svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+#hSearch svg,#hFold svg,#hFile svg,#hCam svg,#hChat svg{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 #hSearch,#hFold{order:2;display:grid;place-items:center;flex:0 0 auto;width:55px;height:55px;padding:0;overflow:hidden;
   border:1px solid var(--line);border-radius:27.5px;background:#fff;color:var(--ink-2);cursor:pointer;
   box-shadow:0 2px 8px rgba(27,32,36,.08);
@@ -424,16 +424,19 @@ html.kb body{align-items:flex-start}
 #scChat.brief #hChat{display:grid;place-items:center;position:absolute;right:0;bottom:0;width:53px;height:53px;padding:0;
   border:0;background:transparent;color:#fff;cursor:pointer;transition:opacity .15s}
 #scChat.brief #hChat svg{width:25.3px;height:25.3px}
-#hFile{display:grid;place-items:center;flex:0 0 auto;width:40px;height:40px;margin:6.5px 0 6.5px 6.5px;padding:0;
+#hFile,#hCam{display:grid;place-items:center;flex:0 0 auto;width:40px;height:40px;margin:6.5px 0 6.5px 6.5px;padding:0;
   border:0;border-radius:50%;background:transparent;color:var(--ink-2);cursor:pointer}
-#hFile:hover{background:var(--mute);color:var(--accent)}
-#hFile svg{width:21px;height:21px}
-#scChat.brief .pill>#hFile,#scChat.brief .pill>#txt,#scChat.brief .pill>#send{opacity:0;pointer-events:none;transition:opacity .1s}
+#hFile:hover,#hCam:hover{background:var(--mute);color:var(--accent)}
+#hFile svg,#hCam svg{width:21px;height:21px}
+/* 카메라는 폰(터치 화면)에서만 — 바로 찍어서 올린다 */
+#hCam{display:none}
+@media(pointer:coarse){ #hCam{display:grid} #hCam+#hFile{margin-left:0} }
+#scChat.brief .pill>#hCam,#scChat.brief .pill>#hFile,#scChat.brief .pill>#txt,#scChat.brief .pill>#send{opacity:0;pointer-events:none;transition:opacity .1s}
 #scChat.brief.hopen #hSearch,#scChat.brief.hopen #hFold{width:0;margin-left:-10px;opacity:0;border-width:0;pointer-events:none}
 #scChat.brief.hopen .pill{width:100%;height:auto;min-height:55px;border-radius:25px;background:#fff;border-color:var(--line)}
 #scChat.brief.hopen .pill:focus-within{border-color:var(--accent)}
 #scChat.brief.hopen #hChat{opacity:0;pointer-events:none}
-#scChat.brief.hopen .pill>#hFile,#scChat.brief.hopen .pill>#txt,#scChat.brief.hopen .pill>#send{opacity:1;pointer-events:auto;
+#scChat.brief.hopen .pill>#hCam,#scChat.brief.hopen .pill>#hFile,#scChat.brief.hopen .pill>#txt,#scChat.brief.hopen .pill>#send{opacity:1;pointer-events:auto;
   transition:opacity .2s .18s}
 @media(prefers-reduced-motion:reduce){#scChat.brief .pill,#scChat.brief #hSearch,#scChat.brief #hFold{transition:none}}
 /* 입력칸은 방 안·홈 모두 돋보기(55px)와 같은 높이 — 안의 버튼은 가운데에 */
@@ -979,6 +982,7 @@ body.rzing *{user-select:none!important}
         <button id="hFold" aria-label="모든 방의 폴더 보기"><svg viewBox="0 0 24 24"><path d="M3 17.7V6.3a1.8 1.8 0 0 1 1.8-1.8h4.3l2.1 2.2h8A1.8 1.8 0 0 1 21 8.5v9.2a1.8 1.8 0 0 1-1.8 1.8H4.8A1.8 1.8 0 0 1 3 17.7z"/></svg></button>
         <button id="hSearch" aria-label="모든 방에서 찾기"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button>
         <div class="pill">
+          <button id="hCam" aria-label="사진 찍기"><svg viewBox="0 0 24 24"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2.3l1.5-2h5.4l1.5 2h2.3A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="12.8" r="3.4"/></svg></button>
           <button id="hFile" aria-label="파일 첨부"><svg viewBox="0 0 24 24"><path d="M20.5 11.5l-8.3 8.3a5 5 0 0 1-7.1-7.1l8.6-8.6a3.3 3.3 0 0 1 4.7 4.7l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"/></svg></button>
           <textarea id="txt" rows="1" placeholder="메시지 입력"></textarea>
           <button id="send" disabled><svg viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></svg></button>
@@ -996,6 +1000,7 @@ body.rzing *{user-select:none!important}
     </div>
     </div>
     <input type="file" id="file" hidden>
+    <input type="file" id="cam" accept="image/*" capture="environment" hidden>
   </section>
 
   <section id="search">
@@ -3936,6 +3941,8 @@ $('.pill').addEventListener('transitionend',e=>{
   hAnim=false; fitTxt();
 });
 $('#hFile').onclick=()=>$('#file').click();
+$('#hCam').onclick=()=>$('#cam').click();
+$('#cam').onchange=e=>{ if(e.target.files[0]) attach(e.target.files[0]); e.target.value=''; };
 document.addEventListener('pointerdown',e=>{
   if(!briefOn||!$('#scChat').classList.contains('hopen')) return;
   if(e.target.closest('#compose,#rtoast,.sheet,#search,#calview')) return;
