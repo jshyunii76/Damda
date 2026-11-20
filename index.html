@@ -748,13 +748,14 @@ body.nosel,body.nosel *{-webkit-user-select:none!important;user-select:none!impo
   animation:up .2s cubic-bezier(.32,.72,0,1);max-height:88%;overflow-y:auto}
 @keyframes up{from{transform:translateY(14px);opacity:.6}}
 @media(prefers-reduced-motion:reduce){.card{animation:none}}
+#shEdit h2{margin-bottom:12px}
 .card h2{margin:0 0 3px;font-size:17px;letter-spacing:-.02em}
 .card p{margin:0 0 15px;font-size:13px;color:var(--ink-2)}
 .card input[type=text]{width:100%;border:1px solid var(--line);border-radius:11px;
   padding:11px 12px;font:inherit;margin-bottom:10px;background:#fff;color:inherit}
 .card input:focus{outline:none;border-color:var(--accent)}
 /* 메시지 수정 */
-#editTxt{display:block;width:100%;min-height:110px;max-height:45vh;border:1px solid var(--line);
+#editTxt{display:block;width:100%;height:55vh;min-height:110px;max-height:65vh;border:1px solid var(--line);
   border-radius:11px;padding:11px 12px;font:inherit;line-height:1.55;margin-bottom:10px;
   background:#fff;color:inherit;resize:vertical}
 #editTxt:focus{outline:none;border-color:var(--accent)}
@@ -1178,7 +1179,6 @@ body.rzing *{user-select:none!important}
 
   <div class="sheet" id="shEdit"><div class="card">
     <h2>메시지 수정</h2>
-    <p>고친 내용으로 바뀌어요.</p>
     <textarea id="editTxt" rows="4" placeholder="메시지 내용"></textarea>
     <div class="btns"><button class="btn ghost" data-close>취소</button>
       <button class="btn" id="doEdit">저장</button></div>
@@ -2716,19 +2716,20 @@ function bubble(m){
 
   const body=el('div','body');
   if(f) body.appendChild(fileNode(f));
+  let mo=null;
   if(m.text){
     const cut=cutLong(m.text), tx=el('div','tx clamp');
     tx.innerHTML=`<span class="sx">${linkify(cut||m.text)}${cut?'…':''}</span>`; body.appendChild(tx);
-    const mo=el('button','more'); mo.type='button';
+    mo=el('button','more'); mo.type='button';
     mo.innerHTML='전체보기<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>';
     mo.onclick=e=>{ e.stopPropagation(); if(selMode) return; openFull(m); };
-    body.appendChild(mo);
     /* 줄바꿈으로 20줄이 넘거나, 화면에 그려 보니 20줄이 넘을 때만 '전체보기' */
     if(!cut){ mo.hidden=true; requestAnimationFrame(()=>{ if(tx.scrollHeight>tx.clientHeight+1) mo.hidden=false; }); }
   }
   /* 태그는 말풍선에 보이지 않는다. 검색과 묶음 정리에만 쓰인다 */
   if(m.ai==='run'&&(!m.tags||!m.tags.length)) body.appendChild(el('div','aip'));
   if(m.due){const w=el('div'); w.innerHTML=dueHtml(m); body.appendChild(w.firstChild);}
+  if(mo) body.appendChild(mo);   /* '전체보기'는 날짜 아래, 맨 끝 */
 
   b.appendChild(body);
   b.setAttribute('aria-label',(m.done?'완료한 메모: ':'메모: ')+mlabel(m));
