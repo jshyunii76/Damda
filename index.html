@@ -81,8 +81,8 @@ html.kb body{align-items:flex-start}
 .ic.hl{color:var(--accent)}
 #btnAI.aion svg{fill:#F5C542;stroke:#D9A21B}
 /* 상단 바 아이콘(좌측 바 메뉴, 홈 달력·별, 방 안 홈·달력·폴더·공유, 각 화면의 뒤로가기)은 홈 하단 아이콘과 같은 크기 — 버튼 칸 크기는 그대로 */
-#railTog,#btnHomeCal,#btnAI,#btnBack,#btnCal,#btnGroup,#btnShare,#sClose,#nvClose,#cvClose,#gvClose,#afClose,#plClose{padding:5.4px}
-#railTog svg,#btnHomeCal svg,#btnAI svg,#btnBack svg,#btnCal svg,#btnGroup svg,#btnShare svg,#sClose svg,#nvClose svg,#cvClose svg,#gvClose svg,#afClose svg,#plClose svg{width:24.2px;height:24.2px;stroke-width:1.9}
+#railTog,#btnHomeCal,#btnAI,#btnBack,#btnCal,#btnGroup,#btnShare,#sClose,#nvClose,#cvClose,#gvClose,#afClose,#plClose,#stClose{padding:5.4px}
+#railTog svg,#btnHomeCal svg,#btnAI svg,#btnBack svg,#btnCal svg,#btnGroup svg,#btnShare svg,#sClose svg,#nvClose svg,#cvClose svg,#gvClose svg,#afClose svg,#plClose svg,#stClose svg{width:24.2px;height:24.2px;stroke-width:1.9}
 
 .screen{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--app);
   transition:transform .22s cubic-bezier(.32,.72,0,1)}
@@ -173,7 +173,9 @@ html.kb body{align-items:flex-start}
 .rkid.ld{cursor:default;color:var(--ink-3);font-size:12px}
 .rsep{height:1px;background:var(--tint-line);flex:0 0 auto;margin:5px 8px}
 .rfoot{margin-top:auto;position:sticky;bottom:-18px;background:var(--tint);padding:6px 0 18px;margin-bottom:-18px;
-  border-top:1px solid var(--tint-line);flex:0 0 auto}
+  flex:0 0 auto;display:flex;gap:2px}
+.rfoot::before{content:"";position:absolute;left:8px;right:8px;top:0;height:1px;background:var(--tint-line)}
+.rfoot .rrow{flex:1;min-width:0}
 @media(min-width:860px){
   #railTog{top:12px;left:15.5px}
   .rtogsp{height:38px}
@@ -503,9 +505,13 @@ html.kb body{align-items:flex-start}
 .stamp.in{padding:0 0 4px 45px;margin-top:0}
 
 /* 추가 메모 */
-#noteview,#calview,#grpview,#allfold{position:absolute;inset:0;background:var(--app);z-index:26;
+#noteview,#calview,#grpview,#allfold,#setview{position:absolute;inset:0;background:var(--app);z-index:26;
   display:none;flex-direction:column}
-#noteview.on,#calview.on,#grpview.on,#allfold.on{display:flex}
+#noteview.on,#calview.on,#grpview.on,#allfold.on,#setview.on{display:flex}
+.setlist{padding:8px 10px}
+/* 가운데에 뜨는 확인 창 */
+.sheet.pop{align-items:center;padding:16px}
+.sheet.pop .card{max-width:340px;border-radius:18px}
 /* 모든 방의 폴더: 방 이름 아래에 그 방 폴더들 */
 #afList{flex:1;overflow-y:auto;padding:6px 14px 24px}
 .afroom{padding-bottom:14px}
@@ -633,6 +639,13 @@ html.kb body{align-items:flex-start}
   padding:9px 12px;word-break:break-word;box-shadow:0 1px 1px rgba(27,32,36,.05)}
 .b.pic{padding:5px 5px 7px}
 .b .tx{white-space:pre-wrap}
+.b .more{display:flex;align-items:center;justify-content:space-between;width:100%;margin:8px 0 -2px;padding:7px 0 0;
+  border:0;border-top:1px solid rgba(27,32,36,.09);background:none;font:inherit;font-size:13px;color:var(--ink-2);cursor:pointer}
+.b .more svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.b.pic .more{width:auto;margin:8px 7px -2px}
+#fullTx{max-height:62vh;overflow:auto;white-space:pre-wrap;word-break:break-word;font-size:15px;line-height:1.6;
+  margin:0 0 14px;-webkit-user-select:text;user-select:text}
+#fullTx a{color:var(--accent);word-break:break-all}
 .aip{display:inline-block;width:9px;height:9px;border:1.5px solid var(--line);
   border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite;
   margin-top:7px}
@@ -748,8 +761,6 @@ body.nosel,body.nosel *{-webkit-user-select:none!important;user-select:none!impo
   cursor:pointer;background:var(--accent);color:#fff}
 .btn.ghost{background:var(--mute);color:var(--ink-2)}
 .btn.danger{background:var(--danger-soft);color:var(--strike)}
-.acctDel{display:block;margin:14px auto 0;padding:4px 8px;border:0;background:none;font:inherit;font-size:12.5px;
-  color:var(--ink-3);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 /* 방 아이콘 색 고르기 */
 .swlb{font-size:11.5px;font-weight:700;color:var(--ink-3);margin:6px 0 7px}
 .sws{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
@@ -1027,6 +1038,18 @@ body.rzing *{user-select:none!important}
     <textarea id="nvText" placeholder="이 메모에 덧붙일 내용을 적어보세요"></textarea>
   </section>
 
+  <section id="setview">
+    <div class="bar">
+      <button class="ic" id="stClose" aria-label="뒤로"><svg viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg></button>
+      <h1>설정</h1>
+    </div>
+    <div class="setlist">
+      <button class="mrow danger" id="toAcctDel">
+        <svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>
+        <span>계정 삭제</span></button>
+    </div>
+  </section>
+
   <section id="calview">
     <div class="bar">
       <button class="ic" id="cvClose"><svg viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg></button>
@@ -1095,10 +1118,14 @@ body.rzing *{user-select:none!important}
     <p id="outWho"></p>
     <div class="btns"><button class="btn ghost" data-close>취소</button>
       <button class="btn" id="doOut">로그아웃</button></div>
-    <button class="acctDel" id="toAcctDel">계정 삭제</button>
   </div></div>
 
-  <div class="sheet" id="shAcct"><div class="card">
+  <div class="sheet" id="shFull"><div class="card">
+    <div id="fullTx"></div>
+    <div class="btns"><button class="btn ghost" data-close>닫기</button></div>
+  </div></div>
+
+  <div class="sheet pop" id="shAcct"><div class="card">
     <h2>계정 삭제</h2>
     <p>메모, 사진, 파일과 계정이 서버에서 모두 지워지고 되돌릴 수 없어요.</p>
     <div class="btns"><button class="btn ghost" data-close>취소</button>
@@ -1379,7 +1406,7 @@ function press(node,onLong,onTap,skipTap){
   let t=null,fired=false,sx=0,sy=0,touch=false;
   const cancel=()=>{node.classList.remove('press'); if(t){clearTimeout(t); t=null;}};
   node.addEventListener('pointerdown',e=>{
-    if(e.button!==0||e.target.closest('video,.nb')) return;
+    if(e.button!==0||e.target.closest('video,.nb,.more')) return;
     touch=e.pointerType!=='mouse';
     fired=false; sx=e.clientX; sy=e.clientY; node.classList.add('press');
     t=setTimeout(()=>{t=null; fired=true; node.classList.remove('press'); vib(); onLong();},480);
@@ -2255,10 +2282,14 @@ function drawRail(){
   });
   /* 로그아웃은 바의 맨 아래에 붙여 둔다 (목록이 길어도 보이게) */
   if(me){
-    const f=el('div','rfoot'), b=el('button','rrow rbf rtool');
-    b.innerHTML='<span class="rico"><svg viewBox="0 0 24 24"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H4"/></svg></span><span class="rnm">로그아웃</span>';
-    b.onclick=()=>{ railDone(); openOut(); };
-    f.appendChild(b); rail.appendChild(f);
+    const f=el('div','rfoot');
+    [['GEAR','설정',openSet],['LOGOUT','로그아웃',openOut]].forEach(([ic,nm,fn])=>{
+      const b=el('button','rrow rbf rtool');
+      b.innerHTML=`<span class="rico">${ic==='GEAR'?SVG_GEAR:SVG_OUT}</span><span class="rnm">${nm}</span>`;
+      b.onclick=()=>{ railDone(); fn(); };
+      f.appendChild(b);
+    });
+    rail.appendChild(f);
   }
   rail.scrollTop=top;
   if(miss) railSoon();
@@ -2471,7 +2502,7 @@ $('#doDel').onclick=async()=>{
 
 /* ---------- 채팅방 ---------- */
 function closeOverlays(){
-  ['#calview','#noteview','#search','#pinlist','#grpview','#allfold'].forEach(s=>$(s).classList.remove('on'));
+  ['#calview','#noteview','#search','#pinlist','#grpview','#allfold','#setview'].forEach(s=>$(s).classList.remove('on'));
 }
 
 async function openRoom(id){
@@ -2662,6 +2693,16 @@ function drawCarry(add){
   add(box);
 }
 
+/* 긴 메모는 카톡처럼 앞부분만 보이고 '전체보기'로 다 본다 */
+const LONG_LINES=10, LONG_CHARS=250;
+function cutLong(t){
+  const ls=t.split('\n');
+  let c=ls.length>LONG_LINES?ls.slice(0,LONG_LINES).join('\n'):t;
+  if(c.length>LONG_CHARS) c=c.slice(0,LONG_CHARS);
+  c=c.replace(/\s+$/,'');
+  return c.length<t.replace(/\s+$/,'').length?c:null;
+}
+function openFull(m){ const f=$('#fullTx'); f.innerHTML=linkify(m.text||''); open('#shFull'); f.scrollTop=0; }
 function bubble(m){
   const wrap=el('div','msg');
   const f=m.file;
@@ -2675,7 +2716,16 @@ function bubble(m){
 
   const body=el('div','body');
   if(f) body.appendChild(fileNode(f));
-  if(m.text){const tx=el('div','tx'); tx.innerHTML=`<span class="sx">${linkify(m.text)}</span>`; body.appendChild(tx);}
+  if(m.text){
+    const cut=cutLong(m.text), tx=el('div','tx');
+    tx.innerHTML=`<span class="sx">${linkify(cut||m.text)}${cut?'…':''}</span>`; body.appendChild(tx);
+    if(cut){
+      const mo=el('button','more'); mo.type='button';
+      mo.innerHTML='전체보기<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>';
+      mo.onclick=e=>{ e.stopPropagation(); if(selMode) return; openFull(m); };
+      body.appendChild(mo);
+    }
+  }
   /* 태그는 말풍선에 보이지 않는다. 검색과 묶음 정리에만 쓰인다 */
   if(m.ai==='run'&&(!m.tags||!m.tags.length)) body.appendChild(el('div','aip'));
   if(m.due){const w=el('div'); w.innerHTML=dueHtml(m); body.appendChild(w.firstChild);}
@@ -2760,7 +2810,7 @@ function bubblePress(b,m){
   const clear=()=>{ if(t){ clearTimeout(t); t=null; } b.classList.remove('press'); };
   const disarm=()=>{ armed=false; msgArmed=false; b.classList.remove('armed'); };
   b.addEventListener('pointerdown',e=>{
-    if(e.button!==0||e.target.closest('video,.nb')) return;
+    if(e.button!==0||e.target.closest('video,.nb,.more')) return;
     touch=e.pointerType!=='mouse'; fired=false; sx=e.clientX; sy=e.clientY;
     if(touch) noSel(true);
     b.classList.add('press');
@@ -5130,6 +5180,26 @@ const railMode=()=>{ railAuto=false; setRail(true,true); };
 if(railMQ.addEventListener) railMQ.addEventListener('change',railMode); else railMQ.addListener(railMode);
 $('#railTog').onclick=()=>{ railAuto=false; setRail(!$('#scChat').classList.contains('norail')); };
 $('#railScrim').onclick=()=>{ railAuto=false; setRail(true); };
+/* 터치: 오른쪽으로 밀면 방 목록 바가 열리고, 왼쪽으로 밀면 닫힌다 (가로로 넘기는 칸 안에서는 그 칸이 먼저) */
+(()=>{
+  const sc=$('#scChat'); let sx=0,sy=0,t0=0,on=false;
+  const hScroll=n=>{ for(;n&&n!==sc;n=n.parentElement){ if(n.scrollWidth>n.clientWidth+2){ const o=getComputedStyle(n).overflowX; if(o==='auto'||o==='scroll') return true; } } return false; };
+  sc.addEventListener('touchstart',e=>{
+    on=false;
+    if(e.touches.length!==1||selMode||mdrag||msgArmed) return;
+    const tg=e.target; if(tg.closest('textarea,input,.sheet,video,#railRz')||hScroll(tg)) return;
+    sx=e.touches[0].clientX; sy=e.touches[0].clientY; t0=Date.now(); on=true;
+  },{passive:true});
+  sc.addEventListener('touchend',e=>{
+    if(!on) return; on=false;
+    if(mdrag||msgArmed||document.querySelector('.sheet.on')) return;
+    const p=e.changedTouches[0], dx=p.clientX-sx, dy=p.clientY-sy;
+    if(Math.abs(dx)<60||Math.abs(dx)<Math.abs(dy)*1.5||Date.now()-t0>700) return;
+    const shut=sc.classList.contains('norail');
+    if(dx>0&&shut){ railAuto=false; setRail(false); }
+    else if(dx<0&&!shut){ railAuto=false; setRail(true); }
+  },{passive:true});
+})();
 /* 상단 바의 높이·위아래 여백을 바 맨 위 줄에 그대로 옮긴다 */
 (()=>{ const bar=$('#chatMain>.bar'), rail=$('#rail'); if(!bar||!rail) return;
   const sync=()=>{ const cs=getComputedStyle(bar), h=bar.getBoundingClientRect().height; if(!h) return;
@@ -5286,6 +5356,9 @@ async function signIn(provider){
 }
 $('#lgKakao').onclick=()=>signIn('kakao');
 $('#lgGoogle').onclick=()=>signIn('google');
+const SVG_GEAR='<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>', SVG_OUT='<svg viewBox="0 0 24 24"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H4"/></svg>';
+function openSet(){ $('#setview').classList.add('on'); }
+$('#stClose').onclick=()=>$('#setview').classList.remove('on');
 function openOut(){ const pv=me&&me.app_metadata&&me.app_metadata.provider;
   const nm=pv==='kakao'?'카카오':pv==='google'?'구글':'';
   $('#outWho').textContent=nm?nm+' 계정으로 로그인되어 있어요.':'로그인되어 있어요.'; open('#shOut'); }
@@ -5298,7 +5371,7 @@ $('#doOut').onclick=async()=>{
   await wipeLocal(); location.replace(location.pathname);
 };
 /* 계정 삭제: 서버의 사진·파일 → 계정(기록은 같이 지워진다) → 이 기기 순서로 지운다 */
-$('#toAcctDel').onclick=()=>{ $('#shOut').classList.remove('on'); open('#shAcct'); };
+$('#toAcctDel').onclick=()=>open('#shAcct');
 $('#doAcctDel').onclick=async()=>{
   const b=$('#doAcctDel'); b.disabled=true; leaving=true; clearTimeout(pushT);
   while(pushing) await sleep(200);
