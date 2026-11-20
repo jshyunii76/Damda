@@ -951,7 +951,7 @@ body.rzing *{user-select:none!important}
     <div id="chatMain">
     <div class="bar">
       <button class="ic" id="btnBack" aria-label="홈으로"><svg viewBox="0 0 24 24"><path d="M4 10.5L12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5H15v-5.5H9v5.5H5.5A1.5 1.5 0 0 1 4 19z"/></svg></button>
-      <h1 id="chatName">방</h1>
+      <h1 id="chatName"></h1>
       <button class="ic" id="btnHomeCal" aria-label="모든 방 일정">
         <svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/></svg>
       </button>
@@ -1695,8 +1695,13 @@ const TAG_SYS=`너는 개인 메모를 나중에 찾기 쉽게 정리하는 도�
   나중에 사용자가 어렴풋이 설명해도 찾을 수 있도록 쓴다.
 - JSON만 출력한다.
 
+- 사진이 있으면 text에 사진에 적힌 글자를 보이는 그대로 옮긴다. 줄은 줄바꿈으로 나눈다. 글자가 없으면 빈 문자열.
+- 사진에 일정(마감, 행사, 약속 날짜)이 적혀 있으면 when에 그 날짜·기간·시각을 짧은 한국어로 쓴다.
+  예) "11월 27일 오후 5시", "12월 1일부터 12월 5일까지", "매주 화요일 오후 3시". 일정이 아니면 빈 문자열.
+  메모 내용에 날짜가 있거나 지정한 날짜가 있으면 when은 빈 문자열.
+
 출력 형식
-{"tags":["...","..."],"desc":"..."}`;
+{"tags":["...","..."],"desc":"...","text":"...","when":"..."}`;
 
 /* 붙여넣을 때 섞여 들어오는 공백·따옴표·보이지 않는 문자를 걸러낸다 */
 const cleanKey=k=>String(k||'').replace(/[^\x21-\x7E]/g,'').replace(/^["']|["']$/g,'');
@@ -1786,9 +1791,11 @@ async function aiTag(m,blob){
     if(d) parts.push({inlineData:{mimeType:'image/jpeg',data:d.split(',')[1]}});
   }
   if(!parts.length) return null;
+  const img=parts.some(x=>x.inlineData);
   const raw=await gText({system:TAG_SYS,parts,json:true,temperature:0.2});
   const o=JSON.parse(raw.replace(/^```(?:json)?\s*|\s*```$/g,''));
-  return {tags:(o.tags||[]).slice(0,5).map(String),desc:String(o.desc||'')};
+  return {tags:(o.tags||[]).slice(0,5).map(String),desc:String(o.desc||''),
+    ocr:img?String(o.text||'').trim().slice(0,600):'', when:img?String(o.when||'').trim().slice(0,60):''};
 }
 
 async function aiEmbed(text){
@@ -1827,13 +1834,23 @@ function cos(a,b){
   return d/(Math.sqrt(x)*Math.sqrt(y)||1);
 }
 
-/* 메모 하나를 AI 로 정리한다 */
-async function enrich(m,blob){
+/* 정리 결과를 메모에 넣는다. auto면 사진에 적힌 일정을 날짜로 쓴다 (글로 적은 날짜가 없을 때만) */
+function applyTag(m,r,auto){
+  m.tags=r.tags; m.desc=r.desc;
+  if(r.ocr) m.ocr=r.ocr; else delete m.ocr;
+  if(!auto||m.due||!r.when) return false;
+  const w=parseWhen(r.when,new Date(m.ts||Date.now()));
+  if(!w) return false;
+  m.due=w.due; m.dueStart=w.start||null; m.dueTime=w.time||null; m.dueDays=w.days||null; m.dueOpen=w.open||null; m.dueMDay=w.mday||null;
+  return true;
+}
+/* 메모 하나를 AI 로 정리한다 (auto: 방금 보낸 메모 — 사진 속 일정을 날짜로 넣는다) */
+async function enrich(m,blob,auto){
   if(!aiKey) return;
   m.ai='run'; if(!briefOn) drawStream();
   try{
     const r=await aiTag(m,blob);
-    if(r){ m.tags=r.tags; m.desc=r.desc; }
+    if(r&&applyTag(m,r,auto)) toast('사진에서 찾은 일정('+whenLabel({due:m.due,start:m.dueStart,time:m.dueTime,days:m.dueDays,open:m.dueOpen,mday:m.dueMDay})+')을 넣었어요');
     await embed(m);
     m.ai='ok';
   }catch(e){
@@ -1848,7 +1865,7 @@ async function enrich(m,blob){
 async function embed(m){
   const note=(m.note||'').trim();
   const base=[m.text||'', m.desc||'', (m.tags||[]).join(' '),
-    m.file?m.file.name:'', note].join('\n').trim();
+    m.file?m.file.name:'', m.ocr||'', note].join('\n').trim();
   if(base){
     const v=await aiEmbed(base);
     vecCache.set(m.id,v); gVec.set(m.id,v);
@@ -3447,7 +3464,7 @@ async function send(){
     await fileInto(cur,[last.id],{id:inF.gid,name:inF.name,ids:[...inF.ids]});
     if(lastGrp) await refreshGroups(); else railSoon();
   }
-  if(aiKey&&last) enrich(last, pend?pend.blob:null);
+  if(aiKey&&last) enrich(last, pend?pend.blob:null, true);
 }
 
 /* =====================================================
@@ -3671,7 +3688,7 @@ async function roomScores(v){
   return out.sort((a,b)=>b.s-a.s||(b.r.at||0)-(a.r.at||0));
 }
 
-const memoBrief=m=>[mlabel(m),m.desc?'설명: '+m.desc:'',(m.tags||[]).length?'태그: '+m.tags.join(', '):'']
+const memoBrief=m=>[mlabel(m),m.desc?'설명: '+m.desc:'',(m.tags||[]).length?'태그: '+m.tags.join(', '):'',m.ocr?'사진 속 글자: '+m.ocr.slice(0,300).replace(/\n/g,' '):'']
   .filter(Boolean).join(' / ');
 
 /* 글에 방 이름이 그대로 들어 있으면 그 방 (띄어쓰기 무시, 긴 이름 먼저) — AI 없이도 된다 */
@@ -3685,7 +3702,7 @@ function nameHit(t){
 
 /* {room}이면 기존 방, {name}이면 새로 만들 방, null이면 미분류 */
 async function pickRoom(m,v){
-  const nh=nameHit(m.text); if(nh) return {room:nh};
+  const nh=nameHit(m.text)||nameHit(m.ocr); if(nh) return {room:nh};
   const sc=await roomScores(v);
   const cand=sc.slice(0,4), top=sc[0]||null;
   const lines=cand.map(c=>{
@@ -3754,10 +3771,11 @@ async function homeSend(){
   resetDraft();
   const blob=pend?pend.blob:null;
   /* 빨리 여러 개를 적어도 같은 새 방이 두 번 생기지 않게 차례로 처리한다 */
-  homeQ=homeQ.then(()=>routeMemo(m,blob,pre)).catch(e=>console.error(e));
+  const auto=hWhen===undefined;   /* 수정에서 일정을 직접 정했거나 뺐으면 사진 속 일정은 쓰지 않는다 */
+  homeQ=homeQ.then(()=>routeMemo(m,blob,pre,auto)).catch(e=>console.error(e));
 }
 
-async function routeMemo(m,blob,pre){
+async function routeMemo(m,blob,pre,auto){
   rtShow(aiKey&&!pre?'담을 방을 고르는 중…':'담는 중…',true);
   let r=null, made=false, why='';
   /* pre: {room} 기존 방 · {name} 새 방 · 둘 다 없으면 미분류 */
@@ -3770,7 +3788,7 @@ async function routeMemo(m,blob,pre){
   if(aiKey){
     try{
       const tg=await aiTag(m,blob);
-      if(tg){ m.tags=tg.tags; m.desc=tg.desc; }
+      if(tg) applyTag(m,tg,auto);
       let v=null;
       try{ await embed(m); v=gVec.get(m.id)||null; }catch(e){ console.error(e); }
       m.ai='ok';
