@@ -639,6 +639,8 @@ html.kb body{align-items:flex-start}
   padding:9px 12px;word-break:break-word;box-shadow:0 1px 1px rgba(27,32,36,.05)}
 .b.pic{padding:5px 5px 7px}
 .b .tx{white-space:pre-wrap}
+.b .tx.clamp{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:20;line-clamp:20;overflow:hidden}
+.b .more[hidden]{display:none}
 .b .more{display:flex;align-items:center;justify-content:space-between;width:100%;margin:8px 0 -2px;padding:7px 0 0;
   border:0;border-top:1px solid rgba(27,32,36,.09);background:none;font:inherit;font-size:13px;color:var(--ink-2);cursor:pointer}
 .b .more svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -2694,13 +2696,11 @@ function drawCarry(add){
 }
 
 /* 긴 메모는 카톡처럼 앞부분만 보이고 '전체보기'로 다 본다 */
-const LONG_LINES=10, LONG_CHARS=250;
+const LONG_LINES=20;
+/* 줄바꿈 기준 20줄까지만. 줄바꿈 없이 긴 글도 화면에서 20줄을 넘으면 접는다(CSS) */
 function cutLong(t){
-  const ls=t.split('\n');
-  let c=ls.length>LONG_LINES?ls.slice(0,LONG_LINES).join('\n'):t;
-  if(c.length>LONG_CHARS) c=c.slice(0,LONG_CHARS);
-  c=c.replace(/\s+$/,'');
-  return c.length<t.replace(/\s+$/,'').length?c:null;
+  const ls=t.replace(/\s+$/,'').split('\n');
+  return ls.length>LONG_LINES?ls.slice(0,LONG_LINES).join('\n'):null;
 }
 function openFull(m){ const f=$('#fullTx'); f.innerHTML=linkify(m.text||''); open('#shFull'); f.scrollTop=0; }
 function bubble(m){
@@ -2717,14 +2717,14 @@ function bubble(m){
   const body=el('div','body');
   if(f) body.appendChild(fileNode(f));
   if(m.text){
-    const cut=cutLong(m.text), tx=el('div','tx');
+    const cut=cutLong(m.text), tx=el('div','tx clamp');
     tx.innerHTML=`<span class="sx">${linkify(cut||m.text)}${cut?'…':''}</span>`; body.appendChild(tx);
-    if(cut){
-      const mo=el('button','more'); mo.type='button';
-      mo.innerHTML='전체보기<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>';
-      mo.onclick=e=>{ e.stopPropagation(); if(selMode) return; openFull(m); };
-      body.appendChild(mo);
-    }
+    const mo=el('button','more'); mo.type='button';
+    mo.innerHTML='전체보기<svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>';
+    mo.onclick=e=>{ e.stopPropagation(); if(selMode) return; openFull(m); };
+    body.appendChild(mo);
+    /* 줄바꿈으로 20줄이 넘거나, 화면에 그려 보니 20줄이 넘을 때만 '전체보기' */
+    if(!cut){ mo.hidden=true; requestAnimationFrame(()=>{ if(tx.scrollHeight>tx.clientHeight+1) mo.hidden=false; }); }
   }
   /* 태그는 말풍선에 보이지 않는다. 검색과 묶음 정리에만 쓰인다 */
   if(m.ai==='run'&&(!m.tags||!m.tags.length)) body.appendChild(el('div','aip'));
