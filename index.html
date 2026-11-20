@@ -946,6 +946,8 @@ body.rzing *{user-select:none!important}
 #splash.out{opacity:0;visibility:hidden}
 @keyframes spIn{from{opacity:0}}
 @media(prefers-reduced-motion:reduce){#splash .spi,#splash .spt{animation:none}}
+.hm-meetings .hm-big b{color:#2474A8}
+.hm-meetings .hm-join{background:#4FA9E8;color:#fff}
 </style>
 </head>
 <body>
@@ -5451,6 +5453,49 @@ async function syncNow(){
   schedPush(100);
   if(ch) await refreshView();
 }
+async function seedSampleAttachments(){
+  const seededKey='sample-attachments-v1';
+  if(await S.get(seededKey)) return;
+  const room=rooms.find(r=>r.id==='sample-tasks')||
+    {id:'sample-tasks',name:'샘플 할 일',color:COLORS[3],pin:false,preview:'',at:null};
+
+  const samples=[
+    {
+      id:'sample-attachment-image',fileId:'fsampleimage',folderId:'sample-images',folder:'이미지',name:'담다-샘플-이미지.svg',type:'image/svg+xml',
+      content:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300"><rect width="480" height="300" rx="24" fill="#D8EDFF"/><path d="M240 48l30 62 68 10-49 48 11 68-60-32-60 32 11-68-49-48 68-10z" fill="#4FA9E8" stroke="#2474A8" stroke-width="6" stroke-linejoin="round"/><circle cx="110" cy="78" r="9" fill="#fff"/><circle cx="365" cy="201" r="12" fill="#fff"/></svg>'
+    },
+    {
+      id:'sample-attachment-document',fileId:'fsampledocument',folderId:'sample-documents',folder:'문서',name:'담다-샘플-체크리스트.txt',type:'text/plain',
+      content:'담다 샘플 체크리스트\n\n□ 오늘 할 일 적기\n□ 필요한 파일 첨부하기\n□ 완료한 할 일 체크하기\n'
+    }
+  ];
+  const folderKey='grpman:'+room.id;
+  const stored=await S.get(folderKey)||{};
+  const man={groups:stored.groups||[],assign:stored.assign||{},lock:stored.lock||{}};
+  const list=await readList(room);
+  for(const sample of samples){
+    if(list.some(m=>m.id===sample.id)) continue;
+    let folder=man.groups.find(g=>g.name===sample.folder);
+    if(!folder){
+      folder={id:sample.folderId,name:sample.folder};
+      man.groups.push(folder);
+    }
+    const blob=new Blob([sample.content],{type:sample.type});
+    const file={id:sample.fileId,name:sample.name,type:sample.type,size:blob.size};
+    await IDB.put(file.id,{blob,name:file.name,type:file.type});
+    man.assign[sample.id]=folder.id;
+    man.lock[sample.id]=true;
+    list.push({id:sample.id,type:'memo',text:'',file,ts:Date.now(),done:false});
+  }
+  if(!await S.set(folderKey,man)||!await saveList(room,list)) return;
+  if(!rooms.some(r=>r.id===room.id)){
+    rooms.unshift(room);
+    normalize();
+  }
+  if(await saveRooms()) await S.set(seededKey,true);
+  drawRooms();
+}
+
 async function boot(){
   if(SYNC_ON&&await loadJS(SB_JS,6000)&&window.supabase){
     SB=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
@@ -5476,7 +5521,10 @@ async function boot(){
       setInterval(()=>{ if(document.visibilityState==='visible') syncNow(); },60000);
     }else if(!(lsGet(OWNER)&&!navigator.onLine)){ showLogin(); return; }
   }
-  await loadRooms(); openBrief();
+  await loadRooms();
+  try{ await seedSampleAttachments(); }
+  catch(e){ console.warn('샘플 파일을 저장하지 못했어요',e); }
+  openBrief();
 }
 boot();
 })();
