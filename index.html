@@ -1010,7 +1010,6 @@ body.rzing *{user-select:none!important}
     <div id="selbar">
       <button class="sbtn" id="sDone"><svg viewBox="0 0 24 24"><path d="M4 12h16"/></svg><span id="sDoneLb">완료</span></button>
       <button class="sbtn" id="sPin"><svg viewBox="0 0 24 24"><path d="M9 4h6l-1 6 4 3v2H6v-2l4-3-1-6zM12 15v5"/></svg><span id="sPinLb">고정</span></button>
-      <button class="sbtn" id="sMove"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10"/></svg><span>옮기기</span></button>
       <button class="sbtn" id="sShare"><svg viewBox="0 0 24 24"><path d="M12 3.5v11.5M7.5 8L12 3.5 16.5 8"/><path d="M5 12.5v6.5a1.5 1.5 0 0 0 1.5 1.5h11a1.5 1.5 0 0 0 1.5-1.5v-6.5"/></svg><span>공유</span></button>
       <button class="sbtn danger" id="sDel"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg><span>삭제</span></button>
     </div>
@@ -2704,7 +2703,7 @@ function cutLong(t){
 }
 function openFull(m){ const f=$('#fullTx'); f.innerHTML=linkify(m.text||''); open('#shFull'); f.scrollTop=0; }
 function bubble(m){
-  const wrap=el('div','msg');
+  const wrap=el('div','msg'); wrap.dataset.id=m.id;
   const f=m.file;
   const media=f && (isImg(f.type)||isVid(f.type));
   const animate=strikeId===m.id;
@@ -3104,19 +3103,34 @@ function updBack(){
   else{ b.innerHTML=HOME_SVG; b.setAttribute('aria-label','홈으로'); }
 }
 const selList=()=>msgs.filter(x=>sel.has(x.id));
+/* 화면에 보이던 메모(또는 누른 메모)를 기준으로, 다시 그린 뒤에도 같은 자리에 두기 */
+function holdView(id,fn){
+  const s=$('#stream'), S=s.getBoundingClientRect();
+  let a=id?s.querySelector(`.msg[data-id="${id}"]`):null;
+  if(!a||a.getBoundingClientRect().bottom<S.top||a.getBoundingClientRect().top>S.bottom)
+    a=[...s.querySelectorAll('.msg[data-id]')].find(x=>x.getBoundingClientRect().bottom>S.top+1);
+  const aid=a&&a.dataset.id, off=a?a.getBoundingClientRect().top-S.top:0;
+  fn();
+  if(!aid) return;
+  const fix=()=>{ const n=s.querySelector(`.msg[data-id="${aid}"]`); if(!n) return;
+    s.scrollTop+=n.getBoundingClientRect().top-s.getBoundingClientRect().top-off; };
+  fix(); requestAnimationFrame(()=>{ fix(); requestAnimationFrame(fix); });
+}
 function enterSel(m){
   selMode=true; sel.clear(); if(m) sel.add(m.id);
-  $('#scChat').classList.add('sel');
-  updBack();
-  drawStream(true); updSel();
+  holdView(m&&m.id,()=>{
+    $('#scChat').classList.add('sel');
+    updBack();
+    drawStream(true); updSel();
+  });
 }
 function exitSel(quiet){
   if(!selMode) return;
   selMode=false; sel.clear();
-  $('#scChat').classList.remove('sel');
+  if(quiet) $('#scChat').classList.remove('sel');
   updBack();
   $('#chatName').textContent=cur?cur.name:'';
-  if(!quiet) drawStream(true);   /* 그룹 방이면 drawStream이 제목을 다시 맞춘다 */
+  if(!quiet) holdView(null,()=>{ $('#scChat').classList.remove('sel'); drawStream(true); });   /* 그룹 방이면 drawStream이 제목을 다시 맞춘다 */
 }
 function toggleSel(m,b){
   sel.has(m.id)?sel.delete(m.id):sel.add(m.id);
@@ -3127,8 +3141,8 @@ function updSel(){
   if(!selMode) return;
   const L=selList(), n=L.length;
   $('#chatName').textContent=n?`${n}개 선택`:'메모를 골라주세요';
-  ['#sDone','#sPin','#sMove','#sShare','#sDel'].forEach(x=>{ $(x).disabled=!n; });
-  if(roNow()) ['#sDone','#sPin','#sMove','#sDel'].forEach(x=>{ $(x).disabled=true; });
+  ['#sDone','#sPin','#sShare','#sDel'].forEach(x=>{ $(x).disabled=!n; });
+  if(roNow()) ['#sDone','#sPin','#sDel'].forEach(x=>{ $(x).disabled=true; });
   $('#sDoneLb').textContent=n&&L.every(x=>x.done)?'완료 취소':'완료';
   $('#sPinLb').textContent=n&&L.every(x=>x.pin)?'고정 해제':'고정';
   const view=grpF?msgs.filter(x=>grpF.ids.has(x.id)):msgs;
@@ -3222,15 +3236,6 @@ $('#sPin').onclick=async()=>{
   let k=1; msgs.filter(x=>x.pin).sort((a,b)=>(a.pinAt||0)-(b.pinAt||0)).forEach(x=>{ x.pinAt=k++; });
   exitSel(true); drawStream(true); await persist();
   toast(un?`${L.length}개 고정을 해제했어요`:`${L.length}개를 상단에 고정했어요`);
-};
-$('#sMove').onclick=()=>{
-  const L=selList(); if(!L.length) return;
-  $('#mvHd').textContent=`메모 ${L.length}개를 다른 방으로`;
-  const box=$('#mvList'); box.innerHTML='';
-  const others=rooms.filter(r=>!cur||r.id!==cur.id);
-  if(!others.length){ box.innerHTML='<p style="margin:4px 8px 10px">옮길 다른 방이 없어요. 방을 먼저 만들어주세요.</p>'; }
-  others.forEach(r=>box.appendChild(mvRoom(r,async()=>{ close('#shMove'); await moveToRoom(selList(),r); })));
-  open('#shMove');
 };
 $('#sDel').onclick=()=>{
   const n=selList().length; if(!n) return;
@@ -5190,6 +5195,17 @@ const railMode=()=>{ railAuto=false; setRail(true,true); };
 if(railMQ.addEventListener) railMQ.addEventListener('change',railMode); else railMQ.addListener(railMode);
 $('#railTog').onclick=()=>{ railAuto=false; setRail(!$('#scChat').classList.contains('norail')); };
 $('#railScrim').onclick=()=>{ railAuto=false; setRail(true); };
+(()=>{
+  let px=0, py=0;
+  document.addEventListener('pointerdown',e=>{ px=e.clientX; py=e.clientY; },true);
+  document.addEventListener('click',e=>{
+    if($('#scChat').classList.contains('norail')||railAuto||mdrag) return;
+    if(Math.hypot(e.clientX-px,e.clientY-py)>10) return;
+    const t=e.target; if(!t.closest||!document.contains(t)) return;
+    if(t.closest('#rail,#railRz,#railTog,#railScrim,.sheet')) return;
+    setRail(true);
+  },true);
+})();
 /* 터치: 오른쪽으로 밀면 방 목록 바가 열리고, 왼쪽으로 밀면 닫힌다 (가로로 넘기는 칸 안에서는 그 칸이 먼저) */
 (()=>{
   const sc=$('#scChat'); let sx=0,sy=0,t0=0,on=false;
