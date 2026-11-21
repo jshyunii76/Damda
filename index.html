@@ -395,10 +395,10 @@ html.kb body{align-items:flex-start}
 /* 추가 메모를 펼치면 말풍선 바로 아래 오른쪽 끝에 맞춰 붙는다 (말풍선 크기는 그대로) — 맞닿는 오른쪽 모서리만 줄인다 */
 .msg.noteon .b{border-bottom-right-radius:5px}
 .notebox{display:none;max-width:min(82%,520px);box-sizing:border-box;margin-top:4px;padding:9px 12px;word-break:break-word;
-  background:var(--mute);border:0;box-shadow:0 2px 6px rgba(27,32,36,.16);border-radius:var(--r) 5px var(--r) var(--r);
+  background:#E8ECEE;border:0;box-shadow:0 2px 6px rgba(27,32,36,.16);border-radius:var(--r) 5px var(--r) var(--r);
   cursor:pointer}
 .msg.noteon .notebox{display:block}
-.notebox:hover{background:var(--mute-2)}
+.notebox:hover{background:#DEE3E6}
 
 .notebox .tx{white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;
   overflow:hidden}
@@ -410,7 +410,7 @@ html.kb body{align-items:flex-start}
   transition:transform .2s}
 .notebox.full .ar svg{transform:rotate(180deg)}
 .notebox.edit{cursor:text}
-.notebox.edit:hover{background:var(--mute)}
+.notebox.edit:hover{background:#E8ECEE}
 .notebox .nin{display:block;width:100%;border:0;outline:0;background:transparent;resize:none;padding:0;margin:0;
   font:inherit;color:inherit;line-height:inherit;max-height:calc(1.55em * 15);max-height:15lh;overflow-y:hidden}
 
@@ -2531,6 +2531,7 @@ async function openRoom(id,jump){
   closeOverlays();
   /* 날짜는 다 펼친 채로 — 내가 눌러서 접은 날짜만 접어 둔다 */
   try{ (await S.get('fold:'+cur.id)||[]).forEach(k=>{ folded[k]=true; }); }catch(e){}
+  try{ pinOpen=!(await S.get('pinfold:'+cur.id)); }catch(e){}
   S.del('open:'+cur.id);   /* 예전 '펼친 날짜' 기록은 버린다 */
   msgs=await readList(cur);
   $('#scChat').classList.toggle('ro',roNow());
@@ -2613,19 +2614,25 @@ function drawStream(keep){
   });
   if(keep==='jump') stickT=0; else if(keep) s.scrollTop=top; else stickBottom();
 }
-/* 방에 들어오면 맨 아래에서 시작한다. 사진처럼 늦게 불러와져 키가 커지는 것이 있어도
-   내가 스크롤하기 전까지는 맨 아래에 붙여 둔다 */
-let stickT=0;
-function stickBottom(){
-  const s=$('#stream'); s.scrollTop=s.scrollHeight; stickT=Date.now()+8000;
-  requestAnimationFrame(()=>{ if(Date.now()<stickT) s.scrollTop=s.scrollHeight; });
+/* 방에 들어오면 맨 아래에서, 메모를 눌러 들어오면 그 메모가 가운데에 오게 연다.
+   사진처럼 늦게 불러와져 키가 커지는 것이 있어도 내가 스크롤하기 전까지는 그 자리를 지킨다 */
+let stickT=0, stickId=null;
+function stickApply(){
+  if(Date.now()>=stickT) return;
+  const s=$('#stream');
+  if(!stickId){ s.scrollTop=s.scrollHeight; return; }
+  const t=document.getElementById('b'+stickId); if(!t) return;
+  const R=t.getBoundingClientRect(), S=s.getBoundingClientRect();
+  s.scrollTop+=R.top-S.top-(S.height-R.height)/2;
 }
+function stickTo(id){ stickId=id||null; stickT=Date.now()+8000; stickApply(); requestAnimationFrame(stickApply); }
+const stickBottom=()=>stickTo(null);
 (()=>{
   const s=$('#stream');
-  const stick=()=>{ if(Date.now()<stickT) s.scrollTop=s.scrollHeight; };
-  s.addEventListener('load',stick,true);
-  s.addEventListener('loadedmetadata',stick,true);
-  if(document.fonts) document.fonts.ready.then(stick);
+  s.addEventListener('load',stickApply,true);
+  s.addEventListener('loadedmetadata',stickApply,true);
+  if(document.fonts) document.fonts.ready.then(stickApply);
+  if(window.ResizeObserver) new ResizeObserver(stickApply).observe(s);   /* 키보드가 닫히는 등 화면 높이가 바뀔 때 */
   ['wheel','touchstart','pointerdown','keydown'].forEach(t=>s.addEventListener(t,()=>{ stickT=0; },{passive:true}));
 })();
 
@@ -2638,12 +2645,7 @@ function jumpTo(m,keep){
   delete folded[oday(m)];
   if(keep){ foundId=m.id; flashId=null; } else flashId=m.id;
   drawStream('jump');
-  const center=()=>{
-    const s=$('#stream'), t=document.getElementById('b'+m.id); if(!t) return;
-    const R=t.getBoundingClientRect(), S=s.getBoundingClientRect();
-    s.scrollTop+=R.top-S.top-(S.height-R.height)/2;
-  };
-  center(); requestAnimationFrame(center); setTimeout(center,250); setTimeout(center,700);
+  stickTo(m.id);
 }
 function clearFound(){
   if(!foundId) return;
@@ -2664,7 +2666,8 @@ function drawPinned(){
   const h=el('div','h');
   h.innerHTML=`<span>고정한 메시지 ${pin.length}개</span>
     <span class="cv"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span>`;
-  h.onclick=()=>{pinOpen=!pinOpen; drawPinned();};
+  h.onclick=()=>{ pinOpen=!pinOpen; drawPinned();
+    if(cur){ if(pinOpen) S.del('pinfold:'+cur.id); else S.set('pinfold:'+cur.id,true); } };
   box.appendChild(h);
 
   const list=el('div','list');
@@ -4444,16 +4447,35 @@ $('#sq').addEventListener('input',()=>{
   if(aiKey) sTimer=setTimeout(runSemantic,450);
 });
 
+/* 띄어쓰기를 빼고 비교한다 */
+const nsp=t=>(t||'').toLowerCase().replace(/\s+/g,'');
+const sHas=(t,q)=>{ const a=(t||'').toLowerCase(); return a.includes(q)||nsp(a).includes(nsp(q)); };
+/* 표시할 때도 글자 사이 띄어쓰기와 상관없이 칠한다 */
+const sMark=(text,q)=>{
+  const k=[...nsp(q)].map(c=>c.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('\\s*');
+  if(!k) return esc(text);
+  let out='', i=0; const re=new RegExp(k,'ig'); let x;
+  while((x=re.exec(text))){ if(!x[0]){ re.lastIndex++; continue; }
+    out+=esc(text.slice(i,x.index))+'<mark>'+esc(x[0])+'</mark>'; i=x.index+x[0].length; }
+  return out+esc(text.slice(i));
+};
+/* AI 요약은 메모가 길 때만 보여 준다 — 짧은 메모는 본문이 곧 요약이다 */
+const descWorth=m=>{
+  if(!m.desc) return false;
+  const t=(m.text||'').trim();
+  if(!t) return true;   /* 사진·파일만 있는 메모는 무엇인지 알려 준다 */
+  const n=nsp(t).length, lines=t.split('\n').filter(x=>x.trim()).length;
+  return n>=80||(lines>=2&&n>=40);
+};
 function hitRow(m,q,sim,byNote,r){
   const d=el('div','hit');
   const base=mlabel(m);
-  const mk=q?esc(base).replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig'),
-    '<mark>$1</mark>'):esc(base);
+  const mk=q?sMark(base,q):esc(base);
   d.innerHTML=`<div class="m"><span class="sp">${sAll&&r?'<b class="srm">'+esc(r.name)+'</b> · ':''}${dlabel(dkey(new Date(m.ts)))} · ${hhmm(m.ts)}`
     +`${m.file?' · 첨부':''}${m.done?' · 완료':''}${byNote?' · 추가 메모에서 찾음':''}</span>`
     +(sim!=null?`<span class="sim">${Math.min(100,Math.round(sim*100))}%</span>`:'')+`</div>${mk}`
     +(byNote&&m.note?`<div class="m nt">${esc(m.note.trim().split('\n')[0])}</div>`
-      :(m.desc?`<div class="m" style="margin:4px 0 0">${esc(m.desc)}</div>`:''));
+      :(descWorth(m)?`<div class="m" style="margin:4px 0 0">${esc(m.desc)}</div>`:''));
   d.dataset.id=m.id;
   d.onclick=async()=>{
     $('#search').classList.remove('on');
@@ -4476,18 +4498,17 @@ function runSearch(){
   box.innerHTML='';
   if(!q) return;
   const hits=sPool().filter(({m})=>
-    (m.text||'').toLowerCase().includes(q)
-    ||(m.file&&(m.file.name||'').toLowerCase().includes(q))
-    ||(m.tags||[]).some(t=>t.toLowerCase().includes(q))
-    ||(m.desc||'').toLowerCase().includes(q)
-    ||(m.note||'').toLowerCase().includes(q)
+    sHas(m.text,q)
+    ||(m.file&&sHas(m.file.name,q))
+    ||(m.tags||[]).some(t=>sHas(t,q))
+    ||sHas(m.desc,q)
+    ||sHas(m.note,q)
   ).sort((a,b)=>b.m.ts-a.m.ts);
   if(hits.length){
     box.appendChild(sechd('바로 찾음'));
     /* 추가 메모에서 걸린 것은 그렇게 표시한다 */
     hits.forEach(({r,m})=>{
-      const inNote=(m.note||'').toLowerCase().includes(q)
-        && !(m.text||'').toLowerCase().includes(q);
+      const inNote=sHas(m.note,q) && !sHas(m.text,q);
       box.appendChild(hitRow(m,q,null,inNote,r));
     });
   }
