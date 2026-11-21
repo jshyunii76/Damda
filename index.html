@@ -386,10 +386,10 @@ html.kb body{align-items:flex-start}
 .stamp{display:flex;align-items:center;gap:3px;font-size:10.5px;color:var(--ink-3);
   margin-top:3px;padding-right:3px}
 .stamp .pm{display:inline-flex;color:var(--pin)}
-.stamp .pm svg{width:12px;height:12px;fill:currentColor;stroke:none}
+.stamp .pm svg{width:13px;height:13px;fill:currentColor;stroke:none}
 .stamp .nb{display:inline-flex;
   color:var(--accent);align-items:center}
-.stamp .nb svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:2;
+.stamp .nb svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;
   stroke-linecap:round;stroke-linejoin:round}
 .bcol{display:flex;flex-direction:column;align-items:flex-end;width:100%}
 /* 추가 메모를 펼치면 말풍선 바로 아래 오른쪽 끝에 맞춰 붙는다 (말풍선 크기는 그대로) — 맞닿는 오른쪽 모서리만 줄인다 */
@@ -2609,8 +2609,23 @@ function drawStream(keep){
       add(bar);
     }
   });
-  s.scrollTop=keep?top:s.scrollHeight;
+  if(keep) s.scrollTop=top; else stickBottom();
 }
+/* 방에 들어오면 맨 아래에서 시작한다. 사진처럼 늦게 불러와져 키가 커지는 것이 있어도
+   내가 스크롤하기 전까지는 맨 아래에 붙여 둔다 */
+let stickT=0;
+function stickBottom(){
+  const s=$('#stream'); s.scrollTop=s.scrollHeight; stickT=Date.now()+8000;
+  requestAnimationFrame(()=>{ if(Date.now()<stickT) s.scrollTop=s.scrollHeight; });
+}
+(()=>{
+  const s=$('#stream');
+  const stick=()=>{ if(Date.now()<stickT) s.scrollTop=s.scrollHeight; };
+  s.addEventListener('load',stick,true);
+  s.addEventListener('loadedmetadata',stick,true);
+  if(document.fonts) document.fonts.ready.then(stick);
+  ['wheel','touchstart','pointerdown','keydown'].forEach(t=>s.addEventListener(t,()=>{ stickT=0; },{passive:true}));
+})();
 
 const pinned=()=>msgs.filter(m=>m.pin).sort((a,b)=>(a.pinAt||0)-(b.pinAt||0));
 /* 찾은 메모로 바로 이동 — 화면 가운데에 오게 곧바로 맞추고, 사진이 늦게 뜨면 한 번 더 맞춘다.
@@ -5020,7 +5035,13 @@ async function openGrpView(fresh){
   $('#grpview').classList.add('on');
   grpOpen=new Set();
   $('#gvList').scrollTop=0;
-  if(lastGrp&&!fresh){ drawGroups(lastGrp); return; }
+  /* 지난번 결과를 먼저 보여 주고, 그 뒤에 쓴 메모까지 넣어 다시 맞춘다 (AI는 부르지 않는다) */
+  if(lastGrp&&!fresh){
+    drawGroups(lastGrp);
+    lastGrp=await computeGroups(false);
+    if($('#grpview').classList.contains('on')) drawGroups(lastGrp);
+    return;
+  }
   const box=$('#gvList'); box.innerHTML='';
   const load=el('div','gload');
   load.innerHTML='<span class="aip"></span>';
