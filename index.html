@@ -2646,12 +2646,12 @@ const stickBottom=()=>stickTo(null);
 
 const pinned=()=>msgs.filter(m=>m.pin).sort((a,b)=>(a.pinAt||0)-(b.pinAt||0));
 /* 찾은 메모로 바로 이동 — 화면 가운데에 오게 곧바로 맞추고, 사진이 늦게 뜨면 한 번 더 맞춘다.
-   keep이면 다른 행동을 할 때까지 노란색을 유지한다 (검색에서 온 경우) */
+   어디서 왔든(검색·고정 메모·홈·알림·묶음) 다른 행동을 할 때까지 노란색을 유지한다 */
 let foundId=null;
-function jumpTo(m,keep){
+function jumpTo(m){
   if(grpF&&!grpF.ids.has(m.id)) exitGrp();
   delete folded[oday(m)];
-  if(keep){ foundId=m.id; flashId=null; } else flashId=m.id;
+  foundId=m.id; flashId=null;
   drawStream('jump');
   stickTo(m.id);
 }
