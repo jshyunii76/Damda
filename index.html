@@ -370,7 +370,10 @@ html.kb body{align-items:flex-start}
 /* 시각과 바로가기는 한 칸에 겹쳐 놓는다 */
 .side{flex:0 0 auto;display:grid;align-items:end;justify-items:end}
 .side>*{grid-area:1/1}
-.tm{font-size:11px;color:var(--ink-3);white-space:nowrap;padding:0 1px 2px 0;font-variant-numeric:tabular-nums}
+.tm{display:inline-flex;align-items:center;gap:2px;font-size:12px;color:var(--ink-3);white-space:nowrap;padding:0 1px 2px 0;font-variant-numeric:tabular-nums}
+/* 고정 표시는 보낸 시각 바로 앞 */
+.tm .pm{display:inline-flex;color:var(--pin)}
+.tm .pm svg{width:13px;height:13px;fill:currentColor;stroke:none}
 .qb{width:30px;height:30px;border:0;border-radius:8px;padding:0;background:transparent;color:var(--ink-2);
   display:grid;place-items:center;cursor:pointer}
 .qb svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -385,12 +388,12 @@ html.kb body{align-items:flex-start}
 }
 .stamp{display:flex;align-items:center;gap:3px;font-size:10.5px;color:var(--ink-3);
   margin-top:3px;padding-right:3px}
-.stamp .pm{display:inline-flex;color:var(--pin)}
-.stamp .pm svg{width:13px;height:13px;fill:currentColor;stroke:none}
 .stamp .nb{display:inline-flex;
   color:var(--accent);align-items:center}
 .stamp .nb svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;
   stroke-linecap:round;stroke-linejoin:round}
+/* 추가 메모를 펼쳐 두면 표시 아이콘은 숨긴다 */
+.msg.noteon .stamp .nb{display:none}
 .bcol{display:flex;flex-direction:column;align-items:flex-end;width:100%}
 /* 추가 메모를 펼치면 말풍선 바로 아래 오른쪽 끝에 맞춰 붙는다 (말풍선 크기는 그대로) — 맞닿는 오른쪽 모서리만 줄인다 */
 .msg.noteon .b{border-bottom-right-radius:5px}
@@ -804,6 +807,7 @@ body.nosel,body.nosel *{-webkit-user-select:none!important;user-select:none!impo
 #robar svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 #scChat.ro #robar{display:flex}
 #scChat.ro #compose,#scChat.ro .qa{display:none!important}
+@media(pointer:coarse){#scChat.noting #compose{display:none}}
 #scChat.ro.sel #robar{display:none}
 
 .cal{margin-bottom:12px}
@@ -1166,7 +1170,10 @@ body.rzing *{user-select:none!important}
       여러 개 선택</button>
     <button class="mrow" id="gCopy">
       <svg viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2"/><path d="M15.5 8.5V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7.5a2 2 0 0 0 2 2h2.5"/></svg>
-      복사</button>
+      <span id="gCopyLb">복사</span></button>
+    <button class="mrow" id="gCopyF">
+      <svg viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2"/><path d="M15.5 8.5V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7.5a2 2 0 0 0 2 2h2.5"/></svg>
+      <span id="gCopyFLb">복사</span></button>
     <button class="mrow" id="gShare">
       <svg viewBox="0 0 24 24"><path d="M12 3.5v11.5M7.5 8L12 3.5 16.5 8"/><path d="M5 12.5v6.5a1.5 1.5 0 0 0 1.5 1.5h11a1.5 1.5 0 0 0 1.5-1.5v-6.5"/></svg>
       공유</button>
@@ -2793,15 +2800,11 @@ function bubble(m){
   const side=el('div','side'), tm=el('span','tm');
   const sd=dkey(new Date(m.ts));
   tm.textContent=(sd!==oday(m)?md(sd)+' ':'')+hhmm(m.ts);
+  if(m.pin){ const p=el('span','pm'); p.innerHTML=PIN; tm.prepend(p); }
   side.append(tm,qa);
   row.append(side,b); col.appendChild(row);
   wrap.appendChild(col);
   const st=el('div','stamp');
-  if(m.pin){
-    const p=el('span','pm');
-    p.innerHTML=PIN;
-    st.appendChild(p);
-  }
   const hasNote=m.note&&m.note.trim();
   let nb=null;
   if(hasNote){
@@ -2809,7 +2812,7 @@ function bubble(m){
     nb.innerHTML='<svg viewBox="0 0 24 24"><path d="M5 4h9l5 5v11H5z"/><path d="M14 4v5h5M8 13h6"/></svg>';
     st.appendChild(nb);
   }
-  /* 말풍선 아래에는 고정·추가 메모 표시만. 표시가 없어도 줄 높이는 남겨 메모 사이 간격을 전과 같게 둔다 */
+  /* 말풍선 아래에는 추가 메모 표시만. 표시가 없어도 줄 높이는 남겨 메모 사이 간격을 전과 같게 둔다 */
   st.appendChild(document.createTextNode('\u200b'));
   wrap.appendChild(st);
   /* 추가 메모: 말풍선 아래 회색 말풍선. 다섯 줄까지 보이고 넘으면 화살표로 펼친다. 누르면 그 자리에서 고친다.
@@ -2860,6 +2863,7 @@ function noteShowBox(m,box){
   ar.innerHTML='<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>';
   ar.setAttribute('aria-label',noteFull.has(m.id)?'추가 메모 접기':'추가 메모 펼치기');
   box.append(tx,ar);
+  box._m=m; noteMenu(box);
   box.onclick=e=>{ e.stopPropagation(); if(selMode||mdrag) return; openNote(m); };
   ar.onclick=e=>{
     e.stopPropagation(); if(selMode) return;
@@ -2874,8 +2878,45 @@ function noteShowBox(m,box){
     ar.hidden=!(tx.scrollHeight-tx.clientHeight>2); if(f) box.classList.add('full'); };
   requestAnimationFrame(()=>{ if(box.isConnected&&box.offsetParent) box._fit(); });
 }
+/* 추가 메모 메뉴 — PC 우클릭, 폰 꾹 누르기 (상자는 다시 쓰이므로 한 번만 붙인다) */
+function noteMenu(box){
+  if(box._lp) return; box._lp=true;
+  let t=null,fired=false,touch=false,sx=0,sy=0;
+  const show=(x,y)=>{
+    const m=box._m; if(!m||roNow()||selMode||box.classList.contains('edit')) return;
+    popMenu('추가 메모',[['del','삭제',()=>delNote(m),'danger']],x,y);
+  };
+  const clear=()=>{ if(t){ clearTimeout(t); t=null; } };
+  box.addEventListener('pointerdown',e=>{
+    if(e.button!==0||box.classList.contains('edit')) return;
+    touch=e.pointerType!=='mouse'; fired=false; if(!touch) return;
+    sx=e.clientX; sy=e.clientY;
+    t=setTimeout(()=>{ t=null; fired=true; vib(); show(sx,sy); },450);
+  });
+  box.addEventListener('pointermove',e=>{ if(t&&(Math.abs(e.clientX-sx)>8||Math.abs(e.clientY-sy)>8)) clear(); });
+  box.addEventListener('pointerup',()=>{ clear(); if(fired) eatClick(); });
+  ['pointercancel','pointerleave'].forEach(v=>box.addEventListener(v,clear));
+  box.addEventListener('click',e=>{ if(fired){ e.preventDefault(); e.stopPropagation(); fired=false; } },true);
+  box.addEventListener('contextmenu',e=>{
+    if(box.classList.contains('edit')) return;
+    e.preventDefault(); e.stopPropagation();
+    if(touch||fired) return;
+    show(e.clientX,e.clientY);
+  });
+}
+async function delNote(m){
+  if(roNow()) return;
+  if(noteEd&&noteEd.id===m.id){ clearTimeout(noteTimer); noteEd=null; $('#scChat').classList.remove('noting'); }
+  m.note=''; noteOpen.delete(m.id); noteFull.delete(m.id);
+  holdView(m.id,()=>drawStream(true));
+  await persist();
+  try{ await IDB.del(VEC+'n:'+m.id); }catch(e){}
+  nVec.delete(m.id); gNVec.delete(m.id);
+  toast('추가 메모를 삭제했어요');
+}
 function noteEditBox(m,box){
   box.className='notebox edit'; box.innerHTML='';
+  $('#scChat').classList.add('noting');
   const ta=el('textarea','nin'); ta.rows=1; ta.value=noteEd.val; ta.placeholder='추가 메모';
   box.appendChild(ta);
   box.onclick=e=>{ e.stopPropagation(); ta.focus(); };
@@ -2917,6 +2958,7 @@ async function noteDone(id){
   if(!noteEd||noteEd.id!==id) return;
   clearTimeout(noteTimer);
   const v=noteEd.val, hide=!!noteEd.hide; noteEd=null;
+  $('#scChat').classList.remove('noting');
   const x=msgs.find(z=>z.id===id); if(!x){ drawStream(true); return; }
   const changed=!roNow()&&(x.note||'')!==v;
   if(changed) x.note=v;
@@ -3289,6 +3331,44 @@ $('#gCopy').onclick=async()=>{
   }
   toast(ok?'복사했어요':'복사하지 못했어요');
 };
+/* 사진은 사진 그대로, 글 파일(txt·md·csv 등)은 내용을 복사한다.
+   그 밖의 파일은 브라우저가 클립보드에 넣어 주지 않는다 */
+function fileCopyKind(m){
+  const f=m.file; if(!f) return null;
+  if(isImg(f.type||'')&&!/svg/i.test(f.type||'')) return 'img';
+  if(/^text\//i.test(f.type||'')||/\.(txt|md|csv|tsv|json|log|ya?ml|xml|html?|css|js|ts|py|c|cpp|h|java|tex)$/i.test(f.name||'')) return 'txt';
+  return null;
+}
+function toPng(blob){
+  if(blob.type==='image/png') return Promise.resolve(blob);
+  return new Promise((res,rej)=>{
+    const u=URL.createObjectURL(blob), im=new Image();
+    im.onload=()=>{
+      const c=document.createElement('canvas'); c.width=im.naturalWidth; c.height=im.naturalHeight;
+      c.getContext('2d').drawImage(im,0,0); URL.revokeObjectURL(u);
+      c.toBlob(b=>b?res(b):rej(new Error('png')),'image/png');
+    };
+    im.onerror=()=>{ URL.revokeObjectURL(u); rej(new Error('img')); };
+    im.src=u;
+  });
+}
+const fileBlob=async m=>{ const r=await IDB.get(m.file.id); if(!r||!r.blob) throw new Error('nofile'); return r.blob; };
+$('#gCopyF').onclick=()=>{
+  const m=msgTarget; close('#shMsg'); if(!m||!m.file) return;
+  const k=fileCopyKind(m);
+  if(k==='img'){
+    /* 사파리는 누른 순간 바로 클립보드에 써야 해서, 사진은 약속(Promise)으로 넘긴다 */
+    let p;
+    try{ p=navigator.clipboard.write([new ClipboardItem({'image/png':fileBlob(m).then(toPng)})]); }
+    catch(e){ p=Promise.reject(e); }
+    p.then(()=>toast('사진을 복사했어요'),()=>toast('사진을 복사하지 못했어요'));
+  }else if(k==='txt'){
+    let p;
+    try{ p=navigator.clipboard.write([new ClipboardItem({'text/plain':fileBlob(m).then(b=>new Blob([b],{type:'text/plain'}))})]); }
+    catch(e){ p=fileBlob(m).then(b=>b.text()).then(copyText).then(ok=>{ if(!ok) throw 0; }); }
+    p.then(()=>toast('파일 내용을 복사했어요'),()=>toast('복사하지 못했어요'));
+  }
+};
 /* ---------- 공유 — 폰·윈도우 공유창으로 다른 앱(AI, 카톡 등)에 바로 보낸다 ----------
    파일은 파일 그대로, 글은 글로. 공유창이 없는 브라우저는 파일을 내려받고 글은 복사한다 */
 async function copyText(t){
@@ -3394,6 +3474,10 @@ function askMsg(m){
   /* 사진·파일만 있는 메모는 수정 대신 추가 메모를 쓴다 */
   $('#gEdit').style.display=m.text?'':'none';
   $('#gCopy').style.display=m.text?'':'none';
+  const cf=fileCopyKind(m);
+  $('#gCopyF').style.display=cf?'':'none';
+  $('#gCopyLb').textContent=cf&&m.text?'글 복사':'복사';
+  $('#gCopyFLb').textContent=m.text?(cf==='img'?'사진 복사':'파일 내용 복사'):'복사';
   /* 보기만 가능한 방: 읽기·복사·공유·여러 개 선택만 */
   if(roNow()){
     ['#gDone','#gDue','#gPin','#gEdit','#gDel'].forEach(x=>{ $(x).style.display='none'; });
