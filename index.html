@@ -265,7 +265,7 @@ html.kb body{align-items:flex-start}
 #pinbar{flex:0 0 auto;background:var(--app);border-bottom:1px solid var(--line)}
 #pinbar:empty{display:none}
 .pinbox{border-left:3px solid var(--accent);padding:8px 14px 9px;background:var(--tint)}
-.pinbox .h{font-size:11.5px;font-weight:700;color:var(--accent);
+.pinbox .h{font-size:13px;font-weight:700;color:var(--accent);
   display:flex;align-items:center;gap:5px;cursor:pointer;user-select:none}
 .pinbox .h .cv{margin-left:auto;transition:transform .2s;opacity:.7}
 .pinbox.open .h .cv{transform:rotate(180deg)}
@@ -367,6 +367,10 @@ html.kb body{align-items:flex-start}
 .brow{display:flex;align-items:flex-end;justify-content:flex-end;gap:6px;width:100%}
 .qa{display:none;flex:0 0 auto;gap:3px;padding:2px;border-radius:10px;background:rgba(27,32,36,.025);
   opacity:0;transition:opacity .12s}
+/* 시각과 바로가기는 한 칸에 겹쳐 놓는다 */
+.side{flex:0 0 auto;display:grid;align-items:end;justify-items:end}
+.side>*{grid-area:1/1}
+.tm{font-size:11px;color:var(--ink-3);white-space:nowrap;padding:0 1px 2px 0;font-variant-numeric:tabular-nums}
 .qb{width:30px;height:30px;border:0;border-radius:8px;padding:0;background:transparent;color:var(--ink-2);
   display:grid;place-items:center;cursor:pointer}
 .qb svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -376,6 +380,7 @@ html.kb body{align-items:flex-start}
   /* PC에는 말풍선 옆 바로가기가 있으니 기능 메뉴에서는 뺀다 (폰은 메뉴에 그대로) */
   #gNote,#gDue{display:none!important}
   .brow:hover .qa,.qa:focus-within{opacity:1}
+  #scChat:not(.sel):not(.mdrag):not(.ro) .brow:hover .tm,#scChat:not(.ro) .side:focus-within .tm{visibility:hidden}
   #scChat.sel .qa,#scChat.mdrag .qa{display:none}
 }
 .stamp{display:flex;align-items:center;gap:3px;font-size:10.5px;color:var(--ink-3);
@@ -2640,8 +2645,7 @@ function drawPinned(){
   const box=el('div','pinbox'+(pinOpen?' open':''));
 
   const h=el('div','h');
-  h.innerHTML=`${PIN}
-    <span>고정한 메시지 ${pin.length}개</span>
+  h.innerHTML=`<span>고정한 메시지 ${pin.length}개</span>
     <span class="cv"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span>`;
   h.onclick=()=>{pinOpen=!pinOpen; drawPinned();};
   box.appendChild(h);
@@ -2763,7 +2767,12 @@ function bubble(m){
   /* 말풍선과 펼친 추가 메모를 한 덩어리로 — 추가 메모가 말풍선 바로 아래에 붙는다 */
   /* 줄(바로가기+말풍선) 아래에 추가 메모 — 바로가기는 말풍선 옆에만, 추가 메모 위에서는 뜨지 않는다 */
   const col=el('div','bcol');
-  row.append(qa,b); col.appendChild(row);
+  /* 보낸 시각은 말풍선 왼쪽 아래 — 바로가기 아이콘이 뜨면 그 자리를 가린다 */
+  const side=el('div','side'), tm=el('span','tm');
+  const sd=dkey(new Date(m.ts));
+  tm.textContent=(sd!==oday(m)?md(sd)+' ':'')+hhmm(m.ts);
+  side.append(tm,qa);
+  row.append(side,b); col.appendChild(row);
   wrap.appendChild(col);
   const st=el('div','stamp');
   if(m.pin){
@@ -2778,9 +2787,8 @@ function bubble(m){
     nb.innerHTML='<svg viewBox="0 0 24 24"><path d="M5 4h9l5 5v11H5z"/><path d="M14 4v5h5M8 13h6"/></svg>';
     st.appendChild(nb);
   }
-  const sd=dkey(new Date(m.ts));
-  st.appendChild(document.createTextNode((sd!==oday(m)?md(sd)+' ':'')+hhmm(m.ts)));
-  wrap.appendChild(st);
+  /* 말풍선 아래에는 고정·추가 메모 표시만 */
+  if(st.childNodes.length) wrap.appendChild(st);
   /* 추가 메모: 말풍선 아래 회색 말풍선. 다섯 줄까지 보이고 넘으면 화살표로 펼친다. 누르면 그 자리에서 고친다.
      펼치고 접을 때는 화면을 다시 그리지 않아 스크롤이 튀지 않는다 */
   const editing=noteEd&&noteEd.id===m.id;
@@ -2790,11 +2798,22 @@ function bubble(m){
     if(!nbox||!(m.note&&m.note.trim())){ openNote(m); return; }
     const on=!noteOpen.has(m.id);
     const s=$('#stream'), y0=b.getBoundingClientRect().top;
+    /* 펼칠 때는 전에 접으면서 깔아 둔 빈칸을 먼저 걷는다 */
+    let pad=s.querySelector(':scope>.npad');
+    if(on&&pad){ pad.remove(); pad=null; }
     on?noteOpen.add(m.id):noteOpen.delete(m.id);
     wrap.classList.toggle('noteon',on);
     if(on&&nbox._fit) nbox._fit();
     /* 말풍선이 있던 자리에 그대로 있도록 스크롤을 맞춘다 */
     s.scrollTop+=b.getBoundingClientRect().top-y0;
+    /* 맨 아래 근처에서 접으면 스크롤이 더 내려갈 수 없어 말풍선이 아래로 튄다 — 줄어든 만큼 빈칸을 깔아 막는다
+       (빈칸은 다음에 화면을 다시 그릴 때 사라진다) */
+    const d=b.getBoundingClientRect().top-y0;
+    if(!on&&d>.5){
+      if(!pad){ pad=el('div','npad'); s.appendChild(pad); }
+      pad.style.height=(parseFloat(pad.style.height)||0)+d+'px';
+      s.scrollTop+=b.getBoundingClientRect().top-y0;
+    }
     /* 펼친 메모가 화면 밖으로 밀렸을 때만 딱 그만큼 올린다 */
     if(on){
       const over=nbox.getBoundingClientRect().bottom-s.getBoundingClientRect().bottom+6;
