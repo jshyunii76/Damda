@@ -2519,7 +2519,7 @@ function closeOverlays(){
   ['#calview','#noteview','#search','#pinlist','#grpview','#allfold','#setview'].forEach(s=>$(s).classList.remove('on'));
 }
 
-async function openRoom(id){
+async function openRoom(id,jump){
   cur=rooms.find(r=>r.id===id); if(!cur) return;
   if(selMode) exitSel(true);
   briefOn=false; grpF=null; lastGrp=null; $('#scChat').classList.remove('brief','grp'); updBack();
@@ -2536,7 +2536,9 @@ async function openRoom(id){
   $('#scChat').classList.toggle('ro',roNow());
   $('#txt').placeholder='메시지 입력';
   hClose(); $('#whenHint').classList.remove('on');
-  drawStream();
+  /* 특정 메모를 눌러 들어온 거면 맨 아래를 거치지 않고 바로 그 메모로 */
+  const jm=jump&&msgs.find(x=>x.id===jump.id);
+  if(jm) jumpTo(jm,jump.keep); else drawStream();
   /* PC에서만 입력창에 바로 커서 — 폰은 키보드가 튀어 올라와서 하지 않는다 */
   if(matchMedia('(pointer:fine)').matches) setTimeout(()=>$('#txt').focus(),260);
 }
@@ -2609,7 +2611,7 @@ function drawStream(keep){
       add(bar);
     }
   });
-  if(keep) s.scrollTop=top; else stickBottom();
+  if(keep==='jump') stickT=0; else if(keep) s.scrollTop=top; else stickBottom();
 }
 /* 방에 들어오면 맨 아래에서 시작한다. 사진처럼 늦게 불러와져 키가 커지는 것이 있어도
    내가 스크롤하기 전까지는 맨 아래에 붙여 둔다 */
@@ -2635,7 +2637,7 @@ function jumpTo(m,keep){
   if(grpF&&!grpF.ids.has(m.id)) exitGrp();
   delete folded[oday(m)];
   if(keep){ foundId=m.id; flashId=null; } else flashId=m.id;
-  drawStream();
+  drawStream('jump');
   const center=()=>{
     const s=$('#stream'), t=document.getElementById('b'+m.id); if(!t) return;
     const R=t.getBoundingClientRect(), S=s.getBoundingClientRect();
@@ -3543,9 +3545,7 @@ async function openBrief(){
 }
 
 async function goMsg(r,id,keep){
-  await openRoom(r.id);
-  const m=msgs.find(x=>x.id===id);
-  if(m) setTimeout(()=>jumpTo(m,keep),40);
+  await openRoom(r.id,{id,keep});
 }
 
 function drawBrief(fresh){
@@ -4197,8 +4197,7 @@ function rtShow(t,busy){
 const rtHide=()=>{ clearTimeout(rtT); $('#rtoast').classList.remove('on'); };
 $('#rtOpen').onclick=async()=>{
   const x=lastRoute; rtHide(); if(!x) return;
-  await openRoom(x.r.id);
-  const m=msgs.find(y=>y.id===x.m.id); if(m) setTimeout(()=>jumpTo(m),40);
+  await openRoom(x.r.id,{id:x.m.id});
 };
 $('#rtChange').onclick=()=>{
   const x=lastRoute; if(!x) return;
@@ -4460,8 +4459,8 @@ function hitRow(m,q,sim,byNote,r){
     $('#search').classList.remove('on');
     if(sAll&&r){
       sAll=null;
-      if(!cur||cur.id!==r.id) await openRoom(r.id);
-      const x=msgs.find(y=>y.id===m.id); if(x) setTimeout(()=>jumpTo(x,true),40);
+      if(!cur||cur.id!==r.id){ await openRoom(r.id,{id:m.id,keep:true}); return; }
+      const x=msgs.find(y=>y.id===m.id); if(x) jumpTo(x,true);
       return;
     }
     jumpTo(m,true);
