@@ -365,11 +365,11 @@ html.kb body{align-items:flex-start}
 .msg{display:flex;flex-direction:column;align-items:flex-end;margin:0 0 9px}
 /* 말풍선 + 왼쪽 바로가기 버튼 줄 */
 .brow{display:flex;align-items:flex-end;justify-content:flex-end;gap:6px;width:100%}
-.qa{display:none;flex:0 0 auto;gap:3px;padding:2px;border-radius:9px;background:rgba(27,32,36,.05);
+.qa{display:none;flex:0 0 auto;gap:3px;padding:2px;border-radius:10px;background:rgba(27,32,36,.025);
   opacity:0;transition:opacity .12s}
-.qb{width:26px;height:26px;border:0;border-radius:7px;padding:0;background:transparent;color:var(--ink-2);
+.qb{width:30px;height:30px;border:0;border-radius:8px;padding:0;background:transparent;color:var(--ink-2);
   display:grid;place-items:center;cursor:pointer}
-.qb svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.qb svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .qb:hover{background:var(--soft);color:var(--accent)}
 @media(hover:hover) and (pointer:fine){
   .qa{display:flex}
@@ -382,24 +382,32 @@ html.kb body{align-items:flex-start}
   margin-top:3px;padding-right:3px}
 .stamp .pm{display:inline-flex;color:var(--pin)}
 .stamp .pm svg{width:12px;height:12px;fill:currentColor;stroke:none}
-.stamp .nb{border:0;background:transparent;padding:0;cursor:pointer;display:inline-flex;
+.stamp .nb{display:inline-flex;
   color:var(--accent);align-items:center}
 .stamp .nb svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:2;
   stroke-linecap:round;stroke-linejoin:round}
-.stamp .nb:hover{opacity:.7}
-.stamp .nb.on{opacity:.55}
 .bcol{display:flex;flex-direction:column;align-items:flex-end;width:100%}
 /* 추가 메모를 펼치면 말풍선 바로 아래 오른쪽 끝에 맞춰 붙는다 (말풍선 크기는 그대로) — 맞닿는 오른쪽 모서리만 줄인다 */
 .msg.noteon .b{border-bottom-right-radius:5px}
-.notebox{display:none;max-width:min(82%,520px);box-sizing:border-box;margin-top:2px;padding:7px 12px 8px;
-  background:var(--mute);border:1px solid var(--line);border-radius:var(--r) 5px var(--r) var(--r);
+.notebox{display:none;max-width:min(82%,520px);box-sizing:border-box;margin-top:4px;padding:7px 12px 8px;
+  background:var(--mute);border:0;box-shadow:0 2px 6px rgba(27,32,36,.16);border-radius:var(--r) 5px var(--r) var(--r);
   font-size:12.5px;color:var(--ink-2);line-height:1.55;cursor:pointer}
 .msg.noteon .notebox{display:block}
 .notebox:hover{background:var(--mute-2)}
 
-.notebox .tx{white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;
+.notebox .tx{white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;
   overflow:hidden}
-.notebox .mo{margin-top:4px;font-size:11.5px;font-weight:600;color:var(--accent)}
+.notebox.full .tx{display:block;overflow:visible}
+.notebox .ar{display:flex;justify-content:center;width:100%;border:0;background:transparent;padding:1px 0 0;margin:2px 0 -3px;
+  color:var(--ink-3);cursor:pointer}
+.notebox .ar[hidden]{display:none}
+.notebox .ar svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;
+  transition:transform .2s}
+.notebox.full .ar svg{transform:rotate(180deg)}
+.notebox.edit{cursor:text}
+.notebox.edit:hover{background:var(--mute)}
+.notebox .nin{display:block;width:100%;border:0;outline:0;background:transparent;resize:none;padding:0;margin:0;
+  font:inherit;color:inherit;line-height:inherit;max-height:calc(1.55em * 15);overflow-y:hidden}
 
 /* ===== 어제·오늘 요약방 ===== */
 #scChat.brief #pinbar,#scChat.brief #btnBack,
@@ -2748,7 +2756,7 @@ function bubble(m){
     x.innerHTML=svg; x.onclick=e=>{ e.stopPropagation(); if(selMode||mdrag) return; fn(); }; return x; };
   qa.append(
     qb('qnote',m.note&&m.note.trim()?'추가 메모 보기':'추가 메모',
-      '<svg viewBox="0 0 24 24"><path d="M5 4h9l5 5v11H5z"/><path d="M14 4v5h5M8 13h8M8 16.5h5"/></svg>',()=>openNote(m)),
+      '<svg viewBox="0 0 24 24"><path d="M5 4h9l5 5v11H5z"/><path d="M14 4v5h5M8 13h8M8 16.5h5"/></svg>',()=>wrap._noteTap()),
     qb('qdue',m.due?'날짜 바꾸기':'날짜 지정',
       '<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/></svg>',
       ()=>openCal(m.due||null,m.dueTime||null,m,m.dueStart||null)));
@@ -2766,43 +2774,118 @@ function bubble(m){
   const hasNote=m.note&&m.note.trim();
   let nb=null;
   if(hasNote){
-    nb=el('button','nb'+(noteOpen.has(m.id)?' on':'')); nb.setAttribute('aria-label','추가 메모 보기');
+    nb=el('span','nb'); nb.setAttribute('aria-label','추가 메모 있음');
     nb.innerHTML='<svg viewBox="0 0 24 24"><path d="M5 4h9l5 5v11H5z"/><path d="M14 4v5h5M8 13h6"/></svg>';
     st.appendChild(nb);
   }
   const sd=dkey(new Date(m.ts));
   st.appendChild(document.createTextNode((sd!==oday(m)?md(sd)+' ':'')+hhmm(m.ts)));
   wrap.appendChild(st);
-  /* 추가 메모는 말풍선 아래에 세 줄까지 먼저 보여준다.
+  /* 추가 메모: 말풍선 아래 회색 말풍선. 다섯 줄까지 보이고 넘으면 화살표로 펼친다. 누르면 그 자리에서 고친다.
      펼치고 접을 때는 화면을 다시 그리지 않아 스크롤이 튀지 않는다 */
-  if(hasNote){
-    if(noteOpen.has(m.id)) wrap.classList.add('noteon');
-    const box=el('div','notebox');
-    const tx=el('div','tx'); tx.textContent=m.note.trim();
-    const mo=el('div','mo'); mo.textContent='더보기'; mo.hidden=true;
-    box.append(tx,mo);
-    box.onclick=e=>{e.stopPropagation(); openNote(m);};
-    const fit=()=>{ mo.hidden=!(tx.scrollHeight-tx.clientHeight>2); };
-    if(noteOpen.has(m.id)) requestAnimationFrame(fit);
-    nb.onclick=e=>{
-      e.stopPropagation();
-      const on=!noteOpen.has(m.id);
-      const s=$('#stream'), y0=b.getBoundingClientRect().top;
-      on?noteOpen.add(m.id):noteOpen.delete(m.id);
-      wrap.classList.toggle('noteon',on);
-      nb.classList.toggle('on',on);
-      if(on) fit();
-      /* 말풍선이 있던 자리에 그대로 있도록 스크롤을 맞춘다 */
-      s.scrollTop+=b.getBoundingClientRect().top-y0;
-      /* 펼친 메모가 화면 밖으로 밀렸을 때만 딱 그만큼 올린다 */
-      if(on){
-        const over=box.getBoundingClientRect().bottom-s.getBoundingClientRect().bottom+6;
-        if(over>0) s.scrollTop+=over;
-      }
-    };
+  const editing=noteEd&&noteEd.id===m.id;
+  let nbox=null;
+  /* 왼쪽 아이콘(폰은 메뉴): 추가 메모가 있으면 보이기·숨기기, 없으면 바로 쓰기 */
+  wrap._noteTap=()=>{
+    if(!nbox||!(m.note&&m.note.trim())){ openNote(m); return; }
+    const on=!noteOpen.has(m.id);
+    const s=$('#stream'), y0=b.getBoundingClientRect().top;
+    on?noteOpen.add(m.id):noteOpen.delete(m.id);
+    wrap.classList.toggle('noteon',on);
+    if(on&&nbox._fit) nbox._fit();
+    /* 말풍선이 있던 자리에 그대로 있도록 스크롤을 맞춘다 */
+    s.scrollTop+=b.getBoundingClientRect().top-y0;
+    /* 펼친 메모가 화면 밖으로 밀렸을 때만 딱 그만큼 올린다 */
+    if(on){
+      const over=nbox.getBoundingClientRect().bottom-s.getBoundingClientRect().bottom+6;
+      if(over>0) s.scrollTop+=over;
+    }
+  };
+  if(hasNote||editing){
+    if(noteOpen.has(m.id)||editing) wrap.classList.add('noteon');
+    const box=nbox=el('div','notebox');
     col.appendChild(box);
+    if(editing) noteEditBox(m,box); else noteShowBox(m,box);
   }
   return wrap;
+}
+
+function noteShowBox(m,box){
+  box.className='notebox'+(noteFull.has(m.id)?' full':''); box.innerHTML=''; box.style.width='';
+  const tx=el('div','tx'); tx.textContent=m.note.trim();
+  const ar=el('button','ar'); ar.type='button'; ar.hidden=true;
+  ar.innerHTML='<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>';
+  ar.setAttribute('aria-label',noteFull.has(m.id)?'추가 메모 접기':'추가 메모 펼치기');
+  box.append(tx,ar);
+  box.onclick=e=>{ e.stopPropagation(); if(selMode||mdrag) return; openNote(m); };
+  ar.onclick=e=>{
+    e.stopPropagation(); if(selMode) return;
+    const s=$('#stream'), y0=box.getBoundingClientRect().top;
+    const on=!box.classList.contains('full');
+    box.classList.toggle('full',on); on?noteFull.add(m.id):noteFull.delete(m.id);
+    ar.setAttribute('aria-label',on?'추가 메모 접기':'추가 메모 펼치기');
+    s.scrollTop+=box.getBoundingClientRect().top-y0;
+  };
+  /* 다섯 줄이 넘을 때만 화살표 */
+  box._fit=()=>{ const f=box.classList.contains('full'); if(f) box.classList.remove('full');
+    ar.hidden=!(tx.scrollHeight-tx.clientHeight>2); if(f) box.classList.add('full'); };
+  requestAnimationFrame(()=>{ if(box.isConnected&&box.offsetParent) box._fit(); });
+}
+function noteEditBox(m,box){
+  box.className='notebox edit'; box.innerHTML='';
+  const ta=el('textarea','nin'); ta.rows=1; ta.value=noteEd.val; ta.placeholder='추가 메모';
+  box.appendChild(ta);
+  box.onclick=e=>{ e.stopPropagation(); ta.focus(); };
+  box.addEventListener('pointerdown',e=>e.stopPropagation());
+  /* 폭: 처음엔 '추가 메모' 글자만큼, 쓰는 대로 왼쪽으로 늘어난다 (최대 82%·520px) */
+  const cv=document.createElement('canvas').getContext('2d');
+  const fitTa=()=>{
+    const col=box.parentElement;
+    if(col){
+      const cs=getComputedStyle(ta), bs=getComputedStyle(box);
+      cv.font=cs.font;
+      const txw=Math.max(cv.measureText(ta.placeholder).width,...ta.value.split('\n').map(l=>cv.measureText(l).width));
+      const pad=parseFloat(bs.paddingLeft)+parseFloat(bs.paddingRight)+4;
+      const mx=Math.min(col.clientWidth*.82,520);
+      box.style.width=Math.min(mx,Math.ceil(txw+pad))+'px';
+    }
+    ta.style.height='auto'; const h=ta.scrollHeight+2, mh=parseFloat(getComputedStyle(ta).maxHeight)||1e9;
+    ta.style.height=h+'px'; ta.style.overflowY=h>mh?'auto':'hidden'; };
+  const mark=()=>{ if(noteEd&&noteEd.id===m.id) noteEd.sel=ta.selectionStart; };
+  ta.addEventListener('input',()=>{ if(!noteEd) return; noteEd.val=ta.value; mark(); fitTa();
+    clearTimeout(noteTimer); noteTimer=setTimeout(()=>noteKeep(m.id),700); });
+  ta.addEventListener('keyup',mark); ta.addEventListener('click',mark);
+  /* 메모 입력칸과 같게: 엔터는 저장(폰은 줄바꿈), 줄바꿈은 Shift+엔터 */
+  ta.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); ta.blur(); return; }
+    if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&window.innerWidth>480){ e.preventDefault(); ta.blur(); }
+  });
+  /* 다른 곳을 누르면 끝. 화면을 다시 그리느라 상자가 사라진 경우는 새 상자가 이어받는다 */
+  ta.addEventListener('blur',()=>setTimeout(()=>{ if(!ta.isConnected||document.activeElement===ta) return; noteDone(m.id); },0));
+  requestAnimationFrame(()=>{ if(!ta.isConnected) return; fitTa(); ta.focus({preventScroll:true});
+    const n=noteEd&&noteEd.sel!=null?Math.min(noteEd.sel,ta.value.length):ta.value.length; ta.setSelectionRange(n,n); });
+}
+async function noteKeep(id){
+  if(!noteEd||noteEd.id!==id||roNow()) return;
+  const x=msgs.find(z=>z.id===id); if(!x||(x.note||'')===noteEd.val) return;
+  x.note=noteEd.val; await persist();
+}
+async function noteDone(id){
+  if(!noteEd||noteEd.id!==id) return;
+  clearTimeout(noteTimer);
+  const v=noteEd.val; noteEd=null;
+  const x=msgs.find(z=>z.id===id); if(!x){ drawStream(true); return; }
+  const changed=!roNow()&&(x.note||'')!==v;
+  if(changed) x.note=v;
+  const has=!!(x.note||'').trim();
+  if(has) noteOpen.add(id); else noteOpen.delete(id);
+  /* 그 자리에서 보기 상자로 바꾼다 — 화면 전체를 다시 그리면 방금 누른 단추가 바뀌어 클릭이 씹힌다 */
+  const w=$('#stream').querySelector(`.msg[data-id="${id}"]`), box=w&&w.querySelector('.notebox');
+  if(box){
+    if(has) noteShowBox(x,box); else { w.classList.remove('noteon'); box.remove(); }
+    if(has!==!!w.querySelector('.stamp .nb')) setTimeout(()=>{ if(!noteEd) holdView(id,()=>drawStream(true)); },400);
+  }else holdView(id,()=>drawStream(true));
+  if(changed){ await persist(); reindex(x); }
 }
 
 function bubblePress(b,m){
@@ -3541,11 +3624,23 @@ const KNUM={'한':1,'두':2,'세':3,'네':4,'다섯':5,'여섯':6,'일곱':7,'�
 const WDAYS='일월화수목금토';
 /* 할 일 모양 끝맺음: ~하기 / 사기·가기·내기… (붙여 써도: '달걀사기') / ~야 함·해야 돼 / ~할 것 / ~하자 */
 const TODO_END=/(?:[가-힣]*하기|(?:^|\s)주기|[가-힣]*(?:사기|사오기|가기|오기|내기|보내기|받기|찾기|챙기기|넣기|빼기|돌려주기|두기|쓰기|읽기|먹기|끄기|켜기|바꾸기|만나기|맡기기|붙이기|타기|싸기|놓기|닦기|치기|자르기|갚기|맞추기|고치기|외우기|풀기|만들기|끝내기|버리기|채우기|보기|알아보기|씻기|빨기|걸기|부치기|뽑기|사두기|맡기기|가져가기|가져오기|데려가기|데려오기|잊지\s*말기))$|[가-힣]야\s*(?:함|해|돼|됨|된다|한다|하는데|지|해요|돼요|겠다)$|할\s*것$|(?:하|사|가|내|보|먹|만나|끝내|보내)자$|잊지\s*말자$/;
+/* 글에 서로 다른 날짜(5월 4일, 5/4, 2026.5.4, 28일 토요일…)가 둘 이상이면 true. 기간(12/1~12/20)은 하나로 본다 */
+function manyDates(s){
+  const full=new Set(), bare=new Set();
+  let t=s.replace(/(\d{4})\s*[.\-/년]\s*(\d{1,2})\s*[.\-/월]\s*(\d{1,2})\s*일?/g,(a,y,m,d)=>{ full.add(+m+'-'+ +d); return ' '; });
+  t=t.replace(/(\d{1,2})\s*월\s*(\d{1,2})\s*일(?:\s*(?:~|-|부터)\s*(?:\d{1,2}\s*월\s*)?\d{1,2}\s*일)?/g,(a,m,d)=>{ full.add(+m+'-'+ +d); return ' '; });
+  t=t.replace(/(?<![\d/.:])(\d{1,2})\/(\d{1,2})(?:\s*~\s*(?:\d{1,2}\/)?\d{1,2})?(?![\d/])/g,(a,m,d)=>{ if(+m>=1&&+m<=12) full.add(+m+'-'+ +d); return ' '; });
+  t.replace(/(?<![\d월/.])(\d{1,2})\s*일\s*(?=까지|에|날|마감|자정|오전|오후|아침|저녁|밤|\d{1,2}\s*시|\(\s*[일월화수목금토]|[일월화수목금토](?:요일|욜))/g,(a,d)=>{ bare.add(+d); return a; });
+  const days=new Set([...full].map(k=>+k.split('-')[1]));
+  let n=full.size; bare.forEach(d=>{ if(!days.has(d)) n++; });
+  return n>1;
+}
 function parseWhen(src,now){
   now=now?new Date(now):new Date();
   const s=String(src||'')
     .replace(/(^|\s)(열한|열두|다섯|여섯|일곱|여덟|아홉|한|두|세|네|열)\s*(시간|시|주|달)/g,(a,b,n,u)=>b+KNUM[n]+u);
   const today=new Date(now); today.setHours(0,0,0,0);
+  if(manyDates(s)) return null;
   const day=n=>{ const d=new Date(today); d.setDate(d.getDate()+n); return d; };
   const hm=d=>String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
   const ok=(y,m,d)=>{ const x=new Date(y,m-1,d); return x.getMonth()===m-1&&x.getDate()===d?x:null; };
@@ -3579,6 +3674,12 @@ function parseWhen(src,now){
     [/(이번|다음|담|다다음)\s*달\s*(\d{1,2})\s*일/,x=>{
       const add=x[1]==='이번'?0:(x[1]==='다다음'?2:1);
       return ok(today.getFullYear(),today.getMonth()+1+add,+x[2])||null; }],
+    /* '28일 토요일', '28일(토)' — 석 달 안에 요일까지 맞는 그날 (없으면 가장 가까운 그날) */
+    [/(?<![\d월/.])(\d{1,2})\s*일\s*(?:([일월화수목금토])(?:요일|욜)|\(\s*([일월화수목금토])(?:요일)?\s*\))/,x=>{
+      const n=+x[1], w=WDAYS.indexOf(x[2]||x[3]); let first=null;
+      for(let k=0;k<3;k++){ const d=new Date(today.getFullYear(),today.getMonth()+k,n); if(d.getDate()!==n||d<today) continue;
+        if(!first) first=d; if(d.getDay()===w) return d; }
+      return first; }],
     /* '다음 주 금요일', '다음주 월, 화', '이번 주 수~금' — 주 뒤에서는 '요일' 없이 한 글자로 써도 요일로 본다.
        이어진 날이면 기간(시작~끝), 떨어진 날이면 가장 이른 날 */
     [/(이번|다음|담|다다음)\s*주\s*(?=[일월화수목금토])/,x=>{
@@ -4406,8 +4507,19 @@ async function runSemantic(){
 
 
 /* ---------- 추가 메모 ---------- */
-let noteTarget=null, noteTimer=null, noteOpen=new Set();
+let noteTarget=null, noteTimer=null, noteOpen=new Set(), noteFull=new Set(), noteEd=null;
+/* 추가 메모: 화면에 있는 메모면 회색 말풍선에서 바로 쓴다 */
 function openNote(m){
+  const w=$('#stream').querySelector(`.msg[data-id="${m.id}"]`);
+  if(!w) return openNoteView(m);
+  if(selMode) return;
+  if(roNow()){ if(m.note&&m.note.trim()){ noteOpen.add(m.id); holdView(m.id,()=>drawStream(true)); } return; }
+  if(noteEd&&noteEd.id!==m.id) noteDone(noteEd.id);
+  noteEd={id:m.id,val:m.note||'',sel:null};
+  noteOpen.add(m.id);
+  holdView(m.id,()=>drawStream(true));
+}
+function openNoteView(m){
   noteTarget=m;
   const src=$('#nvSrc');
   src.innerHTML=`<b>${dlabel(dkey(new Date(m.ts)))} · ${hhmm(m.ts)}</b>${esc(mlabel(m))}`;
@@ -4431,7 +4543,9 @@ async function saveNote(quiet){
   if(!quiet) $('#nvSave').textContent='저장됨';
   reindex(noteTarget);
 }
-$('#gNote').onclick=()=>{ const m=msgTarget; close('#shMsg'); openNote(m); };
+$('#gNote').onclick=()=>{ const m=msgTarget; close('#shMsg');
+  const w=m&&$('#stream').querySelector(`.msg[data-id="${m.id}"]`);
+  if(w&&w._noteTap) w._noteTap(); else openNote(m); };
 
 /* =====================================================
    모아담기 (묶음 정리)
