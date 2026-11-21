@@ -519,6 +519,12 @@ html.kb body{align-items:flex-start}
 .hm-dd{flex:0 0 auto;font-size:12px;font-weight:700;padding:3px 8px;border-radius:7px;background:var(--tint);color:var(--accent)}
 .hm-dd.soon{background:var(--warn-soft);color:#B07D00}
 .hm-dd.over{background:var(--danger-soft);color:var(--strike)}
+.hm-meetings{margin-top:24px}
+.hm-meetings .hm-big{font-size:22px;text-align:left;margin:0 0 6px;padding:0 6px}
+.hm-join{flex:0 0 auto;text-decoration:none;font-size:12px;font-weight:700;padding:7px 10px;border-radius:8px;background:var(--accent);color:#fff}
+.hm-celebrate{position:fixed;z-index:9999;pointer-events:none;font-size:34px;animation:hm-pop 1.25s ease-out forwards}
+@keyframes hm-pop{0%{opacity:0;transform:translate(-50%,-20%) scale(.5)}20%{opacity:1;transform:translate(-50%,-65%) scale(1.15)}65%{opacity:1}100%{opacity:0;transform:translate(-50%,-150%)}}
+@media(prefers-reduced-motion:reduce){.hm-celebrate{animation:none;transform:translate(-50%,-100%)}}
 .stamp.in{padding:0 0 4px 45px;margin-top:0}
 
 /* 추가 메모 */
@@ -3636,6 +3642,22 @@ async function goMsg(r,id,keep){
   await openRoom(r.id,{id,keep});
 }
 
+function zoomMeetingLink(text){
+  for(const raw of String(text||'').match(/https?:\/\/[^\s<>"']+/gi)||[]){
+    const url=raw.replace(/[),.。!?\]}>]+$/,'');
+    if(/^https:\/\/(?:[a-z0-9-]+\.)*(?:zoom\.us|zoomgov\.com)\/(?:j\/\d+|my\/[\w.-]+|wc\/(?:join\/)?\d+(?:\/join)?|webinar\/register\/[\w-]+|w\/\d+)\/?(?:[?#][^\s<>"']*)?$/i.test(url)) return url;
+  }
+  return null;
+}
+function celebrateTask(rect){
+  const pop=el('div','hm-celebrate');
+  pop.setAttribute('aria-hidden','true');
+  pop.textContent=['👏','👍','🎉','✨'][Math.floor(Math.random()*4)];
+  pop.style.left=Math.max(25,Math.min(window.innerWidth-25,rect.left+rect.width/2))+'px';
+  pop.style.top=Math.max(70,rect.top)+'px';
+  document.body.appendChild(pop);
+  setTimeout(()=>pop.remove(),1300);
+}
 function drawBrief(fresh){
   if(!briefOn||!briefData) return;
   const s=$('#stream'), keep=s.scrollTop;
@@ -3647,36 +3669,49 @@ function drawBrief(fresh){
   /* 날짜가 들어간 메모 중 아직 안 한 것. 완료하면 여기서는 빠지고 방에는 완료 표시로 남는다.
      날짜가 지난 일정은 자동으로 빠진다 (오늘 일정은 오늘이 끝날 때까지 남는다). 방의 메모는 그대로 둔다 */
   const pool=briefData.all.flatMap(({r,list})=>list
-      .filter(m=>m.due&&!m.done&&ddays(dueOf(m))>=0).map(m=>({r,list,m})))
+      .filter(m=>m.due&&!m.done&&!zoomMeetingLink(m.text)&&ddays(dueOf(m))>=0).map(m=>({r,list,m})))
     .sort((a,b)=>dueKey(a.m)<dueKey(b.m)?-1:(dueKey(a.m)>dueKey(b.m)?1:0));
   const h=el('div','hm-big'); h.innerHTML=`할 일 <b>${pool.length}</b>`; box.appendChild(h);
   const ul=el('div','hm-list'); box.appendChild(ul);
   pool.forEach(x=>ul.appendChild(todoRow(x)));
+  const meetings=briefData.all.flatMap(({r,list})=>list
+    .filter(m=>!m.done&&(!m.due||ddays(dueOf(m))>=0))
+    .map(m=>({r,list,m,url:zoomMeetingLink(m.text)})).filter(x=>x.url))
+    .sort((a,b)=>(a.m.due?dueKey(a.m):'9999').localeCompare(b.m.due?dueKey(b.m):'9999'));
+  if(meetings.length){
+    const section=el('section','hm-meetings');
+    const title=el('div','hm-big'); title.innerHTML=`예정된 회의 <b>${meetings.length}</b>`;
+    section.appendChild(title);
+    meetings.forEach(x=>section.appendChild(meetingRow(x)));
+    box.appendChild(section);
+  }
 
   s.scrollTop=fresh?0:keep;
 }
 
 const CHECK_SVG='<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 /* 할 일 한 줄: 네모를 누르면 완료(목록에서 빠짐), 줄을 누르면 그 메모로 간다 */
+function meetingRow({r,list,m,url}){
+  const row=el('div','hm-row');
+  const ck=el('button','hm-ck'); ck.innerHTML=CHECK_SVG;
+  ck.setAttribute('aria-label','회의 완료로 표시');
+  ck.onclick=e=>completeHomeTask(e,ck,r,list,m);
+  const tx=el('div','hm-tx');
+  const title=el('span','t');
+  title.textContent=String(m.text||'').replace(/https?:\/\/[^\s<>"']+/gi,'').trim().split('\n')[0].trim()||'Zoom 회의';
+  const sub=el('span','s');
+  sub.textContent='Zoom · '+(m.due?mdw(dueOf(m))+(m.dueTime?' '+fmtT(m.dueTime):' · 시간 미정'):'날짜·시간 미정');
+  tx.append(title,sub);
+  const join=el('a','hm-join'); join.href=url; join.target='_blank'; join.rel='noopener noreferrer';
+  join.textContent='참여하기'; join.onclick=e=>e.stopPropagation();
+  row.append(ck,tx,join); row.onclick=()=>goMsg(r,m.id,true);
+  return row;
+}
 function todoRow({r,list,m}){
   const row=el('div','hm-row');
   const ck=el('button','hm-ck'); ck.innerHTML=CHECK_SVG;
   ck.setAttribute('aria-label','완료로 표시');
-  ck.onclick=async e=>{
-    e.stopPropagation();
-    if(isRO(r)){ toast('보기만 할 수 있는 방이에요'); return; }
-    /* 반복 일정은 이번 회차만 끝내고 다음 회차로 넘어간다 — 남은 회차가 없으면 전체 완료 */
-    if(isRep(m)){
-      const k=dueOf(m); m.doneDays=[...(m.doneDays||[]).filter(x=>x>=todayKey()),k];
-      if(!nextRep(m,todayKey())){ m.done=true; m.doneAt=Date.now(); }
-      await saveList(r,list); drawBrief(false);
-      toast(m.done?'완료 표시했어요':md(k)+' 회차를 끝냈어요'); return;
-    }
-    m.done=true; m.doneAt=Date.now();
-    await saveList(r,list);
-    drawBrief(false);
-    toast('완료 표시했어요');
-  };
+  ck.onclick=e=>completeHomeTask(e,ck,r,list,m);
   const tx=el('div','hm-tx');
   tx.innerHTML=`<span class="t">${esc(mlabel(m))}</span><span class="s"><span class="rn">${esc(r.name)}</span>${m.dueTime?' · '+fmtT(m.dueTime):''}</span>`;
   const n=ddays(dueOf(m));
@@ -3685,6 +3720,30 @@ function todoRow({r,list,m}){
   row.append(ck,tx,d);
   row.onclick=()=>goMsg(r,m.id,true);   /* 홈 할 일에서 들어가면 검색처럼 다른 곳을 누를 때까지 노랗게 */
   return row;
+}
+
+async function completeHomeTask(e,ck,r,list,m){
+  e.stopPropagation();
+  if(isRO(r)){ toast('보기만 할 수 있는 방이에요'); return; }
+  if(ck.disabled) return;
+  ck.disabled=true;
+  const rect=ck.getBoundingClientRect();
+  const before={done:m.done,doneAt:m.doneAt,doneDays:m.doneDays};
+  let message='완료 표시했어요';
+  try{
+    if(isRep(m)){
+      const k=dueOf(m); m.doneDays=[...(m.doneDays||[]).filter(x=>x>=todayKey()),k];
+      if(!nextRep(m,todayKey())){ m.done=true; m.doneAt=Date.now(); }
+      else message=md(k)+' 회차를 끝냈어요';
+    }else{ m.done=true; m.doneAt=Date.now(); }
+    const ok=await saveList(r,list);
+    if(ok===false) throw new Error('save failed');
+    celebrateTask(rect);
+    drawBrief(false); toast(message);
+  }catch(e){
+    for(const k of Object.keys(before)){ if(before[k]===undefined) delete m[k]; else m[k]=before[k]; }
+    ck.disabled=false; toast('완료 상태를 저장하지 못했어요');
+  }
 }
 
 /* ---------- 작성 ---------- */
@@ -3737,7 +3796,7 @@ async function send(){
     await fileInto(cur,[last.id],{id:inF.gid,name:inF.name,ids:[...inF.ids]});
     if(lastGrp) await refreshGroups(); else railSoon();
   }
-  if(aiKey&&last) enrich(last, pend?pend.blob:null, true);
+  if(aiKey&&last) enrich(last, pend?pend.blob:null, !zoomMeetingLink(last.text));
 }
 
 /* =====================================================
@@ -3763,6 +3822,7 @@ function manyDates(s){
 function parseWhen(src,now){
   now=now?new Date(now):new Date();
   const s=String(src||'')
+    .replace(/https?:\/\/[^\s<>"']+/gi,' ')
     .replace(/(^|\s)(열한|열두|다섯|여섯|일곱|여덟|아홉|한|두|세|네|열)\s*(시간|시|주|달)/g,(a,b,n,u)=>b+KNUM[n]+u);
   const today=new Date(now); today.setHours(0,0,0,0);
   if(manyDates(s)) return null;
@@ -4076,7 +4136,9 @@ async function routeMemo(m,blob,pre,auto){
     else if(p.name){ made=!rooms.some(x=>x.name===p.name&&!isRO(x)); r=await ensureRoom(p.name,true); }
   };
   if(pre&&pre.manual) await take(pre);
-  if(aiKey){
+  const meeting=zoomMeetingLink(m.text);
+  if(meeting&&!r) await take({name:'회의'});
+  if(aiKey&&!meeting){
     try{
       const tg=await aiTag(m,blob);
       if(tg) applyTag(m,tg,auto);
@@ -4116,7 +4178,7 @@ function resetDraft(){ hRoom=null; hWhen=undefined; pv={text:''}; pvSeq++; clear
 function schedulePreview(){
   clearTimeout(pvT);
   const t=txt.value.trim();
-  if(!aiKey||hRoom||!t||pv.text===t) return;
+  if(!aiKey||hRoom||!t||zoomMeetingLink(t)||pv.text===t) return;
   pvT=setTimeout(()=>runPreview(t),800);
 }
 async function runPreview(t){
@@ -4148,6 +4210,7 @@ function updWhen(){
   if(!show) return;
   let room;
   if(hRoom) room=(hRoom.room?'':'새 방 ')+`<b>[${esc(hRoom.room?hRoom.room.name:hRoom.name)}]</b>`;
+  else if(zoomMeetingLink(t)) room='<b>[회의]</b>';
   else if(!aiKey) room=`<b>[${INBOX}]</b>`;
   else if(pv.text===t&&pv.busy) room='<span class="ld">방 고르는 중…</span>';
   else if(pv.text===t&&!pv.err) room=pv.room?`<b>[${esc(pv.room.name)}]</b>`:(pv.name?`새 방 <b>[${esc(pv.name)}]</b>`:`<b>[${INBOX}]</b>`);
@@ -4171,9 +4234,11 @@ function drawRouteSheet(sent){
   const box=$('#rtRooms'); box.innerHTML='';
   /* 지금 담길 방(직접 고른 방 > AI가 고른 방 > 미분류)을 채워서 보여 준다 */
   const ready=aiKey&&pv.text===t&&!pv.busy&&!pv.err;
+  const zoomDraft=!!zoomMeetingLink(t);
+  const zoomRoom=zoomDraft?rooms.find(r=>r.name==='회의'&&!isRO(r)):null;
   const curR=hRoom?(hRoom.room||null)
-    :(ready&&pv.room?pv.room:(!aiKey||(ready&&!pv.name)?rooms.find(r=>r.name===INBOX)||null:null));
-  const curName=hRoom?(hRoom.room?null:hRoom.name):(ready&&pv.name?pv.name:null);
+    :(zoomDraft?zoomRoom||null:(ready&&pv.room?pv.room:(!aiKey||(ready&&!pv.name)?rooms.find(r=>r.name===INBOX)||null:null)));
+  const curName=hRoom?(hRoom.room?null:hRoom.name):(zoomDraft?(zoomRoom?null:'회의'):(ready&&pv.name?pv.name:null));
   if(curName){ const b=el('button','on'); b.textContent=curName+' (새 방)'; b.onclick=()=>{ close('#shRoute'); txt.focus(); }; box.appendChild(b); }
   rooms.filter(r=>!isRO(r)).forEach(r=>{
     const b=el('button',curR===r?'on':'');
