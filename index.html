@@ -389,9 +389,9 @@ html.kb body{align-items:flex-start}
 .bcol{display:flex;flex-direction:column;align-items:flex-end;width:100%}
 /* 추가 메모를 펼치면 말풍선 바로 아래 오른쪽 끝에 맞춰 붙는다 (말풍선 크기는 그대로) — 맞닿는 오른쪽 모서리만 줄인다 */
 .msg.noteon .b{border-bottom-right-radius:5px}
-.notebox{display:none;max-width:min(82%,520px);box-sizing:border-box;margin-top:4px;padding:7px 12px 8px;
+.notebox{display:none;max-width:min(82%,520px);box-sizing:border-box;margin-top:4px;padding:9px 12px;word-break:break-word;
   background:var(--mute);border:0;box-shadow:0 2px 6px rgba(27,32,36,.16);border-radius:var(--r) 5px var(--r) var(--r);
-  font-size:12.5px;color:var(--ink-2);line-height:1.55;cursor:pointer}
+  cursor:pointer}
 .msg.noteon .notebox{display:block}
 .notebox:hover{background:var(--mute-2)}
 
@@ -407,7 +407,7 @@ html.kb body{align-items:flex-start}
 .notebox.edit{cursor:text}
 .notebox.edit:hover{background:var(--mute)}
 .notebox .nin{display:block;width:100%;border:0;outline:0;background:transparent;resize:none;padding:0;margin:0;
-  font:inherit;color:inherit;line-height:inherit;max-height:calc(1.55em * 15);overflow-y:hidden}
+  font:inherit;color:inherit;line-height:inherit;max-height:calc(1.55em * 15);max-height:15lh;overflow-y:hidden}
 
 /* ===== 어제·오늘 요약방 ===== */
 #scChat.brief #pinbar,#scChat.brief #btnBack,
@@ -2837,19 +2837,19 @@ function noteEditBox(m,box){
   box.appendChild(ta);
   box.onclick=e=>{ e.stopPropagation(); ta.focus(); };
   box.addEventListener('pointerdown',e=>e.stopPropagation());
-  /* 폭: 처음엔 '추가 메모' 글자만큼, 쓰는 대로 왼쪽으로 늘어난다 (최대 82%·520px) */
+  /* 폭: 쓴 글만큼(비었으면 '추가 메모' 글자만큼), 쓰는 대로 왼쪽으로 늘어난다 (최대 82%·520px) */
   const cv=document.createElement('canvas').getContext('2d');
   const fitTa=()=>{
     const col=box.parentElement;
     if(col){
       const cs=getComputedStyle(ta), bs=getComputedStyle(box);
       cv.font=cs.font;
-      const txw=Math.max(cv.measureText(ta.placeholder).width,...ta.value.split('\n').map(l=>cv.measureText(l).width));
-      const pad=parseFloat(bs.paddingLeft)+parseFloat(bs.paddingRight)+4;
+      const txw=ta.value?Math.max(...ta.value.split('\n').map(l=>cv.measureText(l).width)):cv.measureText(ta.placeholder).width;
+      const pad=parseFloat(bs.paddingLeft)+parseFloat(bs.paddingRight)+2;
       const mx=Math.min(col.clientWidth*.82,520);
       box.style.width=Math.min(mx,Math.ceil(txw+pad))+'px';
     }
-    ta.style.height='auto'; const h=ta.scrollHeight+2, mh=parseFloat(getComputedStyle(ta).maxHeight)||1e9;
+    ta.style.height='auto'; const h=ta.scrollHeight, mh=parseFloat(getComputedStyle(ta).maxHeight)||1e9;
     ta.style.height=h+'px'; ta.style.overflowY=h>mh?'auto':'hidden'; };
   const mark=()=>{ if(noteEd&&noteEd.id===m.id) noteEd.sel=ta.selectionStart; };
   ta.addEventListener('input',()=>{ if(!noteEd) return; noteEd.val=ta.value; mark(); fitTa();
