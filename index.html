@@ -512,6 +512,7 @@ html.kb body{align-items:flex-start}
 .hm-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .hm-tx .t{font-size:15px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hm-tx .s{font-size:12px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hm-tx .s .rn{color:var(--accent)}
 .hm-dd{flex:0 0 auto;font-size:12px;font-weight:700;padding:3px 8px;border-radius:7px;background:var(--tint);color:var(--accent)}
 .hm-dd.soon{background:var(--warn-soft);color:#B07D00}
 .hm-dd.over{background:var(--danger-soft);color:var(--strike)}
@@ -3593,7 +3594,7 @@ function todoRow({r,list,m}){
     toast('완료 표시했어요');
   };
   const tx=el('div','hm-tx');
-  tx.innerHTML=`<span class="t">${esc(mlabel(m))}</span><span class="s">${esc(r.name)}${m.dueTime?' · '+fmtT(m.dueTime):''}</span>`;
+  tx.innerHTML=`<span class="t">${esc(mlabel(m))}</span><span class="s"><span class="rn">${esc(r.name)}</span>${m.dueTime?' · '+fmtT(m.dueTime):''}</span>`;
   const n=ddays(dueOf(m));
   const d=el('span','hm-dd'+(n<=0?' over':(n<=3?' soon':'')));
   d.textContent=ddText(n);
