@@ -2757,7 +2757,8 @@ function bubble(m){
   /* PC: 마우스를 올리면 말풍선 왼쪽 아래에 추가 메모·날짜 지정 바로가기 */
   const row=el('div','brow'), qa=el('div','qa');
   const qb=(cls,title,svg,fn)=>{ const x=el('button','qb '+cls); x.type='button'; x.setAttribute('aria-label',title);
-    x.innerHTML=svg; x.onclick=e=>{ e.stopPropagation(); if(selMode||mdrag) return; fn(); }; return x; };
+    x.innerHTML=svg; x.onclick=e=>{ e.stopPropagation(); if(selMode||mdrag) return; fn(); };
+    x.addEventListener('mousedown',e=>e.preventDefault()); return x; };
   qa.append(
     qb('qnote',m.note&&m.note.trim()?'추가 메모 보기':'추가 메모',
       '<svg viewBox="0 0 24 24"><path d="M5 4h9l5 5v11H5z"/><path d="M14 4v5h5M8 13h8M8 16.5h5"/></svg>',()=>wrap._noteTap()),
@@ -2787,14 +2788,16 @@ function bubble(m){
     nb.innerHTML='<svg viewBox="0 0 24 24"><path d="M5 4h9l5 5v11H5z"/><path d="M14 4v5h5M8 13h6"/></svg>';
     st.appendChild(nb);
   }
-  /* 말풍선 아래에는 고정·추가 메모 표시만 */
-  if(st.childNodes.length) wrap.appendChild(st);
+  /* 말풍선 아래에는 고정·추가 메모 표시만. 표시가 없어도 줄 높이는 남겨 메모 사이 간격을 전과 같게 둔다 */
+  st.appendChild(document.createTextNode('\u200b'));
+  wrap.appendChild(st);
   /* 추가 메모: 말풍선 아래 회색 말풍선. 다섯 줄까지 보이고 넘으면 화살표로 펼친다. 누르면 그 자리에서 고친다.
      펼치고 접을 때는 화면을 다시 그리지 않아 스크롤이 튀지 않는다 */
   const editing=noteEd&&noteEd.id===m.id;
   let nbox=null;
   /* 왼쪽 아이콘(폰은 메뉴): 추가 메모가 있으면 보이기·숨기기, 없으면 바로 쓰기 */
   wrap._noteTap=()=>{
+    if(noteEd&&noteEd.id===m.id){ noteEd.hide=true; noteDone(m.id); return; }
     if(!nbox||!(m.note&&m.note.trim())){ openNote(m); return; }
     const on=!noteOpen.has(m.id);
     const s=$('#stream'), y0=b.getBoundingClientRect().top;
@@ -2892,16 +2895,16 @@ async function noteKeep(id){
 async function noteDone(id){
   if(!noteEd||noteEd.id!==id) return;
   clearTimeout(noteTimer);
-  const v=noteEd.val; noteEd=null;
+  const v=noteEd.val, hide=!!noteEd.hide; noteEd=null;
   const x=msgs.find(z=>z.id===id); if(!x){ drawStream(true); return; }
   const changed=!roNow()&&(x.note||'')!==v;
   if(changed) x.note=v;
   const has=!!(x.note||'').trim();
-  if(has) noteOpen.add(id); else noteOpen.delete(id);
+  if(has&&!hide) noteOpen.add(id); else noteOpen.delete(id);
   /* 그 자리에서 보기 상자로 바꾼다 — 화면 전체를 다시 그리면 방금 누른 단추가 바뀌어 클릭이 씹힌다 */
   const w=$('#stream').querySelector(`.msg[data-id="${id}"]`), box=w&&w.querySelector('.notebox');
   if(box){
-    if(has) noteShowBox(x,box); else { w.classList.remove('noteon'); box.remove(); }
+    if(has){ noteShowBox(x,box); if(hide) w.classList.remove('noteon'); } else { w.classList.remove('noteon'); box.remove(); }
     if(has!==!!w.querySelector('.stamp .nb')) setTimeout(()=>{ if(!noteEd) holdView(id,()=>drawStream(true)); },400);
   }else holdView(id,()=>drawStream(true));
   if(changed){ await persist(); reindex(x); }
