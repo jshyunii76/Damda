@@ -3642,13 +3642,20 @@ async function goMsg(r,id,keep){
   await openRoom(r.id,{id,keep});
 }
 
-function zoomMeetingLink(text){
+/* 화상 회의 링크(Zoom·Google Meet·Teams)가 든 메모는 [회의] 방으로 담고 홈의 '예정된 회의'에 보여 준다 */
+const MEETING_LINKS=[
+  ['Zoom',/^https:\/\/(?:[a-z0-9-]+\.)*(?:zoom\.us|zoomgov\.com)\/(?:j\/\d+|my\/[\w.-]+|wc\/(?:join\/)?\d+(?:\/join)?|webinar\/register\/[\w-]+|w\/\d+)\/?(?:[?#][^\s<>"']*)?$/i],
+  ['Google Meet',/^https:\/\/meet\.google\.com\/[a-z]{3}-[a-z]{4}-[a-z]{3}\/?(?:[?#][^\s<>"']*)?$/i],
+  ['Teams',/^https:\/\/teams\.(?:microsoft\.com|live\.com)\/(?:l\/meetup-join\/[^\s<>"']+|meet\/\d+\/?(?:[?#][^\s<>"']*)?)$/i],
+];
+function meetingInfo(text){
   for(const raw of String(text||'').match(/https?:\/\/[^\s<>"']+/gi)||[]){
     const url=raw.replace(/[),.。!?\]}>]+$/,'');
-    if(/^https:\/\/(?:[a-z0-9-]+\.)*(?:zoom\.us|zoomgov\.com)\/(?:j\/\d+|my\/[\w.-]+|wc\/(?:join\/)?\d+(?:\/join)?|webinar\/register\/[\w-]+|w\/\d+)\/?(?:[?#][^\s<>"']*)?$/i.test(url)) return url;
+    for(const [kind,re] of MEETING_LINKS) if(re.test(url)) return {url,kind};
   }
   return null;
 }
+function meetingLink(text){ const x=meetingInfo(text); return x?x.url:null; }
 function celebrateTask(rect){
   const pop=el('div','hm-celebrate');
   pop.setAttribute('aria-hidden','true');
@@ -3669,14 +3676,14 @@ function drawBrief(fresh){
   /* 날짜가 들어간 메모 중 아직 안 한 것. 완료하면 여기서는 빠지고 방에는 완료 표시로 남는다.
      날짜가 지난 일정은 자동으로 빠진다 (오늘 일정은 오늘이 끝날 때까지 남는다). 방의 메모는 그대로 둔다 */
   const pool=briefData.all.flatMap(({r,list})=>list
-      .filter(m=>m.due&&!m.done&&!zoomMeetingLink(m.text)&&ddays(dueOf(m))>=0).map(m=>({r,list,m})))
+      .filter(m=>m.due&&!m.done&&!meetingLink(m.text)&&ddays(dueOf(m))>=0).map(m=>({r,list,m})))
     .sort((a,b)=>dueKey(a.m)<dueKey(b.m)?-1:(dueKey(a.m)>dueKey(b.m)?1:0));
   const h=el('div','hm-big'); h.innerHTML=`할 일 <b>${pool.length}</b>`; box.appendChild(h);
   const ul=el('div','hm-list'); box.appendChild(ul);
   pool.forEach(x=>ul.appendChild(todoRow(x)));
   const meetings=briefData.all.flatMap(({r,list})=>list
     .filter(m=>!m.done&&(!m.due||ddays(dueOf(m))>=0))
-    .map(m=>({r,list,m,url:zoomMeetingLink(m.text)})).filter(x=>x.url))
+    .map(m=>({r,list,m,url:meetingLink(m.text)})).filter(x=>x.url))
     .sort((a,b)=>(a.m.due?dueKey(a.m):'9999').localeCompare(b.m.due?dueKey(b.m):'9999'));
   if(meetings.length){
     const section=el('section','hm-meetings');
@@ -3698,9 +3705,10 @@ function meetingRow({r,list,m,url}){
   ck.onclick=e=>completeHomeTask(e,ck,r,list,m);
   const tx=el('div','hm-tx');
   const title=el('span','t');
-  title.textContent=String(m.text||'').replace(/https?:\/\/[^\s<>"']+/gi,'').trim().split('\n')[0].trim()||'Zoom 회의';
+  const kind=(meetingInfo(m.text)||{kind:'화상'}).kind;
+  title.textContent=String(m.text||'').replace(/https?:\/\/[^\s<>"']+/gi,'').trim().split('\n')[0].trim()||kind+' 회의';
   const sub=el('span','s');
-  sub.textContent='Zoom · '+(m.due?mdw(dueOf(m))+(m.dueTime?' '+fmtT(m.dueTime):' · 시간 미정'):'날짜·시간 미정');
+  sub.textContent=kind+' · '+(m.due?mdw(dueOf(m))+(m.dueTime?' '+fmtT(m.dueTime):' · 시간 미정'):'날짜·시간 미정');
   tx.append(title,sub);
   const join=el('a','hm-join'); join.href=url; join.target='_blank'; join.rel='noopener noreferrer';
   join.textContent='참여하기'; join.onclick=e=>e.stopPropagation();
@@ -3796,7 +3804,7 @@ async function send(){
     await fileInto(cur,[last.id],{id:inF.gid,name:inF.name,ids:[...inF.ids]});
     if(lastGrp) await refreshGroups(); else railSoon();
   }
-  if(aiKey&&last) enrich(last, pend?pend.blob:null, !zoomMeetingLink(last.text));
+  if(aiKey&&last) enrich(last, pend?pend.blob:null, !meetingLink(last.text));
 }
 
 /* =====================================================
@@ -4136,7 +4144,7 @@ async function routeMemo(m,blob,pre,auto){
     else if(p.name){ made=!rooms.some(x=>x.name===p.name&&!isRO(x)); r=await ensureRoom(p.name,true); }
   };
   if(pre&&pre.manual) await take(pre);
-  const meeting=zoomMeetingLink(m.text);
+  const meeting=meetingLink(m.text);
   if(meeting&&!r) await take({name:'회의'});
   if(aiKey&&!meeting){
     try{
@@ -4178,7 +4186,7 @@ function resetDraft(){ hRoom=null; hWhen=undefined; pv={text:''}; pvSeq++; clear
 function schedulePreview(){
   clearTimeout(pvT);
   const t=txt.value.trim();
-  if(!aiKey||hRoom||!t||zoomMeetingLink(t)||pv.text===t) return;
+  if(!aiKey||hRoom||!t||meetingLink(t)||pv.text===t) return;
   pvT=setTimeout(()=>runPreview(t),800);
 }
 async function runPreview(t){
@@ -4210,7 +4218,7 @@ function updWhen(){
   if(!show) return;
   let room;
   if(hRoom) room=(hRoom.room?'':'새 방 ')+`<b>[${esc(hRoom.room?hRoom.room.name:hRoom.name)}]</b>`;
-  else if(zoomMeetingLink(t)) room='<b>[회의]</b>';
+  else if(meetingLink(t)) room='<b>[회의]</b>';
   else if(!aiKey) room=`<b>[${INBOX}]</b>`;
   else if(pv.text===t&&pv.busy) room='<span class="ld">방 고르는 중…</span>';
   else if(pv.text===t&&!pv.err) room=pv.room?`<b>[${esc(pv.room.name)}]</b>`:(pv.name?`새 방 <b>[${esc(pv.name)}]</b>`:`<b>[${INBOX}]</b>`);
@@ -4234,7 +4242,7 @@ function drawRouteSheet(sent){
   const box=$('#rtRooms'); box.innerHTML='';
   /* 지금 담길 방(직접 고른 방 > AI가 고른 방 > 미분류)을 채워서 보여 준다 */
   const ready=aiKey&&pv.text===t&&!pv.busy&&!pv.err;
-  const zoomDraft=!!zoomMeetingLink(t);
+  const zoomDraft=!!meetingLink(t);
   const zoomRoom=zoomDraft?rooms.find(r=>r.name==='회의'&&!isRO(r)):null;
   const curR=hRoom?(hRoom.room||null)
     :(zoomDraft?zoomRoom||null:(ready&&pv.room?pv.room:(!aiKey||(ready&&!pv.name)?rooms.find(r=>r.name===INBOX)||null:null)));
