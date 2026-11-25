@@ -1687,6 +1687,7 @@ async function wipeLocal(){
   RS.reset();
   for(const k in mem) delete mem[k];
   pend={}; fpend={}; own={}; base={}; lsSet(PEND,null); lsSet(FPEND,null); lsSet(OWN,null); lsSet(BASE,null); lsSet(OWNER,null);
+  lsSet('damda:lms',null);    /* Canvas 받은 시각 */
   lsSet(AI_KEY_STORE,null);   /* 이 기기에 넣어 둔 AI 키도 같이 지운다 */
   await idbRaw.clear(); urlCache.clear();
 }
@@ -2028,14 +2029,22 @@ const LMSP=(()=>{
     }
     return out;
   }
+  function tail(t){
+    if(!t.endsWith(']')) return null;
+    for(let i=t.length-1,d=0;i>0;i--){
+      if(t[i]===']') d++;
+      else if(t[i]==='['&&--d===0){ const h=t.slice(0,i).trim(); return h?[h,t.slice(i+1,-1)]:null; }
+    }
+    return null;
+  }
   function event(o){
     const uid=o.UID&&o.UID.v, w=o.DTSTART&&when(o.DTSTART.p,o.DTSTART.v);
     if(!uid||!w) return null;
     /* 시각 없이 날짜만 온 과제는 그날 23:59 마감 (한양대 LMS 원본 마감과 대조해 22개 모두 확인) */
     if(!w.dueTime&&/assignment/i.test(uid)) w.dueTime='23:59';
     let title=unesc((o.SUMMARY&&o.SUMMARY.v)||'').replace(/\s+/g,' ').trim(), course='';
-    const b=/^(.*\S)?\s*\[([^\[\]]+)\]$/.exec(title);           /* 맨 끝 대괄호 = 과목 */
-    if(b&&b[1]){ title=b[1]; course=b[2].replace(/^[0-9A-Za-z]+_/,'').trim(); }
+    const b=tail(title);                                      /* 맨 끝 대괄호 = 과목 (안에 대괄호가 또 있어도) */
+    if(b){ title=b[0]; course=b[1].replace(/^[0-9A-Za-z]+_/,'').trim(); }
     const raw=(o.URL&&o.URL.v)||'', cid=(/include_contexts=(course_\d+)/.exec(raw)||[])[1]||'';
     const url=/^https:\/\//i.test(raw)?raw:'';
     const kind=/quiz|퀴즈|쪽지/i.test(title)?'퀴즈':/\bexam\b|시험|중간고사|기말고사|midterm|\bfinal\b/i.test(title)?'시험'
@@ -2044,106 +2053,175 @@ const LMSP=(()=>{
     return {uid,title,course:course||'Canvas',cid:cid||('n_'+(course||'Canvas')),url,kind,team,...w};
   }
   const textOf=e=>e.title.startsWith(`[${e.kind}]`)?e.title:`[${e.kind}] ${e.title}`;
-  const memoId=e=>'c'+hash(e.uid);
+  /* 일정 번호는 학교마다 따로 매기므로 학교 주소와 묶어서 구분한다 */
+  const keyOf=(host,uid)=>host+' '+uid;
+  const memoId=e=>'c'+hash(keyOf(e.host,e.uid));
   const GONE=' (Canvas에서 사라짐)';
-  /* 한 방의 목록에 피드를 반영한다. evs: Map(uid→일정) */
-  function update(list,evs,today){
-    let changed=false;
+  /* 한 방의 목록에 피드를 반영한다. evs: Map(uid→일정), o.host: 피드의 학교, o.mine(uid): 내가 이 피드에서 담은 것인지 */
+  function update(list,evs,today,o){
+    let changed=false; const moved=[];
     const out=list.map(m=>{
-      const L=m&&m.lms; if(!L||!L.uid) return m;
+      const L=m&&m.lms; if(!L||!L.uid||(L.host&&L.host!==o.host)) return m;
       const e=evs.get(L.uid), n={...m,lms:{...L}};
       const base=(m.text||'').endsWith(GONE)?m.text.slice(0,-GONE.length):(m.text||'');
       if(!e){
-        if(m.done||!m.due||m.due<today||L.gone) return m;   /* 지난 일정은 피드에서 원래 빠진다 */
+        /* 지난 일정은 피드에서 원래 빠진다 — 내가 고친 마감이 아니라 Canvas 마감으로 판단 */
+        if(m.done||!L.due||L.due<today||L.gone||!o.mine(L.uid)) return m;
         n.text=base+GONE; n.lms.gone=true; changed=true; return n;
       }
+      if(!L.host){ n.lms.host=o.host; changed=true; }
       if(L.gone){ n.text=base; delete n.lms.gone; changed=true; }
       /* 글: 내가 고친 글은 그대로 둔다 */
       const t=textOf(e); if(t!==L.text){ if(base===L.text) n.text=t; n.lms.text=t; changed=true; }
       /* 마감: Canvas에서 바뀌었을 때만 (내가 따로 고친 마감은 Canvas가 다시 바꾸기 전까지 그대로) */
       if(e.due===L.due&&!L.dueTime&&e.dueTime==='23:59'){           /* 예전에 날짜만 담은 것에 시각 채우기 — 내가 고친 마감은 그대로 */
         n.lms.dueTime=e.dueTime; if(m.due===L.due&&!m.dueTime) n.dueTime=e.dueTime; changed=true;
-      }else if(e.due!==L.due||e.dueTime!==L.dueTime){ n.due=e.due; n.dueTime=e.dueTime; n.dueStart=null; n.lms.due=e.due; n.lms.dueTime=e.dueTime; changed=true; }
+      }else if(e.due!==L.due||e.dueTime!==L.dueTime){
+        moved.push({uid:L.uid,due:L.due,dueTime:L.dueTime||null,to:e});
+        n.due=e.due; n.dueTime=e.dueTime; n.dueStart=null; n.lms.due=e.due; n.lms.dueTime=e.dueTime; changed=true; }
       if((e.url||'')!==(L.url||'')){ n.lms.url=e.url; changed=true; }
       return n;
     });
-    return {list:changed?out:list,changed};
+    return {list:changed?out:list,changed,moved};
   }
   const make=(e,ts)=>({id:memoId(e),type:'memo',text:textOf(e),file:null,ts,due:e.due,dueStart:null,dueTime:e.dueTime,done:false,
-    lms:{uid:e.uid,cid:e.cid,url:e.url,kind:e.kind,team:e.team,text:textOf(e),due:e.due,dueTime:e.dueTime}});
+    lms:{uid:e.uid,host:e.host,cid:e.cid,url:e.url,kind:e.kind,team:e.team,text:textOf(e),due:e.due,dueTime:e.dueTime}});
   /* 복사한 글에서 피드 주소만 골라낸다 (앞뒤에 다른 글이 붙어 있거나 webcal:// 이어도 된다) */
   const findUrl=t=>{ const m=/(?:https|webcal):\/\/[^\s"'<>]+?\/feeds\/calendars\/user_[A-Za-z0-9]+\.ics/.exec(String(t||'')); return m?m[0].replace(/^webcal:/,'https:'):''; };
   const okUrl=u=>{ try{ const x=new URL(String(u).trim()); return x.protocol==='https:'&&!x.search&&!x.hash&&/^\/feeds\/calendars\/user_[A-Za-z0-9]{10,100}\.ics$/.test(x.pathname); }catch(e){ return false; } };
-  return {parse,update,make,memoId,hash,okUrl,findUrl};
+  return {parse,update,make,memoId,keyOf,hash,okUrl,findUrl};
 })();
 /*LMS-PURE-END*/
 const LMS=(()=>{
-  const EVERY=3600000;
-  let busy=false, drawN=0;
-  const load=async()=>await S.get('lms')||null;
-  const store=v=>v?S.set('lms',v):S.del('lms');
+  /* 연결 주소는 p:lms {url} 로 계정에 저장(다른 기기도 연결). 받은 시각·오류는 이 기기에만 둔다 —
+     받기에 실패할 때마다 p:lms 를 다시 올리면 다른 기기에서 끊은 연결이 되살아나기 때문이다.
+     담은 적 있는 일정(p:msgs:_lms)은 목록 키라서 두 기기가 동시에 써도 합쳐진다 */
+  const EVERY=3600000, RETRY=600000, LOCAL='damda:lms', SEEN='msgs:_lms';
+  let busy=false, drawN=0, ready=false, gen=0;
+  const load=async()=>{ const v=await S.get('lms'); return v&&v.url?v:null; };
+  const local=url=>{ const v=jget(LOCAL,{}); return v.k===LMSP.hash(url)?v:{}; };
+  const setLocal=(url,v)=>lsSet(LOCAL,JSON.stringify({...local(url),...v,k:LMSP.hash(url)}));
   const MSG={url:'Canvas 캘린더 피드 주소가 아니에요',feed:'일정을 받지 못했어요. LMS에서 피드 주소를 다시 복사해 주세요',
     big:'일정이 너무 많아 받지 못했어요',net:'학교 LMS에 연결하지 못했어요. 잠시 후 다시 해 주세요',login:'로그인하면 연결할 수 있어요'};
+  const why=e=>MSG[e&&e.message]?e.message:'net';
+  /* 기다리는 사이 로그아웃·계정 삭제·다른 계정 로그인·연결 끊기가 있었으면 아무것도 저장하지 않는다 */
+  const mine=uid=>!leaving&&!!me&&me.id===uid&&lsGet(OWNER)===uid;
+  const still=(uid,g)=>mine(uid)&&g===gen;
+  /* 쓰는 중이거나 다른 창이 열려 있으면 자동 받기는 기다린다 (고치던 글·열어 둔 화면이 사라지지 않게) */
+  const uiBusy=()=>!!document.querySelector('.sheet.on,#setview.on,#calview.on,#grpview.on,#allfold.on,#pinlist.on,#search.on,#noteview.on')
+    ||selMode||!!noteEd||$('#scChat').classList.contains('hopen');
   async function get(url){
-    if(!SB||!me) throw new Error('login');
     const {data,error}=await SB.functions.invoke('canvas-feed',{body:{url}});
     if(error){ let c='net'; try{ c=(await error.context.json()).error||'net'; }catch(e){} throw new Error(MSG[c]?c:'net'); }
     return LMSP.parse(typeof data==='string'?data:await data.text());
   }
-  /* 과목방: 같은 과목은 어느 기기에서 만들어도 같은 ID가 되게 해서 방이 둘로 늘지 않는다 */
+  /* 과목방은 늘 개인방. 어느 기기에서 만들어도 같은 ID가 되게 해서 방이 둘로 늘지 않는다 */
   async function roomFor(e){
-    let r=rooms.find(x=>x.lms===e.cid&&!x.code)||rooms.find(x=>x.lms===e.cid&&!isRO(x));
-    if(r) return r;
-    r=rooms.find(x=>x.name===e.course&&!x.code);              /* 내가 먼저 만들어 둔 같은 이름의 방 */
-    if(!r){ r=await ensureRoomPrivate(e.course,'rlms'+LMSP.hash(e.cid)); }
-    r.lms=e.cid; await saveRooms(); return r;
+    const rk=LMSP.keyOf(e.host,e.cid);
+    let r=rooms.find(x=>!x.code&&x.lms===rk)||rooms.find(x=>!x.code&&x.lms===e.cid);
+    if(!r) r=rooms.find(x=>!x.code&&!x.lms&&!x.lmsTeam&&x.name===e.course&&x.name!==INBOX);   /* 내가 먼저 만들어 둔 같은 이름의 방 */
+    if(!r){
+      let id='rlms'+LMSP.hash(rk); while(rooms.some(x=>x.id===id)) id+='x';
+      const used=new Set(rooms.map(x=>x.color)), pal=COLORS.slice(0,-1);
+      r={id,name:e.course,preview:'',at:null,code:null,pin:false,_due:0,color:pal.find(c=>!used.has(c))||pal[rooms.length%pal.length],ai:false};
+      rooms.unshift(r); normalize();
+    }
+    if(r.lms!==rk){ r.lms=rk; await saveRooms(); }
+    return r;
   }
-  async function ensureRoomPrivate(name,id){
-    const used=new Set(rooms.map(x=>x.color)), pal=COLORS.slice(0,-1);
-    const r={id,name,preview:'',at:null,code:null,pin:false,_due:0,color:pal.find(c=>!used.has(c))||pal[rooms.length%pal.length],ai:false};
-    rooms.unshift(r); normalize(); await saveRooms(); return r;
+  const shown=r=>cur&&cur.id===r.id&&!briefOn;
+  const listOf=async r=>shown(r)?msgs:await readList(r);
+  async function put(r,list){
+    const before=msgs; if(shown(r)) msgs=list;
+    const ok=await saveList(r,list)!==false;
+    if(!ok&&shown(r)) msgs=before;
+    return ok;
   }
-  const listOf=async r=>(cur&&cur.id===r.id&&!briefOn)?msgs:await readList(r);
-  const put=async(r,list)=>{ if(cur&&cur.id===r.id&&!briefOn) msgs=list; await saveList(r,list); };
-  async function apply(evs,st){
-    const map=new Map(evs.map(e=>[e.uid,e])), have=new Set(), seen=new Set(st.seen||[]);
-    let added=0, changed=0;
-    for(const r of rooms.slice()){
-      if(isRO(r)) continue;
-      const list=await listOf(r);
-      for(const m of list) if(m&&m.lms&&m.lms.uid) have.add(m.lms.uid);
-      const u=LMSP.update(list,map,todayKey());
-      if(u.changed){ changed++; await put(r,u.list); }
+  async function apply(evs,url,ok){
+    const host=new URL(url).host, today=todayKey(), K=u=>LMSP.keyOf(host,u);
+    for(const e of evs) e.host=host;
+    const map=new Map(evs.map(e=>[e.uid,e])), own=rooms.filter(r=>!r.code), have=new Set();
+    for(const r of own) for(const m of await listOf(r)) if(m&&m.lms&&m.lms.uid&&(m.lms.host||host)===host) have.add(K(m.lms.uid));
+    const was=await S.get(SEEN)||[], seen=new Set(was.map(x=>x&&x.id)), fresh=new Set();
+    const note=k=>{ if(!seen.has(k)){ seen.add(k); fresh.add(k); } };
+    /* 예전 버전의 기록 옮기기: 마감이 지나 담지 않았던 일정은 빼서, 마감이 미뤄지면 다시 담기게 한다 */
+    const old=await S.get('lms');
+    for(const u of (old&&old.seen)||[]){ const e=map.get(u); if(have.has(K(u))||!(e&&e.due<today)) note(K(u)); }
+    for(const k of have) note(k);
+    let added=0, changed=0, full=false; const moved=[];
+    for(const r of own){
+      const u=LMSP.update(await listOf(r),map,today,{host,mine:x=>seen.has(K(x))});
+      if(!u.changed) continue;
+      if(!ok()) return null;
+      if(await put(r,u.list)){ changed++; moved.push(...u.moved); } else full=true;
+    }
+    /* 팀플방에 복사해 둔 과제도 마감이 바뀌면 같이 (팀원이 따로 고치지 않았을 때만) */
+    for(const v of moved) for(const r of rooms){
+      if(r.lmsTeam!==K(v.uid)||isRO(r)) continue;
+      const list=await listOf(r); let hit=false;
+      const nl=list.map(m=>m&&m.teamOf===K(v.uid)&&m.due===v.due&&(m.dueTime||null)===v.dueTime?(hit=true,{...m,due:v.to.due,dueTime:v.to.dueTime}):m);
+      if(hit&&ok()) await put(r,nl);
     }
     /* 처음 보는 일정만 새로 넣는다 — 예전에 넣었는데 지금 없으면 내가 지운 것이므로 되살리지 않는다 */
     const by=new Map();
-    for(const e of evs) if(!have.has(e.uid)&&!seen.has(e.uid)&&e.due>=todayKey()) by.set(e.cid,[...(by.get(e.cid)||[]),e]);
+    for(const e of evs) if(!seen.has(K(e.uid))&&e.due>=today) by.set(e.cid,[...(by.get(e.cid)||[]),e]);
     for(const es of by.values()){
+      if(!ok()) return null;
       const r=await roomFor(es[0]), list=await listOf(r), ids=new Set(list.map(m=>m&&m.id)); let ts=Date.now();
-      const add=es.filter(e=>!ids.has(LMSP.memoId(e))).sort((a,b)=>a.due<b.due?-1:1).map(e=>LMSP.make(e,ts++));
-      if(add.length){ added+=add.length; await put(r,list.concat(add)); }
+      const add=es.filter(e=>!ids.has(LMSP.memoId(e))).sort((x,y)=>x.due<y.due?-1:1);
+      if(add.length&&!await put(r,list.concat(add.map(e=>LMSP.make(e,ts++))))){ full=true; continue; }   /* 저장 못 한 것은 다음에 다시 */
+      added+=add.length; for(const e of es) note(K(e.uid));
     }
-    for(const e of evs) seen.add(e.uid);
-    return {added,changed,seen:[...seen].slice(-3000)};
+    if(!ok()) return null;
+    if(fresh.size){ const t=Date.now(); await S.set(SEEN,was.concat([...fresh].map(id=>({id,ts:t}))).slice(-3000)); }
+    if(old&&old.seen) await S.set('lms',{url});
+    return {added,changed,full};
   }
-  async function pull(manual){
-    if(busy) return null;
-    const st=await load(); if(!st||!st.url||!SB||!me) return null;
-    if(!manual&&Date.now()-(st.at||0)<EVERY) return null;
-    busy=true;
+  async function redraw(){
+    await loadRooms();
+    if(briefOn){ briefData=await buildBrief(); drawBrief(false); drawRail(); return; }
+    const r=cur&&rooms.find(x=>x.id===cur.id);
+    if(!r){ await openBrief(); return; }
+    cur=r; msgs=await readList(cur); if(cur.code) RS.seen(cur.code);
+    drawStream(true); drawRail();
+  }
+  /* 받아 온 일정을 담는다: 다른 기기에서 바뀐 기록을 먼저 받고 → 사용자·연결을 다시 확인하고 → 적용 */
+  async function take(evs,url,uid,g,manual){
+    if(!manual){ for(let i=0;i<120&&uiBusy()&&still(uid,g);i++) await sleep(1000); if(uiBusy()) return null; }
+    if(!still(uid,g)) return null;
+    const ch=await pull();
+    if(!mine(uid)) return null;
+    if(ch) await redraw();
+    const st=await load();
+    if(!still(uid,g)||!st||st.url!==url) return null;      /* 받는 사이 연결을 끊음(이 기기든 다른 기기든) */
+    const r=await apply(evs,url,()=>still(uid,g)); if(!r) return null;
+    setLocal(url,{at:Date.now(),err:null});
+    if(r.added||r.changed) await redraw();
+    toastResult(r,manual);
+    return r;
+  }
+  function toastResult(r,manual){
+    if(r.full) toast('저장 공간이 부족해 일부 일정을 담지 못했어요');
+    else if(r.added) toast(`Canvas 일정 ${r.added}개를 담았어요`);
+    else if(manual) toast('새로 담을 일정이 없어요');
+  }
+  async function receive(manual){
+    if(!ready||!SB||!me||leaving) return null;
+    if(busy){ if(manual) toast('지금 받는 중이에요'); return null; }
+    busy=true; const uid=me.id, g=gen; let url=null;
     try{
-      const evs=await get(st.url), r=await apply(evs,st);
-      const now=await load(); if(!now||now.url!==st.url) return null;         /* 받는 사이 연결을 끊음 */
-      await store({...now,at:Date.now(),seen:r.seen,err:null});
-      if(r.added||r.changed) await refreshView();
-      if(r.added) toast(`Canvas 일정 ${r.added}개를 담았어요`); else if(manual) toast('새로 담을 일정이 없어요');
-      return r;
+      const st=await load(); if(!st) return null;
+      const lo=local(st.url), now=Date.now();
+      if(!manual&&(navigator.onLine===false||now-(lo.at||0)<EVERY||now-(lo.try||0)<RETRY)) return null;
+      url=st.url; setLocal(url,{try:now});
+      const evs=await get(url);
+      return await take(evs,url,uid,g,manual);
     }catch(e){
       console.warn('Canvas 받기 실패',e&&e.message);
-      const now=await load(); if(now) await store({...now,at:manual?now.at:Date.now(),err:MSG[e.message]?e.message:'net'});
-      if(manual) toast(MSG[e.message]||MSG.net);
+      if(url&&still(uid,g)) setLocal(url,{err:why(e)});
+      if(manual) toast(MSG[why(e)]);
       return null;
-    }finally{ busy=false; draw(); }
+    }finally{ busy=false; if(mine(uid)) draw(); }
   }
   /* 버튼으로 바로 열어 줄 학교 LMS 캘린더 (다른 학교는 여기에 한 줄 추가) */
   const SCHOOLS=[['한양대','https://learning.hanyang.ac.kr/calendar']];
@@ -2161,54 +2239,82 @@ const LMS=(()=>{
   }
   async function link(url){
     url=String(url||'').trim(); url=LMSP.findUrl(url)||url;
-    if(!SB||!me){ toast(MSG.login); return; }
+    if(!ready||!SB||!me||leaving){ toast(MSG.login); return; }
     if(!LMSP.okUrl(url)){ toast(MSG.url); return; }
-    const old=await load();
-    await store({url,at:0,seen:(old&&old.seen)||[]});
-    if(!await pull(true)){ const st=await load(); if(st&&!st.at){ await store(old); draw(); } return; }
-    $('#lmsUrl').value=''; draw();
+    const uid=me.id, g=++gen;                       /* 진행 중이던 받기는 여기서 무효가 된다 */
+    while(busy) await sleep(100);
+    if(!still(uid,g)) return;
+    busy=true; let saved=false;
+    try{
+      const evs=await get(url);                     /* 받아지는 주소일 때만 저장한다 */
+      if(!still(uid,g)) return;
+      const old=await S.get('lms');
+      await S.set('lms',{url,...(old&&old.seen?{seen:old.seen}:{})}); saved=true;
+      $('#lmsUrl').value='';
+      await take(evs,url,uid,g,true);
+    }catch(e){
+      console.warn('Canvas 연결 실패',e&&e.message);
+      if(saved&&still(uid,g)) setLocal(url,{err:why(e)});
+      toast(MSG[why(e)]);
+    }finally{ busy=false; if(mine(uid)) draw(); }
   }
-  async function cut(){ const st=await load(); if(st) await store({seen:st.seen||[]}); $('#lmsUrl').value=''; toast('연결을 끊었어요. 담긴 일정은 그대로 있어요'); draw(); }
-  /* 팀 과제 → 사용자가 누를 때만 팀플방을 만든다 */
+  async function cut(){
+    gen++;
+    const old=await S.get('lms');
+    if(old&&old.url&&old.seen){                     /* 예전 버전의 '담은 적 있는 일정'은 남긴다 (다시 연결해도 지운 것이 안 살아나게) */
+      const was=await S.get(SEEN)||[], ids=new Set(was.map(x=>x.id)), host=new URL(old.url).host;
+      await S.set(SEEN,was.concat(old.seen.map(u=>({id:LMSP.keyOf(host,u),ts:Date.now()})).filter(x=>!ids.has(x.id))));
+    }
+    await S.del('lms'); lsSet(LOCAL,null);
+    $('#lmsUrl').value=''; toast('연결을 끊었어요. 담긴 일정은 그대로 있어요'); draw();
+  }
+  /* 팀 과제 → 사용자가 누를 때만 팀플방을 만든다. 제목과 마감만 옮긴다(내 추가 메모·태그·완료는 안 옮김) */
   async function teamRoom(m,src){
-    const nm=(src.name+' 팀플').slice(0,40);
-    let r=rooms.find(x=>x.lmsTeam===m.lms.uid);
+    const k=LMSP.keyOf(m.lms.host||'',m.lms.uid);
+    let r=rooms.find(x=>x.lmsTeam===k);
     if(!r){
-      r={id:'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name:nm,preview:'',at:null,code:null,pin:false,_due:0,color:src.color,ai:false,lmsTeam:m.lms.uid};
+      r={id:'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name:(src.name+' 팀플').slice(0,40),preview:'',at:null,code:null,pin:false,_due:0,color:src.color,ai:false,lmsTeam:k};
       rooms.unshift(r); normalize(); await saveRooms();
-      await saveList(r,[{...m,id:'m'+Date.now().toString(36),ts:Date.now(),lms:undefined}]);
+      await saveList(r,[{id:'m'+Date.now().toString(36),type:'memo',text:m.lms.text||m.text,file:null,ts:Date.now(),due:m.due,dueStart:null,dueTime:m.dueTime||null,done:false,teamOf:k}]);
     }
     $('#shLms').classList.remove('on'); $('#setview').classList.remove('on');
     await openRoom(r.id);
     if(!r.code) $('#btnShare').click();
   }
   async function draw(){
-    const st=await load(), on=!!(st&&st.url);
-    let nRoom=0, nDue=0;
-    if(on) for(const r of rooms){ const n=(await readList(r)).filter(m=>m&&m.lms&&m.lms.uid&&!m.done&&m.due>=todayKey()).length; if(n){ nRoom++; nDue+=n; } }
-    $('#lmsOff').style.display=on?'none':''; $('#lmsOn').style.display=on?'':'none';
-    $('#lmsInfo').textContent=!(SB&&me)?MSG.login:on?(st.err?MSG[st.err]:`연결됨 · 과목방 ${nRoom}개 · 남은 마감 ${nDue}개 · `+(st.at?new Date(st.at).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'})+'에 받음':'아직 받지 않음')):'학교 LMS의 과제·시험 마감을 과목방에 자동으로 담아요.';
-    schools();
-    const my=++drawN, btns=[];                 /* 동시에 두 번 그려도 버튼이 겹치지 않게 마지막 것만 쓴다 */
-    if(!on){ $('#lmsTeams').replaceChildren(); return; }
-    for(const r of rooms){
+    const my=++drawN, st=await load(), on=!!st, lo=on?local(st.url):{}, btns=[]; let nRoom=0, nDue=0;
+    if(on) for(const r of rooms){
       if(r.code) continue;
-      for(const m of await readList(r)) if(m&&m.lms&&m.lms.team&&m.lms.uid&&!m.done&&m.due>=todayKey()){
+      let n=0;
+      for(const m of await readList(r)){
+        if(!(m&&m.lms&&m.lms.uid&&!m.done&&m.due>=todayKey())) continue;
+        n++;
+        if(!m.lms.team) continue;
         const b=el('button','btn ghost'); b.style.cssText='width:100%;margin:4px 0;text-align:left';
-        b.textContent=(rooms.some(x=>x.lmsTeam===m.lms.uid)?'팀플방 열기 · ':'팀플방 만들기 · ')+m.text;
+        b.textContent=(rooms.some(x=>x.lmsTeam===LMSP.keyOf(m.lms.host||'',m.lms.uid))?'팀플방 열기 · ':'팀플방 만들기 · ')+m.text;
         b.onclick=()=>teamRoom(m,r); btns.push(b);
       }
+      if(n){ nRoom++; nDue+=n; }
     }
-    if(my===drawN) $('#lmsTeams').replaceChildren(...btns);
+    if(my!==drawN) return;                         /* 동시에 두 번 그려도 마지막 것만 쓴다 */
+    $('#lmsOff').style.display=on?'none':''; $('#lmsOn').style.display=on?'':'none';
+    const got=lo.at?new Date(lo.at).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'})+'에 받음':'아직 받지 않음';
+    $('#lmsInfo').textContent=!(SB&&me)?MSG.login:!on?'학교 LMS의 과제·시험 마감을 과목방에 자동으로 담아요.'
+      :(lo.err?MSG[lo.err]+' · ':`연결됨 · 과목방 ${nRoom}개 · 남은 마감 ${nDue}개 · `)+got;
+    schools(); $('#lmsTeams').replaceChildren(...btns);
   }
-  return {pull,link,paste,cut,draw};
+  /* 방 목록을 다 읽은 뒤에만 시작한다 — 그 전에 받으면 빈 방 목록을 저장해 버린다 */
+  function start(){
+    if(ready) return; ready=true;
+    document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') receive(false); });
+    receive(false);
+  }
+  return {start,pull:receive,link,paste,cut,draw,teamRoom};
 })();
 $('#toLms').onclick=async()=>{ await LMS.draw(); open('#shLms'); };
-$('#lmsLink').onclick=async()=>{ const b=$('#lmsLink'); b.disabled=true; try{ await LMS.link($('#lmsUrl').value); }finally{ b.disabled=false; } };
-$('#lmsPaste').onclick=async()=>{ const b=$('#lmsPaste'); b.disabled=true; try{ await LMS.paste(); }finally{ b.disabled=false; } };
-$('#lmsNow').onclick=async()=>{ const b=$('#lmsNow'); b.disabled=true; try{ await LMS.pull(true); }finally{ b.disabled=false; } };
+const lmsAct=(id,f)=>{ $(id).onclick=async()=>{ const b=$(id), t=b.textContent; b.disabled=true; b.textContent='받는 중…'; try{ await f(); }finally{ b.disabled=false; b.textContent=t; } }; };
+lmsAct('#lmsLink',()=>LMS.link($('#lmsUrl').value)); lmsAct('#lmsPaste',()=>LMS.paste()); lmsAct('#lmsNow',()=>LMS.pull(true));
 $('#lmsCut').onclick=()=>LMS.cut();
-document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') LMS.pull(false); });
 
 const urlCache=new Map();
 async function fileURL(f){
@@ -4049,7 +4155,8 @@ function fitEdit(){
 }
 $('#editTxt').addEventListener('input',fitEdit);
 async function saveEdit(){
-  const m=editTarget; if(!m) return;
+  const t0=editTarget; if(!t0) return;
+  const m=msgs.find(x=>x&&x.id===t0.id)||t0;      /* 그 사이 화면이 다시 그려졌으면 지금 메모를 고친다 */
   const v=$('#editTxt').value.trim();
   if(!v&&!m.file){ toast('내용을 입력하세요. 지우려면 삭제를 눌러주세요'); return; }
   close('#shEdit'); editTarget=null;
@@ -4267,7 +4374,9 @@ async function completeHomeTask(e,ck,r,list,m){
       if(!nextRep(m,todayKey())){ m.done=true; m.doneAt=Date.now(); }
       else message=md(k)+' 회차를 끝냈어요';
     }else{ m.done=true; m.doneAt=Date.now(); }
-    const ok=await saveList(r,list);
+    /* 그 사이 들어온 메모를 지우지 않게, 지금 목록에서 이 메모만 바꾼다 */
+    const now=await readList(r), at=now.findIndex(x=>x&&x.id===m.id);
+    const ok=await saveList(r,at<0?list:now.map((x,i)=>i===at?{...x,done:m.done,doneAt:m.doneAt,doneDays:m.doneDays}:x));
     if(ok===false) throw new Error('save failed');
     celebrateTask(rect);
     drawBrief(false); toast(message);
@@ -6301,6 +6410,7 @@ $('#doOut').onclick=async()=>{
   while(pushing) await sleep(200);
   await pushNow(); await RS.flush();
   if(unsent()){ b.disabled=false; toast('아직 서버에 못 올린 기록이 있어요. 인터넷 연결을 확인해 주세요'); return; }
+  leaving=true; clearTimeout(pushT);             /* 지우는 사이 늦게 온 응답이 다시 저장하지 않게 */
   try{ await SB.auth.signOut(); }catch(e){}
   await wipeLocal(); location.replace(location.pathname);
 };
@@ -6370,7 +6480,7 @@ async function boot(){
     }else if(!(lsGet(OWNER)&&!navigator.onLine)){ showLogin(); return; }
   }
   await loadRooms(); openBrief();
-  if(SB&&me){ RS.start(); LMS.pull(false); }
+  if(SB&&me){ RS.start(); LMS.start(); }
 }
 boot();
 })();
