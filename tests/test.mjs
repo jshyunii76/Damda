@@ -87,6 +87,11 @@ r = await as('anon', `select * from public.rooms`); check('로그인 안 한 사
 r = await as('anon', `select * from public.join_room('ABCDEF','x')`); check('로그인 안 한 사람 참여 거절', !!r.err, r);
 r = await as('C', `select * from private.join_fail`); check('C가 private 표 못 읽음', !!r.err, r);
 
+// 옮기기용: 내가 방장인 방 찾기 (#3)
+r = await as('A', `select public.my_room_by_code('abcdef') as id`); check('방장은 코드로 내 방 찾음', r.rows?.[0]?.id === rid, r);
+r = await as('B', `select public.my_room_by_code('ABCDEF') as id`); check('방장이 아니면 못 찾음(null)', r.rows?.[0]?.id === null, r);
+r = await as('anon', `select public.my_room_by_code('ABCDEF')`); check('로그인 안 하면 거절', !!r.err, r);
+
 // 코드 맞히기 제한
 for (let i = 0; i < 10; i++) await as('C', `select * from public.join_room('QQQQQ${'23456789AB'[i]}','c')`);
 r = await as('C', `select * from public.join_room('ABCDEF','c')`); check('10번 틀린 뒤 맞는 코드도 차단', /too many/.test(r.err || ''), r);

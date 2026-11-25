@@ -165,6 +165,8 @@ language plpgsql security definer set search_path = '' as $$
 declare uid uuid := (select auth.uid()); r public.rooms;
 begin
   if uid is null then raise exception 'login required'; end if;
+  -- 같은 사람이 동시에 여러 번 불러도 하나씩 세도록 잠근다 (동시 요청으로 횟수 제한 우회 방지)
+  perform pg_advisory_xact_lock(hashtext('join_room:' || uid::text));
   if (select count(*) from private.join_fail f
         where f.user_id = uid and f.at > now() - interval '10 minutes') >= 10 then
     raise exception 'too many attempts';
@@ -180,8 +182,14 @@ begin
   return query select r.id, r.name, r.perm, r.owner;
 end $$;
 
-revoke all on function public.create_room(text,text,text,text), public.join_room(text,text) from public, anon;
-grant execute on function public.create_room(text,text,text,text), public.join_room(text,text) to authenticated;
+-- 내가 방장인 방을 코드로 찾기 (예전 공유방을 옮길 때 같은 방을 두 번 만들지 않게)
+create or replace function public.my_room_by_code(p_code text)
+returns uuid language sql stable security definer set search_path = '' as $$
+  select x.id from public.rooms x where x.code = upper(p_code) and x.owner = (select auth.uid())
+$$;
+
+revoke all on function public.create_room(text,text,text,text), public.join_room(text,text), public.my_room_by_code(text) from public, anon;
+grant execute on function public.create_room(text,text,text,text), public.join_room(text,text), public.my_room_by_code(text) to authenticated;
 
 -- 6) 사진·파일: files 저장소의 'r/방ID/파일ID' 는 그 방 멤버가 읽고, 쓸 수 있는 멤버가 올린다 --
 drop policy if exists room_files_select on storage.objects;

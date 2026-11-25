@@ -1610,7 +1610,7 @@ async function pushNow(){
   }catch(e){ console.warn('서버에 올리지 못함',e); schedPush(15000); }
   finally{ pushing=false; }
 }
-const unsent=()=>Object.keys(pend).length+Object.keys(fpend).length;
+const unsent=()=>Object.keys(pend).length+Object.keys(fpend).length+RS.pending();   /* 공유방에 못 올린 것도 센다 (#1) */
 
 /* 서버 기록 받기 (since 이후에 바뀐 것만) */
 /* 먼저 키와 시각만 받아서, 이 기기가 올린 것·아직 못 올린 것을 빼고 나머지만 내용까지 받는다 (데이터 절약) */
@@ -1727,6 +1727,8 @@ const RS=(()=>{
   const RBASE='damda:rbase', RPEND='damda:rpend', FROOM='damda:froom';
   let rbase=jget(RBASE,{}), rpend=jget(RPEND,{}), froom=jget(FROOM,{});
   let pushT=null, pullT=null, busy=false, chan=null;
+  const fresh={};        /* 방코드 → 서버에서 막 받아 아직 화면이 다시 읽지 않은 메모 ID (#5: 낡은 화면 목록 저장 시 지워지지 않게) */
+  const fileTry={};      /* 사진 원본을 못 구한 횟수 (#4) */
   const save=()=>{ lsSet(RBASE,JSON.stringify(rbase)); lsSet(RPEND,JSON.stringify(rpend)); lsSet(FROOM,JSON.stringify(froom)); };
   const on=()=>!!(SYNC_ON&&SB&&me&&!leaving);
   const sinceKey=()=>'damda:rsince:'+me.id;
@@ -1744,55 +1746,81 @@ const RS=(()=>{
     if(r.rid) for(const m of (cget(r.code)||{}).messages||[]){ const f=fileOf(m); if(f) froom[f]=r.rid; }
     save(); if(on()){ clearTimeout(pushT); pushT=setTimeout(push,700); }
   }
+  const isPermErr=e=>!!(e&&(e.code==='42501'||/row-level security|permission/i.test(e.message||'')));
+  /* 정말 쓸 권한이 없어졌는지 서버에 다시 확인한다 (#2: 로그인이 풀려 거절된 걸 '보기만'으로 착각하지 않게)
+     true=쓸 수 있음, false=정말 못 씀(보기만·나가짐), null=모름(로그인 끊김·연결 문제) */
+  async function writable(r){
+    try{
+      const {data:{session}}=await SB.auth.getSession(); if(!session) return null;
+      const {data,error}=await SB.from('rooms').select('perm,owner').eq('id',r.rid);
+      if(error) return null;
+      if(!data.length) return false;
+      return data[0].perm!=='view'||data[0].owner===me.id;
+    }catch(e){ return null; }
+  }
+  async function pushRoom(code){
+    const r=rooms.find(x=>x.code===code), d=cget(code), seq=rpend[code];
+    if(!r||!d){ delete rpend[code]; return; }
+    if(!r.rid) return;                         /* 옮기기 전 방 — 옮긴 뒤 올린다 */
+    if(isRO(r)){ delete rpend[code]; return; }
+    const b=B(code,r.rid).h, list=(d.messages||[]).filter(m=>m&&m.id), ids=new Set(list.map(m=>m.id));
+    const rows=[], nh={};
+    for(const m of list){ const h=hs(m); if(b[m.id]!==h){ rows.push({room_id:r.rid,id:m.id,data:m,deleted:false}); nh[m.id]=h; } }
+    for(const id of Object.keys(b)) if(!ids.has(id)){ rows.push({room_id:r.rid,id,data:{id},deleted:true}); nh[id]=null; }
+    try{
+      /* 새 메모의 사진은 방 폴더에 먼저 올린다. 이 기기에 원본이 없으면 내 서버 폴더에서 받아 와서 올린다 (#4) */
+      for(const x of rows){
+        const f=!x.deleted&&b[x.id]===undefined&&fileOf(x.data); if(!f) continue;
+        froom[f]=r.rid; const rec=await IDB.get(f);
+        if(!(rec&&rec.blob)){
+          fileTry[f]=(fileTry[f]||0)+1;
+          if(fileTry[f]<5) throw new Error('사진 원본을 아직 못 받음 '+f);
+          console.warn('사진 원본을 찾지 못해 글만 올림',f); continue;
+        }
+        const {error}=await SB.storage.from('files').upload('r/'+r.rid+'/'+f,rec.blob,
+          {upsert:true,contentType:rec.type||rec.blob.type||'application/octet-stream'});
+        if(error) throw error;
+      }
+      for(let i=0;i<rows.length;i+=200){
+        const {error}=await SB.from('room_msgs').upsert(rows.slice(i,i+200),{onConflict:'room_id,id'});
+        if(error) throw error;
+      }
+    }catch(e){
+      if(isPermErr(e)&&await writable(r)===false){
+        /* 정말 권한이 없어짐(보기만으로 바뀜·방에서 나가짐) — 서버 상태로 되돌리되, 못 올린 내 글은 따로 보관한다 */
+        console.warn('공유방에 쓸 권한이 없음',code,e);
+        const d2=cget(code);
+        if(d2){
+          const lost=(d2.messages||[]).filter(m=>m&&m.id&&b[m.id]===undefined);
+          if(lost.length){ const k='damda:rstash:'+code; let old=[]; try{ old=JSON.parse(lsGet(k))||[]; }catch(_){}
+            lsSet(k,JSON.stringify(old.concat(lost))); }
+          d2.messages=(d2.messages||[]).filter(m=>m&&b[m.id]!==undefined); cset(code,d2);
+        }
+        rbase[code]={rid:r.rid,h:{}}; delete rpend[code]; save();
+        toast('이 방은 이제 보기만 할 수 있어요. 못 올린 글은 이 폰에 따로 보관했어요');
+        soon(); return;
+      }
+      throw e;                                 /* 그 밖의 오류(로그인 끊김·연결 문제 포함)는 잠시 뒤 다시 */
+    }
+    for(const id in nh){ if(nh[id]===null) delete b[id]; else b[id]=nh[id]; }
+    if(rpend[code]===seq) delete rpend[code];
+    save();
+  }
   async function push(){
     if(!on()) return;
     if(busy){ clearTimeout(pushT); pushT=setTimeout(push,1500); return; }
     busy=true; let retry=false;
     try{
+      /* 방마다 따로 — 한 방이 계속 실패해도 다른 방은 올라간다 (#9) */
       for(const code of Object.keys(rpend)){
-        const r=rooms.find(x=>x.code===code), d=cget(code), seq=rpend[code];
-        if(!r||!d){ delete rpend[code]; continue; }
-        if(!r.rid) continue;                       /* 옮기기 전 방 — 옮긴 뒤 올린다 */
-        if(isRO(r)){ delete rpend[code]; continue; }
-        const b=B(code,r.rid).h, list=(d.messages||[]).filter(m=>m&&m.id), ids=new Set(list.map(m=>m.id));
-        const rows=[], nh={};
-        for(const m of list){ const h=hs(m); if(b[m.id]!==h){ rows.push({room_id:r.rid,id:m.id,data:m,deleted:false}); nh[m.id]=h; } }
-        for(const id of Object.keys(b)) if(!ids.has(id)){ rows.push({room_id:r.rid,id,data:{id},deleted:true}); nh[id]=null; }
-        try{
-          /* 새 메모의 사진은 방 폴더에 먼저 올린다 */
-          for(const x of rows){
-            const f=!x.deleted&&b[x.id]===undefined&&fileOf(x.data); if(!f) continue;
-            froom[f]=r.rid; const rec=await idbRaw.get(f);
-            if(rec&&rec.blob){
-              const {error}=await SB.storage.from('files').upload('r/'+r.rid+'/'+f,rec.blob,
-                {upsert:true,contentType:rec.type||rec.blob.type||'application/octet-stream'});
-              if(error) throw error;
-            }
-          }
-          for(let i=0;i<rows.length;i+=200){
-            const {error}=await SB.from('room_msgs').upsert(rows.slice(i,i+200),{onConflict:'room_id,id'});
-            if(error) throw error;
-          }
-        }catch(e){
-          /* 권한이 없으면(보기만으로 바뀜·방에서 나가짐) 다시 시도하지 않는다 — 다음 받기에서 서버 상태로 돌아간다 */
-          if(e&&(e.code==='42501'||/row-level security|permission/i.test(e.message||''))){
-            /* 서버에 없는(못 올린) 메모는 지우고, 고친 메모는 서버 것으로 되돌린다 */
-            console.warn('공유방에 쓸 권한이 없음',code,e);
-            const d2=cget(code); if(d2){ d2.messages=(d2.messages||[]).filter(m=>m&&b[m.id]!==undefined); cset(code,d2); }
-            rbase[code]={rid:r.rid,h:{}}; delete rpend[code]; save();
-            toast('이 방은 이제 보기만 할 수 있어요. 쓴 내용은 되돌렸어요');
-            soon(); continue;
-          }
-          throw e;
-        }
-        for(const id in nh){ if(nh[id]===null) delete b[id]; else b[id]=nh[id]; }
-        if(rpend[code]===seq) delete rpend[code];
-        save();
+        try{ await pushRoom(code); }
+        catch(e){ console.warn('공유방을 올리지 못함',code,e); retry=true; }
       }
-    }catch(e){ console.warn('공유방을 올리지 못함',e); retry=true; }
-    finally{ busy=false; }
+    }finally{ busy=false; }
     if(retry){ clearTimeout(pushT); pushT=setTimeout(push,15000); }
   }
+  /* 로그아웃 전에: 진행 중인 올리기를 기다렸다가 한 번 더 올린다 (#1) */
+  async function flush(){ while(busy) await sleep(200); await push(); }
 
   /* 서버 줄들을 방 사본에 반영한다. 이 기기에서 고쳤는데 아직 못 올린 메모는 건드리지 않는다 */
   function applyMsgs(r,list){
@@ -1810,7 +1838,7 @@ const RS=(()=>{
       const h=hs(x.data); b[x.id]=h;
       const f=fileOf(x.data); if(f) froom[f]=r.rid;
       if(loc&&hs(loc)===h) continue;
-      if(loc) arr[i]=x.data; else { at.set(x.id,arr.length); arr.push(x.data); }
+      if(loc) arr[i]=x.data; else { at.set(x.id,arr.length); arr.push(x.data); (fresh[code]=fresh[code]||new Map()).set(x.id,Date.now()); }
       ch=true;
     }
     if(ch){ d.messages=arr.filter(Boolean).sort((a,c)=>(a.ts||0)-(c.ts||0)); cset(code,d); }
@@ -1889,17 +1917,23 @@ const RS=(()=>{
           if(kv&&kv.v) d=kv.v;
         }
         d=d||{name:r.name,messages:[]};
-        const old=r.code; let code=old, rid=null;
+        const old=r.code; let code=old, rid=null, adopted=false;
+        /* 내가 이미 이 코드로 옮겨 둔 방이 있으면(다른 기기·지난번에 중간까지) 새로 만들지 않고 그 방을 쓴다 (#3) */
+        const mine=async c=>{ const {data,error}=await SB.rpc('my_room_by_code',{p_code:c}); if(error) throw error; return data||null; };
+        rid=await mine(code); adopted=!!rid;
         for(let t=0;t<5&&!rid;t++){
           const {data,error}=await SB.rpc('create_room',{p_code:code,p_name:r.name,p_perm:d.perm==='view'?'view':'edit',p_display:myName()});
           if(!error){ rid=data; break; }
-          if(error.code==='23505'){ code=makeCode(); continue; }   /* 코드가 이미 있음 */
+          if(error.code==='23505'){                /* 코드가 이미 있음 — 방금 다른 기기가 만들었으면 그 방을 쓰고, 남의 방이면 새 코드 */
+            rid=await mine(code); if(rid){ adopted=true; break; }
+            code=makeCode(); continue;
+          }
           throw error;
         }
         if(!rid) continue;
         delete d.members; d.rid=rid; d.perm=d.perm==='view'?'view':'edit';
         cset(code,d); r.rid=rid; r.code=code;
-        rbase[code]={rid,h:{},full:true}; rpend[code]=++seqN; ch=true;
+        rbase[code]={rid,h:{},full:!adopted}; rpend[code]=++seqN; ch=true;   /* 이미 있던 방이면 서버 기록도 받아 합친다 */
         if(code!==old){ lsSet('s:room:'+old,null); toast(`'${r.name}' 방 코드가 ${code}로 바뀌었어요`); }
         await SB.from('kv').update({deleted:true,v:null}).eq('k','s:room:'+old);
       }catch(e){ console.warn('공유방 옮기기 실패',r.code,e); }
@@ -1919,11 +1953,23 @@ const RS=(()=>{
     await sync();
   }
   return {
-    mark, push, sync, start, myName,
+    mark, push, flush, sync, start, myName,
+    pending:()=>Object.keys(rpend).length,
+    seen(code){ delete fresh[code]; },
+    /* 화면이 아직 못 본(방금 받은) 메모가 저장할 목록에 빠져 있으면 다시 넣는다 (#5) */
+    keepFresh(code,list,cache){
+      const f=fresh[code]; if(!f||!f.size) return list;
+      const have=new Set(list.map(m=>m&&m.id)), add=[];
+      /* 받은 지 5초가 지났으면 화면이 이미 다시 그렸다고 보고, 빠져 있으면 사용자가 지운 것으로 본다 */
+      const now=Date.now();
+      for(const [id,t] of [...f]) if(now-t>5000) f.delete(id);
+      for(const m of (cache||[])) if(m&&f.has(m.id)){ if(have.has(m.id)) f.delete(m.id); else add.push(m); }
+      return add.length?list.concat(add).sort((a,c)=>(a.ts||0)-(c.ts||0)):list;
+    },
     roomOf:id=>froom[id]||null,
     adopt(code,rid){ rbase[code]={rid,h:{},full:true}; save(); },
     forget(code){ delete rbase[code]; delete rpend[code]; save(); },
-    reset(){ rbase={}; rpend={}; froom={}; lsSet(RBASE,null); lsSet(RPEND,null); lsSet(FROOM,null);
+    reset(){ rbase={}; rpend={}; froom={}; for(const k in fresh) delete fresh[k]; lsSet(RBASE,null); lsSet(RPEND,null); lsSet(FROOM,null);
       try{ if(chan) SB.removeChannel(chan); }catch(e){} chan=null; }
   };
 })();
@@ -2322,6 +2368,7 @@ async function saveList(r,list){
   let ok;
   if(r.code){
     const d=await S.get('room:'+r.code,true)||{};
+    if(r.rid) list=RS.keepFresh(r.code,list,d.messages);
     d.name=r.name; d.messages=list;
     if(!r.rid){ d.members=d.members||1; r._members=d.members; }   /* 옮기기 전 예전 방식 방 */
     ok=await S.set('room:'+r.code,d,true);
@@ -2725,9 +2772,10 @@ $('#doRen').onclick=async()=>{
 $('#renName').addEventListener('keydown',e=>{if(e.key==='Enter')$('#doRen').click();});
 function askDelete(r){ delTarget=r;
   /* 서버 공유방은 지우는 게 아니라 나 혼자 나간다 — 남은 사람에게 기록이 그대로 남는다 */
-  const lv=!!r.rid;
+  const lv=!!r.rid, alone=lv&&(r._members||1)<=1;
   $('#delTitle').textContent=r.name+(lv?' 나가기':' 삭제');
-  $('#delDesc').textContent=lv?'이 폰에서 방이 사라져요. 함께 쓰는 사람에게는 기록이 그대로 남아요. 다시 들어오려면 코드가 필요해요.'
+  $('#delDesc').textContent=alone?'이 방에 남은 사람이 나뿐이라, 나가면 방과 기록이 모두 지워지고 되돌릴 수 없습니다.'
+    :lv?'이 폰에서 방이 사라져요. 함께 쓰는 사람에게는 기록이 그대로 남아요. 다시 들어오려면 코드가 필요해요.'
     :'이 방의 메모가 모두 지워지고 되돌릴 수 없습니다.';
   $('#doDel').textContent=lv?'나가기':'삭제';
   open('#shDel'); }
@@ -2779,7 +2827,7 @@ async function openRoom(id,jump){
   try{ (await S.get('fold:'+cur.id)||[]).forEach(k=>{ folded[k]=true; }); }catch(e){}
   try{ pinOpen=!(await S.get('pinfold:'+cur.id)); }catch(e){}
   S.del('open:'+cur.id);   /* 예전 '펼친 날짜' 기록은 버린다 */
-  msgs=await readList(cur);
+  msgs=await readList(cur); if(cur.code) RS.seen(cur.code);
   $('#scChat').classList.toggle('ro',roNow());
   $('#txt').placeholder='메시지 입력';
   hClose(); $('#whenHint').classList.remove('on');
@@ -6008,7 +6056,7 @@ function openOut(){ const pv=me&&me.app_metadata&&me.app_metadata.provider;
 $('#doOut').onclick=async()=>{
   const b=$('#doOut'); b.disabled=true;
   while(pushing) await sleep(200);
-  await pushNow();
+  await pushNow(); await RS.flush();
   if(unsent()){ b.disabled=false; toast('아직 서버에 못 올린 기록이 있어요. 인터넷 연결을 확인해 주세요'); return; }
   try{ await SB.auth.signOut(); }catch(e){}
   await wipeLocal(); location.replace(location.pathname);
@@ -6042,7 +6090,7 @@ async function refreshView(){
   if(briefOn){ if(!$('#scChat').classList.contains('hopen')) openBrief(); return; }
   const r=cur&&rooms.find(x=>x.id===cur.id);
   if(!r){ openBrief(); return; }
-  cur=r; msgs=await readList(cur);
+  cur=r; msgs=await readList(cur); if(cur.code) RS.seen(cur.code);
   $('#scChat').classList.toggle('ro',roNow());   /* 방장이 권한을 바꾸면 열린 화면에도 바로 반영 */
   drawStream(); drawRail();
 }

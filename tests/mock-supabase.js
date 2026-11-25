@@ -60,7 +60,7 @@
       const ks = Object.keys(args || {}), ps = ks.map(k => args[k]);
       const r = await sql(`select * from public.${fn}(${ks.map((k, i) => `${k} => $${i + 1}`).join(',')})`, ps);
       if (r.error) return r;
-      if (fn === 'create_room' || fn === 'delete_me') return { data: r.data[0] && Object.values(r.data[0])[0], error: null };
+      if (fn === 'create_room' || fn === 'delete_me' || fn === 'my_room_by_code') return { data: r.data[0] && Object.values(r.data[0])[0], error: null };
       return { data: r.data, error: null };
     },
     storage: {
