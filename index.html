@@ -1145,8 +1145,10 @@ body.rzing *{user-select:none!important}
     <h2>Canvas 연결</h2>
     <p id="lmsInfo"></p>
     <div id="lmsOff">
-      <p>1. 학교 LMS 웹에서 <b>캘린더</b>를 여세요<br>2. <b>캘린더 피드</b>를 누르고 주소를 복사하세요<br>3. 아래에 붙여 넣으세요</p>
-      <input id="lmsUrl" placeholder="https://…/feeds/calendars/user_….ics" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <p>1. 아래 버튼으로 LMS 캘린더를 열고 로그인하세요<br>2. <b>캘린더 피드</b>를 누르고 링크를 길게 눌러 복사하세요<br>3. 담다로 돌아와 <b>복사한 주소 붙여넣기</b>를 누르세요</p>
+      <div id="lmsSchools"></div>
+      <button class="btn" id="lmsPaste" style="width:100%;margin:4px 0 10px">복사한 주소 붙여넣기</button>
+      <input id="lmsUrl" style="display:block;width:100%;box-sizing:border-box;padding:12px;border:1px solid var(--line);border-radius:10px;font-size:16px;margin:0 0 10px" placeholder="직접 붙여 넣으려면 여기에" autocomplete="off" autocapitalize="off" spellcheck="false">
       <p>이 주소를 아는 사람은 내 일정을 볼 수 있어요. 다른 사람에게 보내지 마세요.</p>
       <div class="btns"><button class="btn ghost" data-close>취소</button>
         <button class="btn" id="lmsLink">연결하기</button></div>
@@ -2065,8 +2067,10 @@ const LMSP=(()=>{
   }
   const make=(e,ts)=>({id:memoId(e),type:'memo',text:textOf(e),file:null,ts,due:e.due,dueStart:null,dueTime:e.dueTime,done:false,
     lms:{uid:e.uid,cid:e.cid,url:e.url,kind:e.kind,team:e.team,text:textOf(e),due:e.due,dueTime:e.dueTime}});
+  /* 복사한 글에서 피드 주소만 골라낸다 (앞뒤에 다른 글이 붙어 있거나 webcal:// 이어도 된다) */
+  const findUrl=t=>{ const m=/(?:https|webcal):\/\/[^\s"'<>]+?\/feeds\/calendars\/user_[A-Za-z0-9]+\.ics/.exec(String(t||'')); return m?m[0].replace(/^webcal:/,'https:'):''; };
   const okUrl=u=>{ try{ const x=new URL(String(u).trim()); return x.protocol==='https:'&&!x.search&&!x.hash&&/^\/feeds\/calendars\/user_[A-Za-z0-9]{10,100}\.ics$/.test(x.pathname); }catch(e){ return false; } };
-  return {parse,update,make,memoId,hash,okUrl};
+  return {parse,update,make,memoId,hash,okUrl,findUrl};
 })();
 /*LMS-PURE-END*/
 const LMS=(()=>{
@@ -2137,8 +2141,22 @@ const LMS=(()=>{
       return null;
     }finally{ busy=false; draw(); }
   }
+  /* 버튼으로 바로 열어 줄 학교 LMS 캘린더 (다른 학교는 여기에 한 줄 추가) */
+  const SCHOOLS=[['한양대','https://learning.hanyang.ac.kr/calendar']];
+  function schools(){
+    $('#lmsSchools').replaceChildren(...SCHOOLS.map(([n,u])=>{
+      const a=el('a','btn ghost'); a.href=u; a.target='_blank'; a.rel='noopener'; a.textContent=n+' LMS 캘린더 열기';
+      a.style.cssText='display:block;width:100%;box-sizing:border-box;margin:4px 0;text-align:center;text-decoration:none'; return a; }));
+  }
+  async function paste(){
+    let t=null; try{ t=await navigator.clipboard.readText(); }catch(e){}
+    if(t===null){ $('#lmsUrl').focus(); toast('붙여넣기가 막혀 있어요. 아래 칸을 길게 눌러 붙여 넣어 주세요'); return; }
+    const u=LMSP.findUrl(t);
+    if(!u){ toast('복사한 것 중에 캘린더 피드 주소가 없어요'); return; }
+    await link(u);
+  }
   async function link(url){
-    url=String(url||'').trim();
+    url=String(url||'').trim(); url=LMSP.findUrl(url)||url;
     if(!SB||!me){ toast(MSG.login); return; }
     if(!LMSP.okUrl(url)){ toast(MSG.url); return; }
     const old=await load();
@@ -2164,6 +2182,7 @@ const LMS=(()=>{
     const st=await load(), on=!!(st&&st.url);
     $('#lmsOff').style.display=on?'none':''; $('#lmsOn').style.display=on?'':'none';
     $('#lmsInfo').textContent=!(SB&&me)?MSG.login:on?(st.err?MSG[st.err]:`연결됨 · 과목 ${st.courses||0}개 · `+(st.at?new Date(st.at).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'})+'에 받음':'아직 받지 않음')):'학교 LMS의 과제·시험 마감을 과목방에 자동으로 담아요.';
+    schools();
     const my=++drawN, btns=[];                 /* 동시에 두 번 그려도 버튼이 겹치지 않게 마지막 것만 쓴다 */
     if(!on){ $('#lmsTeams').replaceChildren(); return; }
     for(const r of rooms){
@@ -2176,10 +2195,11 @@ const LMS=(()=>{
     }
     if(my===drawN) $('#lmsTeams').replaceChildren(...btns);
   }
-  return {pull,link,cut,draw};
+  return {pull,link,paste,cut,draw};
 })();
 $('#toLms').onclick=async()=>{ await LMS.draw(); open('#shLms'); };
 $('#lmsLink').onclick=async()=>{ const b=$('#lmsLink'); b.disabled=true; try{ await LMS.link($('#lmsUrl').value); }finally{ b.disabled=false; } };
+$('#lmsPaste').onclick=async()=>{ const b=$('#lmsPaste'); b.disabled=true; try{ await LMS.paste(); }finally{ b.disabled=false; } };
 $('#lmsNow').onclick=async()=>{ const b=$('#lmsNow'); b.disabled=true; try{ await LMS.pull(true); }finally{ b.disabled=false; } };
 $('#lmsCut').onclick=()=>LMS.cut();
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') LMS.pull(false); });

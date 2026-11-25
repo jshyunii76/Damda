@@ -65,6 +65,9 @@ const plain = [{ id: 'm1', text: '내 메모', due: '2026-12-01' }]; check('일�
 console.log('서버 함수: 주소 검사');
 const ok = 'https://learning.example.ac.kr/feeds/calendars/user_abcDEF1234567890.ics';
 check('정상 주소', !!checkUrl(ok)); check('앱 쪽 검사도 통과', L.okUrl(ok));
+check('복사한 글에서 주소만 골라냄', L.findUrl('캘린더 피드: ' + ok + ' 입니다') === ok && L.findUrl(String.fromCharCode(10) + ok + String.fromCharCode(10)) === ok);
+check('webcal 주소도 됨', L.findUrl(ok.replace('https', 'webcal')) === ok);
+check('피드 주소가 없으면 빈 값', L.findUrl('https://learning.example.ac.kr/calendar') === '' && L.findUrl('') === '' && L.findUrl(null) === '');
 for (const [n, u] of [
   ['http', ok.replace('https', 'http')], ['IP', ok.replace('learning.example.ac.kr', '10.0.0.1')],
   ['IPv6', ok.replace('learning.example.ac.kr', '[::1]')], ['localhost', ok.replace('learning.example.ac.kr', 'localhost')],
