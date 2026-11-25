@@ -63,6 +63,13 @@
       if (fn === 'create_room' || fn === 'delete_me' || fn === 'my_room_by_code') return { data: r.data[0] && Object.values(r.data[0])[0], error: null };
       return { data: r.data, error: null };
     },
+    functions: {
+      async invoke(name, { body }) {
+        const r = await fetch(`/api/fn/${name}?uid=${user.id}`, { method: 'POST', body: JSON.stringify(body) });
+        if (!r.ok) return { data: null, error: { message: 'non-2xx', context: r } };
+        return { data: await r.text(), error: null };
+      }
+    },
     storage: {
       from: () => ({
         async upload(path, blob, o) {

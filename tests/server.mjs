@@ -4,6 +4,7 @@ import { PGlite } from '@electric-sql/pglite';
 import http from 'node:http';
 import { readFileSync, existsSync } from 'node:fs';
 import { join, extname, resolve } from 'node:path';
+import { handle } from '../supabase/functions/canvas-feed/index.ts';
 
 const APP = resolve(process.argv[2]), SQL = join(APP, 'supabase');
 const db = new PGlite();
@@ -24,6 +25,7 @@ await db.exec(readFileSync(join(SQL, 'setup.sql'), 'utf8'));
 await db.exec(readFileSync(join(SQL, 'rooms.sql'), 'utf8'));
 for (const c of 'abc') await db.query('insert into auth.users values ($1)', ['00000000-0000-0000-0000-00000000000' + c]);
 const blobs = new Map();
+let feed = { status: 200, text: readFileSync(new URL('./fixtures/sample.ics', import.meta.url), 'utf8') }, feedCalls = 0;
 let q = Promise.resolve();   // 요청을 하나씩 (역할 전환이 섞이지 않게)
 const serial = fn => (q = q.then(fn, fn));
 
@@ -58,6 +60,16 @@ http.createServer(async (req, res) => {
       const b = blobs.get(path);
       if (out.error || !out.rows.length || !b) { res.writeHead(404); return res.end(); }
       res.writeHead(200, { 'content-type': b.type || 'application/octet-stream' }); return res.end(b.buf);
+    }
+    if (url.pathname === '/api/fn/canvas-feed') {   /* 진짜 함수 코드를 그대로 쓰고, 학교 LMS 응답만 가짜 */
+      if (!url.searchParams.get('uid')) { res.writeHead(401); return res.end(); }
+      feedCalls++;
+      const r = await handle(new Request('http://f/', { method: 'POST', body: await body(req) }), async () => new Response(feed.text, { status: feed.status }));
+      res.writeHead(r.status, { 'content-type': r.headers.get('content-type') }); return res.end(await r.text());
+    }
+    if (url.pathname === '/api/fixture') {          /* 시험용: 가짜 피드 바꾸기 */
+      if (req.method === 'POST') feed = JSON.parse(await body(req));
+      res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ ...feed, calls: feedCalls }));
     }
     if (url.pathname === '/api/ver') {
       const r = await serial(() => db.query(`select (select coalesce(max(updated_at)::text,'') from public.room_msgs) || (select count(*)::text from public.room_members) || (select count(*)::text from public.room_msgs) || (select string_agg(perm,'') from public.rooms) v`));
