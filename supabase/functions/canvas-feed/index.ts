@@ -1,6 +1,6 @@
 // Canvas 캘린더 피드(.ics)를 대신 받아 주는 함수 (2바퀴)
 // 브라우저는 CORS 때문에 학교 Canvas에서 직접 받을 수 없다.
-// - 로그인한 사람만 (Supabase 함수의 JWT 검사 켜 둘 것)
+// - 로그인한 사람만 (Supabase 기본 JWT 검사는 공개 키로도 통과되므로 여기서 직접 확인한다)
 // - Canvas 피드 모양의 주소만. 아무 주소나 받아 주는 프록시가 되지 않게 한다
 // - 피드 주소는 열쇠와 같으므로 로그에 남기지 않는다
 
@@ -39,7 +39,19 @@ export async function readLimited(res, max = MAX) {
   return new TextDecoder().decode(all);
 }
 
-export async function handle(req, fetcher = fetch) {
+/* 로그인한 사람의 토큰인지 Supabase 로그인 서버에 물어본다 */
+export async function signedIn(req, base, fetcher = fetch) {
+  const auth = req.headers.get('authorization') || '', key = req.headers.get('apikey') || '';
+  if (!/^Bearer \S+$/.test(auth) || !key || !base) return false;
+  try {
+    const r = await fetcher(base + '/auth/v1/user', { headers: { Authorization: auth, apikey: key }, signal: AbortSignal.timeout(5000) });
+    if (!r.ok) return false;
+    const u = await r.json();
+    return !!(u && u.id);
+  } catch { return false; }
+}
+
+export async function handle(req, fetcher = fetch, login = r => signedIn(r, Deno.env.get('SUPABASE_URL'))) {
   const origin = req.headers.get('origin') || '';
   const head = {
     'Access-Control-Allow-Origin': ORIGINS.includes(origin) ? origin : ORIGINS[0],
@@ -50,6 +62,8 @@ export async function handle(req, fetcher = fetch) {
   const fail = (status, error) => new Response(JSON.stringify({ error }), { status, headers: { ...head, 'Content-Type': 'application/json' } });
   if (req.method === 'OPTIONS') return new Response('ok', { headers: head });
   if (req.method !== 'POST') return fail(405, 'method');
+
+  if (!await login(req)) return fail(401, 'login');
 
   let body;
   try { body = await req.json(); } catch { return fail(400, 'url'); }

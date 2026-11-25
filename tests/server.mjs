@@ -64,7 +64,7 @@ http.createServer(async (req, res) => {
     if (url.pathname === '/api/fn/canvas-feed') {   /* 진짜 함수 코드를 그대로 쓰고, 학교 LMS 응답만 가짜 */
       if (!url.searchParams.get('uid')) { res.writeHead(401); return res.end(); }
       feedCalls++;
-      const r = await handle(new Request('http://f/', { method: 'POST', body: await body(req) }), async () => new Response(feed.text, { status: feed.status }));
+      const r = await handle(new Request('http://f/', { method: 'POST', body: await body(req) }), async () => new Response(feed.text, { status: feed.status }), async () => true);
       res.writeHead(r.status, { 'content-type': r.headers.get('content-type') }); return res.end(await r.text());
     }
     if (url.pathname === '/api/fixture') {          /* 시험용: 가짜 피드 바꾸기 */

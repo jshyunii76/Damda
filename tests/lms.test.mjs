@@ -1,6 +1,6 @@
 // 2바퀴 시험: Canvas 피드 해석·적용 규칙 + canvas-feed 서버 함수
 import { readFileSync } from 'node:fs';
-import { checkUrl, handle } from '../supabase/functions/canvas-feed/index.ts';
+import { checkUrl, handle, signedIn } from '../supabase/functions/canvas-feed/index.ts';
 
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const src = html.slice(html.indexOf('/*LMS-PURE-START'), html.indexOf('/*LMS-PURE-END*/'));
@@ -76,7 +76,7 @@ for (const [n, u] of [
 ]) check(n + ' → 거절', checkUrl(u) === null, u);
 
 console.log('서버 함수: 받기');
-const call = (url, res, o = {}) => handle(new Request('https://f/', { method: o.method || 'POST', headers: { origin: o.origin || 'https://pikachu515.github.io' }, body: (o.method || 'POST') === 'POST' ? JSON.stringify({ url }) : undefined }), async (u, opt) => { call.seen = { u, opt }; if (res instanceof Error) throw res; return res; });
+const call = (url, res, o = {}) => handle(new Request('https://f/', { method: o.method || 'POST', headers: { origin: o.origin || 'https://pikachu515.github.io' }, body: (o.method || 'POST') === 'POST' ? JSON.stringify({ url }) : undefined }), async (u, opt) => { call.seen = { u, opt }; if (res instanceof Error) throw res; return res; }, async () => o.login !== false);
 let x = await call(ok, new Response(ics, { headers: { 'content-type': 'text/calendar' } }));
 check('정상 피드 그대로 돌려줌', x.status === 200 && (await x.text()) === ics && /text\/calendar/.test(x.headers.get('content-type')));
 check('리다이렉트 안 따라감', call.seen.opt.redirect === 'manual');
@@ -90,6 +90,13 @@ for (const [n, res, e, st] of [
 ]) { x = await call(ok, res); const j = await x.json(); check(n + ' → ' + e, x.status === st && j.error === e, [x.status, j]); }
 x = await call(ok, null, { method: 'OPTIONS' }); check('OPTIONS 응답', x.status === 200);
 x = await call(ok, null, { method: 'GET' }); check('GET 거절', x.status === 405);
+call.seen = null; x = await call(ok, new Response(ics), { login: false }); check('로그인 안 한 사람 → 거절, 학교에 요청 안 보냄', x.status === 401 && (await x.json()).error === 'login' && call.seen === null);
+const who = (h, res) => signedIn(new Request('https://f/', { headers: h }), 'https://p.supabase.co', async () => res);
+const H = { authorization: 'Bearer tok', apikey: 'k' };
+check('사용자 토큰 → 통과', await who(H, new Response('{"id":"u1"}')) === true);
+check('공개 키를 토큰 자리에 넣음(로그인 서버가 401/403) → 거절', await who(H, new Response('{}', { status: 403 })) === false);
+check('토큰 없음 → 거절', await who({ apikey: 'k' }, new Response('{"id":"u1"}')) === false);
+check('로그인 서버 응답에 사용자 없음 → 거절', await who(H, new Response('{}')) === false);
 const logs = [], w = console.warn; console.warn = (...a) => logs.push(a.join(' ')); await call(ok, new Response('', { status: 404 })); await call(ok, new Error('boom')); console.warn = w;
 check('로그에 피드 주소(토큰)가 없음', logs.length === 2 && !logs.join().includes('user_'), logs);
 
