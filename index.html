@@ -1240,7 +1240,7 @@ body.rzing *{user-select:none!important}
 
   <div class="sheet" id="shDel"><div class="card">
     <h2 id="delTitle">방 삭제</h2>
-    <p>이 방의 메모가 모두 지워지고 되돌릴 수 없습니다.</p>
+    <p id="delDesc">이 방의 메모가 모두 지워지고 되돌릴 수 없습니다.</p>
     <div class="btns"><button class="btn ghost" data-close>취소</button>
       <button class="btn danger" id="doDel">삭제</button></div>
   </div></div>
@@ -1248,6 +1248,7 @@ body.rzing *{user-select:none!important}
   <div class="sheet" id="shJoin"><div class="card">
     <h2>코드로 참여</h2>
     <input type="text" id="joinCode" placeholder="예) 7QK2MD" maxlength="6" autocapitalize="characters">
+    <input type="text" id="joinName" placeholder="이 방에서 쓸 이름" maxlength="20" style="margin-top:8px">
     <div class="btns"><button class="btn ghost" data-close>취소</button>
       <button class="btn" id="doJoin">참여하기</button></div>
   </div></div>
@@ -1502,7 +1503,7 @@ const syncAtKey=()=>'damda:syncAt:'+me.id;
 const lsGet=k=>{ try{ return localStorage.getItem(k); }catch(e){ return null; } };
 const lsSet=(k,v)=>{ try{ v==null?localStorage.removeItem(k):localStorage.setItem(k,v); }catch(e){} };
 const jget=(k,d)=>{ try{ return JSON.parse(lsGet(k))||d; }catch(e){ return d; } };
-const syncable=kk=>/^[ps]:/.test(kk);
+const syncable=kk=>/^[ps]:/.test(kk)&&!kk.startsWith('s:room:');   /* 공유방은 RS(공유방 동기화)가 따로 맞춘다 */
 const isFileId=k=>/^f[0-9a-z]+$/.test(k);
 let pend=jget(PEND,{}), fpend=jget(FPEND,{});   /* 키 → 'u…'(올림) / 'd…'(지움), 뒤 숫자는 바뀐 순서 */
 let own=jget(OWN,{});   /* 이 기기가 올린 기록의 서버 시각 — 받을 때 내가 올린 건 다시 받지 않는다 */
@@ -1591,6 +1592,7 @@ async function pushNow(){
     /* 사진·파일 */
     for(const id of Object.keys(fpend)){
       const mk=fpend[id], path=me.id+'/'+id;
+      if(mk[0]==='u'&&RS.roomOf(id)){ delete fpend[id]; lsSet(FPEND,JSON.stringify(fpend)); continue; }
       if(mk[0]==='u'){
         const rec=await idbRaw.get(id);
         if(rec&&rec.blob){
@@ -1607,7 +1609,7 @@ async function pushNow(){
   }catch(e){ console.warn('서버에 올리지 못함',e); schedPush(15000); }
   finally{ pushing=false; }
 }
-const unsent=()=>Object.keys(pend).length+Object.keys(fpend).length;
+const unsent=()=>Object.keys(pend).length+Object.keys(fpend).length+RS.pending();   /* 공유방에 못 올린 것도 센다 (#1) */
 
 /* 서버 기록 받기 (since 이후에 바뀐 것만) */
 /* 먼저 키와 시각만 받아서, 이 기기가 올린 것·아직 못 올린 것을 빼고 나머지만 내용까지 받는다 (데이터 절약) */
@@ -1635,6 +1637,7 @@ function applyRows(rows){
   let changed=false, last=null;
   for(const r of rows){
     if(!last||r.updated_at>last) last=r.updated_at;
+    if(r.k.startsWith('s:room:')) continue;   /* 예전 방식 공유방 — RS가 옮긴다 */
     if(pend[r.k]||r.skip) continue;   /* 이 기기에서 아직 못 올린 변경이 우선 · 내가 올린 그대로면 건너뜀 */
     setBase(r.k,r.updated_at,r.deleted?undefined:r.v);
     const nv=r.deleted?null:JSON.stringify(r.v);
@@ -1657,7 +1660,8 @@ function localKeys(){
   return ks;
 }
 async function wipeLocal(){
-  try{ for(const k of localKeys().concat(Object.keys(localStorage).filter(k=>k.startsWith('damda:syncAt:')))) localStorage.removeItem(k); }catch(e){}
+  try{ for(const k of localKeys().concat(Object.keys(localStorage).filter(k=>k.startsWith('damda:syncAt:')||k.startsWith('damda:rsince:')||k.startsWith('s:room:')))) localStorage.removeItem(k); }catch(e){}
+  RS.reset();
   for(const k in mem) delete mem[k];
   pend={}; fpend={}; own={}; base={}; lsSet(PEND,null); lsSet(FPEND,null); lsSet(OWN,null); lsSet(BASE,null); lsSet(OWNER,null);
   lsSet(AI_KEY_STORE,null);   /* 이 기기에 넣어 둔 AI 키도 같이 지운다 */
@@ -1695,7 +1699,10 @@ async function adopt(user){
 }
 async function fileFetch(id){
   try{
-    const {data,error}=await SB.storage.from('files').download(me.id+'/'+id);
+    /* 공유방 사진이면 방 폴더에서, 아니면(또는 옮기기 전 사진이면) 내 폴더에서 */
+    const rid=RS.roomOf(id);
+    let {data,error}=rid?await SB.storage.from('files').download('r/'+rid+'/'+id):{data:null,error:1};
+    if(error||!data) ({data,error}=await SB.storage.from('files').download(me.id+'/'+id));
     if(error||!data) return null;
     const rec={blob:data,type:data.type}; await idbRaw.put(id,rec); return rec;
   }catch(e){ return null; }
@@ -1707,6 +1714,264 @@ const IDB={
   async get(k){ const r=await idbRaw.get(k); if(r||!SB||!me||!isFileId(k)) return r; return fileFetch(k); },
   async del(k){ const r=await idbRaw.del(k); fileMark(k,true); return r; }
 };
+
+/* =====================================================
+   공유방 동기화 (RS) — supabase/rooms.sql
+   방 메모는 서버 room_msgs 표에 '메모 1개 = 1줄'로 둔다. 여러 명이 동시에 써도 서로 덮어쓰지 않는다.
+   화면은 지금처럼 이 기기의 s:room:코드 사본을 읽고 쓰고, 여기서 사본과 서버를 맞춘다.
+   - rbase: 방마다 마지막으로 서버와 맞춘 메모 지문 → 바뀐 메모만 올리고, 이 기기에서 고치는 중인 메모는 덮지 않는다
+   - 작성자·시각·권한은 서버가 정한다 (앱이 보낸 값은 믿지 않음)
+   ===================================================== */
+const RS=(()=>{
+  const RBASE='damda:rbase', RPEND='damda:rpend', FROOM='damda:froom';
+  let rbase=jget(RBASE,{}), rpend=jget(RPEND,{}), froom=jget(FROOM,{});
+  let pushT=null, pullT=null, busy=false, chan=null;
+  const fresh={};        /* 방코드 → 서버에서 막 받아 아직 화면이 다시 읽지 않은 메모 ID (#5: 낡은 화면 목록 저장 시 지워지지 않게) */
+  const fileTry={};      /* 사진 원본을 못 구한 횟수 (#4) */
+  const save=()=>{ lsSet(RBASE,JSON.stringify(rbase)); lsSet(RPEND,JSON.stringify(rpend)); lsSet(FROOM,JSON.stringify(froom)); };
+  const on=()=>!!(SYNC_ON&&SB&&me&&!leaving);
+  const sinceKey=()=>'damda:rsince:'+me.id;
+  const cget=code=>{ try{ return JSON.parse(lsGet('s:room:'+code))||null; }catch(e){ return null; } };
+  const cset=(code,d)=>{ lsSet('s:room:'+code,JSON.stringify(d)); delete mem['s:room:'+code]; };
+  const B=(code,rid)=>(rbase[code]=rbase[code]||{rid,h:{}});
+  const myName=()=>{ const m=(me&&me.user_metadata)||{};
+    return String(m.name||m.full_name||m.nickname||m.preferred_username||((me&&me.email)||'').split('@')[0]||'나').trim().slice(0,20); };
+  const fileOf=m=>m&&m.file&&m.file.id&&isFileId(m.file.id)?m.file.id:null;
+
+  /* 방 사본이 바뀌었다고 표시하고 잠시 뒤 올린다 */
+  function mark(r){
+    if(!r||!r.code) return;
+    rpend[r.code]=++seqN;
+    if(r.rid) for(const m of (cget(r.code)||{}).messages||[]){ const f=fileOf(m); if(f) froom[f]=r.rid; }
+    save(); if(on()){ clearTimeout(pushT); pushT=setTimeout(push,700); }
+  }
+  const isPermErr=e=>!!(e&&(e.code==='42501'||/row-level security|permission/i.test(e.message||'')));
+  /* 정말 쓸 권한이 없어졌는지 서버에 다시 확인한다 (#2: 로그인이 풀려 거절된 걸 '보기만'으로 착각하지 않게)
+     true=쓸 수 있음, false=정말 못 씀(보기만·나가짐), null=모름(로그인 끊김·연결 문제) */
+  async function writable(r){
+    try{
+      const {data:{session}}=await SB.auth.getSession(); if(!session) return null;
+      const {data,error}=await SB.from('rooms').select('perm,owner').eq('id',r.rid);
+      if(error) return null;
+      if(!data.length) return false;
+      return data[0].perm!=='view'||data[0].owner===me.id;
+    }catch(e){ return null; }
+  }
+  async function pushRoom(code){
+    const r=rooms.find(x=>x.code===code), d=cget(code), seq=rpend[code];
+    if(!r||!d){ delete rpend[code]; return; }
+    if(!r.rid) return;                         /* 옮기기 전 방 — 옮긴 뒤 올린다 */
+    if(isRO(r)){ delete rpend[code]; return; }
+    const b=B(code,r.rid).h, list=(d.messages||[]).filter(m=>m&&m.id), ids=new Set(list.map(m=>m.id));
+    const rows=[], nh={};
+    for(const m of list){ const h=hs(m); if(b[m.id]!==h){ rows.push({room_id:r.rid,id:m.id,data:m,deleted:false}); nh[m.id]=h; } }
+    for(const id of Object.keys(b)) if(!ids.has(id)){ rows.push({room_id:r.rid,id,data:{id},deleted:true}); nh[id]=null; }
+    try{
+      /* 새 메모의 사진은 방 폴더에 먼저 올린다. 이 기기에 원본이 없으면 내 서버 폴더에서 받아 와서 올린다 (#4) */
+      for(const x of rows){
+        const f=!x.deleted&&b[x.id]===undefined&&fileOf(x.data); if(!f) continue;
+        froom[f]=r.rid; const rec=await IDB.get(f);
+        if(!(rec&&rec.blob)){
+          fileTry[f]=(fileTry[f]||0)+1;
+          if(fileTry[f]<5) throw new Error('사진 원본을 아직 못 받음 '+f);
+          console.warn('사진 원본을 찾지 못해 글만 올림',f); continue;
+        }
+        const {error}=await SB.storage.from('files').upload('r/'+r.rid+'/'+f,rec.blob,
+          {upsert:true,contentType:rec.type||rec.blob.type||'application/octet-stream'});
+        if(error) throw error;
+      }
+      for(let i=0;i<rows.length;i+=200){
+        const {error}=await SB.from('room_msgs').upsert(rows.slice(i,i+200),{onConflict:'room_id,id'});
+        if(error) throw error;
+      }
+    }catch(e){
+      if(isPermErr(e)&&await writable(r)===false){
+        /* 정말 권한이 없어짐(보기만으로 바뀜·방에서 나가짐) — 서버 상태로 되돌리되, 못 올린 내 글은 따로 보관한다 */
+        console.warn('공유방에 쓸 권한이 없음',code,e);
+        const d2=cget(code);
+        if(d2){
+          const lost=(d2.messages||[]).filter(m=>m&&m.id&&b[m.id]===undefined);
+          if(lost.length){ const k='damda:rstash:'+code; let old=[]; try{ old=JSON.parse(lsGet(k))||[]; }catch(_){}
+            lsSet(k,JSON.stringify(old.concat(lost))); }
+          d2.messages=(d2.messages||[]).filter(m=>m&&b[m.id]!==undefined); cset(code,d2);
+        }
+        rbase[code]={rid:r.rid,h:{}}; delete rpend[code]; save();
+        toast('이 방은 이제 보기만 할 수 있어요. 못 올린 글은 이 폰에 따로 보관했어요');
+        soon(); return;
+      }
+      throw e;                                 /* 그 밖의 오류(로그인 끊김·연결 문제 포함)는 잠시 뒤 다시 */
+    }
+    for(const id in nh){ if(nh[id]===null) delete b[id]; else b[id]=nh[id]; }
+    if(rpend[code]===seq) delete rpend[code];
+    save();
+  }
+  async function push(){
+    if(!on()) return;
+    if(busy){ clearTimeout(pushT); pushT=setTimeout(push,1500); return; }
+    busy=true; let retry=false;
+    try{
+      /* 방마다 따로 — 한 방이 계속 실패해도 다른 방은 올라간다 (#9) */
+      for(const code of Object.keys(rpend)){
+        try{ await pushRoom(code); }
+        catch(e){ console.warn('공유방을 올리지 못함',code,e); retry=true; }
+      }
+    }finally{ busy=false; }
+    if(retry){ clearTimeout(pushT); pushT=setTimeout(push,15000); }
+  }
+  /* 로그아웃 전에: 진행 중인 올리기를 기다렸다가 한 번 더 올린다 (#1) */
+  async function flush(){ while(busy) await sleep(200); await push(); }
+
+  /* 서버 줄들을 방 사본에 반영한다. 이 기기에서 고쳤는데 아직 못 올린 메모는 건드리지 않는다 */
+  function applyMsgs(r,list){
+    const code=r.code, d=cget(code)||{name:r.name,messages:[]}, b=B(code,r.rid).h;
+    const arr=(d.messages||[]).slice(), at=new Map(arr.map((m,i)=>[m&&m.id,i]));
+    let ch=false;
+    for(const x of list){
+      const i=at.get(x.id), loc=i===undefined?null:arr[i];
+      if(loc&&b[x.id]!==undefined&&hs(loc)!==b[x.id]) continue;          /* 이 기기에서 고치는 중 */
+      if(!loc&&b[x.id]!==undefined&&rpend[code]) continue;                /* 이 기기에서 지웠는데 아직 못 올림 */
+      if(x.deleted){
+        if(loc){ arr[i]=null; ch=true; }
+        delete b[x.id]; continue;
+      }
+      const h=hs(x.data); b[x.id]=h;
+      const f=fileOf(x.data); if(f) froom[f]=r.rid;
+      if(loc&&hs(loc)===h) continue;
+      if(loc) arr[i]=x.data; else { at.set(x.id,arr.length); arr.push(x.data); (fresh[code]=fresh[code]||new Map()).set(x.id,Date.now()); }
+      ch=true;
+    }
+    if(ch){ d.messages=arr.filter(Boolean).sort((a,c)=>(a.ts||0)-(c.ts||0)); cset(code,d); }
+    return ch;
+  }
+  async function pull(){
+    if(!on()) return false;
+    const mine=rooms.filter(r=>r.code&&r.rid);
+    if(!mine.length) return false;
+    let changed=false;
+    /* 방 정보(권한)와 멤버 이름 */
+    const [a,m]=await Promise.all([
+      SB.from('rooms').select('id,name,perm,owner'),
+      SB.from('room_members').select('room_id,user_id,display_name,role,joined_at').order('joined_at')]);
+    if(a.error) throw a.error; if(m.error) throw m.error;
+    for(const r of mine){
+      const info=a.data.find(x=>x.id===r.rid); if(!info) continue;   /* 서버에 없음(나가짐) */
+      const d=cget(r.code)||{name:r.name,messages:[]};
+      const mem2=m.data.filter(x=>x.room_id===r.rid).map(x=>({uid:x.user_id,name:x.display_name,role:x.role}));
+      if(d.perm!==info.perm||d.rid!==r.rid||JSON.stringify(d.mem||[])!==JSON.stringify(mem2)){
+        d.perm=info.perm; d.rid=r.rid; d.mem=mem2; cset(r.code,d); changed=true;
+      }
+      r._perm=info.perm; r._members=mem2.length;
+    }
+    /* 처음 받는 방은 통째로 */
+    for(const r of mine){
+      if(B(r.code,r.rid).full) continue;
+      const all=[];
+      for(let off=0;off<100000;off+=1000){
+        const {data,error}=await SB.from('room_msgs').select('id,data,deleted,updated_at').eq('room_id',r.rid)
+          .order('updated_at').order('id').range(off,off+999);
+        if(error) throw error; all.push(...data); if(data.length<1000) break;
+      }
+      if(applyMsgs(r,all)) changed=true;
+      rbase[r.code].full=true;
+    }
+    /* 나머지는 마지막으로 받은 뒤 바뀐 것만 (같은 순간에 들어온 것을 놓치지 않게 5초 겹쳐서) */
+    const since=lsGet(sinceKey()); let last=since; const rows=[];
+    for(let off=0;off<100000;off+=1000){
+      let q=SB.from('room_msgs').select('room_id,id,data,deleted,updated_at').order('updated_at').order('id').range(off,off+999);
+      if(since) q=q.gt('updated_at',new Date(Date.parse(since)-5000).toISOString());
+      const {data,error}=await q; if(error) throw error;
+      rows.push(...data); if(data.length<1000) break;
+    }
+    for(const r of mine){ const l=rows.filter(x=>x.room_id===r.rid); if(l.length&&applyMsgs(r,l)) changed=true; }
+    for(const x of rows) if(!last||x.updated_at>last) last=x.updated_at;
+    if(last) lsSet(sinceKey(),last);
+    save();
+    return changed;
+  }
+  async function sync(){
+    let ch=false;
+    try{ ch=await pull(); }catch(e){ console.warn('공유방을 받지 못함',e); }
+    push();
+    if(ch) await refreshView();
+    return ch;
+  }
+  const soon=()=>{ clearTimeout(pullT); pullT=setTimeout(()=>{ if(on()) sync(); },400); };
+
+  /* 예전 방식(각자 kv에 통째로 저장) 공유방을 새 구조로 옮긴다 — 한 번 옮긴 방은 rid가 생겨 다시 하지 않는다 */
+  async function migrate(){
+    let ch=false;
+    for(const r of rooms.slice()){
+      if(!r.code||r.rid) continue;
+      try{
+        if(r.joined){
+          /* 참여했던 방: 같은 코드로 다시 참여 (방장이 아직 안 옮겼으면 다음에 다시) */
+          const {data,error}=await SB.rpc('join_room',{p_code:r.code,p_display:myName()});
+          if(error) throw error;
+          if(data&&data[0]){ r.rid=data[0].room_id; ch=true; }
+          continue;
+        }
+        let d=cget(r.code);
+        if(!d||!(d.messages||[]).length){
+          const {data:kv}=await SB.from('kv').select('v').eq('k','s:room:'+r.code).maybeSingle();
+          if(kv&&kv.v) d=kv.v;
+        }
+        d=d||{name:r.name,messages:[]};
+        const old=r.code; let code=old, rid=null, adopted=false;
+        /* 내가 이미 이 코드로 옮겨 둔 방이 있으면(다른 기기·지난번에 중간까지) 새로 만들지 않고 그 방을 쓴다 (#3) */
+        const mine=async c=>{ const {data,error}=await SB.rpc('my_room_by_code',{p_code:c}); if(error) throw error; return data||null; };
+        rid=await mine(code); adopted=!!rid;
+        for(let t=0;t<5&&!rid;t++){
+          const {data,error}=await SB.rpc('create_room',{p_code:code,p_name:r.name,p_perm:d.perm==='view'?'view':'edit',p_display:myName()});
+          if(!error){ rid=data; break; }
+          if(error.code==='23505'){                /* 코드가 이미 있음 — 방금 다른 기기가 만들었으면 그 방을 쓰고, 남의 방이면 새 코드 */
+            rid=await mine(code); if(rid){ adopted=true; break; }
+            code=makeCode(); continue;
+          }
+          throw error;
+        }
+        if(!rid) continue;
+        delete d.members; d.rid=rid; d.perm=d.perm==='view'?'view':'edit';
+        cset(code,d); r.rid=rid; r.code=code;
+        rbase[code]={rid,h:{},full:!adopted}; rpend[code]=++seqN; ch=true;   /* 이미 있던 방이면 서버 기록도 받아 합친다 */
+        if(code!==old){ lsSet('s:room:'+old,null); toast(`'${r.name}' 방 코드가 ${code}로 바뀌었어요`); }
+        await SB.from('kv').update({deleted:true,v:null}).eq('k','s:room:'+old);
+      }catch(e){ console.warn('공유방 옮기기 실패',r.code,e); }
+    }
+    if(ch){ save(); await saveRooms(); }
+  }
+  async function start(){
+    if(!on()) return;
+    try{
+      chan=SB.channel('damda-rooms')
+        .on('postgres_changes',{event:'*',schema:'public',table:'room_msgs'},()=>soon())
+        .on('postgres_changes',{event:'*',schema:'public',table:'room_members'},()=>soon())
+        .on('postgres_changes',{event:'*',schema:'public',table:'rooms'},()=>soon())
+        .subscribe();
+    }catch(e){ console.warn('실시간 연결 실패',e); }
+    await migrate();
+    await sync();
+  }
+  return {
+    mark, push, flush, sync, start, myName,
+    pending:()=>Object.keys(rpend).length,
+    seen(code){ delete fresh[code]; },
+    /* 화면이 아직 못 본(방금 받은) 메모가 저장할 목록에 빠져 있으면 다시 넣는다 (#5) */
+    keepFresh(code,list,cache){
+      const f=fresh[code]; if(!f||!f.size) return list;
+      const have=new Set(list.map(m=>m&&m.id)), add=[];
+      /* 받은 지 5초가 지났으면 화면이 이미 다시 그렸다고 보고, 빠져 있으면 사용자가 지운 것으로 본다 */
+      const now=Date.now();
+      for(const [id,t] of [...f]) if(now-t>5000) f.delete(id);
+      for(const m of (cache||[])) if(m&&f.has(m.id)){ if(have.has(m.id)) f.delete(m.id); else add.push(m); }
+      return add.length?list.concat(add).sort((a,c)=>(a.ts||0)-(c.ts||0)):list;
+    },
+    roomOf:id=>froom[id]||null,
+    adopt(code,rid){ rbase[code]={rid,h:{},full:true}; save(); },
+    forget(code){ delete rbase[code]; delete rpend[code]; save(); },
+    reset(){ rbase={}; rpend={}; froom={}; for(const k in fresh) delete fresh[k]; lsSet(RBASE,null); lsSet(RPEND,null); lsSet(FROOM,null);
+      try{ if(chan) SB.removeChannel(chan); }catch(e){} chan=null; }
+  };
+})();
 
 const urlCache=new Map();
 async function fileURL(f){
@@ -2080,7 +2345,7 @@ const saveRooms=()=>S.set('rooms',rooms);
 async function readList(r){
   const d=await S.get(key(r),!!r.code);
   /* 공유한 방은 참여 인원도 같이 읽어 둔다 */
-  if(r.code){ r._members=(d&&d.members)||1; r._perm=(d&&d.perm)||'edit'; }
+  if(r.code){ r._members=(d&&d.mem&&d.mem.length)||(d&&d.members)||1; r._perm=(d&&d.perm)||'edit'; }
   return (r.code?(d&&d.messages):d)||[];
 }
 
@@ -2102,9 +2367,11 @@ async function saveList(r,list){
   let ok;
   if(r.code){
     const d=await S.get('room:'+r.code,true)||{};
-    d.name=r.name; d.messages=list; d.members=d.members||1;
-    r._members=d.members;
+    if(r.rid) list=RS.keepFresh(r.code,list,d.messages);
+    d.name=r.name; d.messages=list;
+    if(!r.rid){ d.members=d.members||1; r._members=d.members; }   /* 옮기기 전 예전 방식 방 */
     ok=await S.set('room:'+r.code,d,true);
+    RS.mark(r);
   }else ok=await S.set('msgs:'+r.id,list);
   const last=list[list.length-1];
   r.preview=last?((last.file&&!last.text)?(last.file.name||'파일'):(last.text||'').split('\n')[0]):'';
@@ -2502,7 +2769,15 @@ $('#doRen').onclick=async()=>{
   close('#shRename'); toast('이름을 바꿨어요');
 };
 $('#renName').addEventListener('keydown',e=>{if(e.key==='Enter')$('#doRen').click();});
-function askDelete(r){ delTarget=r; $('#delTitle').textContent=r.name+' 삭제'; open('#shDel'); }
+function askDelete(r){ delTarget=r;
+  /* 서버 공유방은 지우는 게 아니라 나 혼자 나간다 — 남은 사람에게 기록이 그대로 남는다 */
+  const lv=!!r.rid, alone=lv&&(r._members||1)<=1;
+  $('#delTitle').textContent=r.name+(lv?' 나가기':' 삭제');
+  $('#delDesc').textContent=alone?'이 방에 남은 사람이 나뿐이라, 나가면 방과 기록이 모두 지워지고 되돌릴 수 없습니다.'
+    :lv?'이 폰에서 방이 사라져요. 함께 쓰는 사람에게는 기록이 그대로 남아요. 다시 들어오려면 코드가 필요해요.'
+    :'이 방의 메모가 모두 지워지고 되돌릴 수 없습니다.';
+  $('#doDel').textContent=lv?'나가기':'삭제';
+  open('#shDel'); }
 $('#doDel').onclick=async()=>{
   if(!delTarget) return;
   const kk=key(delTarget);
@@ -2511,7 +2786,12 @@ $('#doDel').onclick=async()=>{
   /* 함께 보는 사람이 남아 있으면 파일은 지우지 않는다 */
   if(!shared) for(const m of list){ if(m.file) await IDB.del(m.file.id); await IDB.del('v:'+m.id);
     await IDB.del(VEC+m.id); await IDB.del(VEC+'n:'+m.id); }
-  if(shared){
+  if(delTarget.rid&&SB&&me){
+    /* 서버 공유방: 내 멤버 줄만 지운다. 마지막 사람이면 서버가 방을 지운다 */
+    const {error}=await SB.from('room_members').delete().eq('room_id',delTarget.rid).eq('user_id',me.id);
+    if(error){ toast('나가지 못했어요. 인터넷 연결을 확인하세요'); return; }
+    await S.del(kk,true); RS.forget(delTarget.code);
+  }else if(shared){
     /* 나만 나가는 경우 — 방 데이터는 남기고 인원만 줄인다 */
     const d=await S.get('room:'+delTarget.code,true)||{};
     d.members=Math.max(1,(d.members||1)-1);
@@ -2523,7 +2803,7 @@ $('#doDel').onclick=async()=>{
   rooms=rooms.filter(x=>x.id!==delTarget.id);
   const wasCur=cur&&cur.id===delTarget.id;
   await saveRooms(); await countDue(); drawRooms(); close('#shDel');
-  toast('삭제했어요'); delTarget=null;
+  toast(delTarget.rid?'방에서 나왔어요':'삭제했어요'); delTarget=null;
   if(wasCur) openBrief();
 };
 
@@ -2546,7 +2826,7 @@ async function openRoom(id,jump){
   try{ (await S.get('fold:'+cur.id)||[]).forEach(k=>{ folded[k]=true; }); }catch(e){}
   try{ pinOpen=!(await S.get('pinfold:'+cur.id)); }catch(e){}
   S.del('open:'+cur.id);   /* 예전 '펼친 날짜' 기록은 버린다 */
-  msgs=await readList(cur);
+  msgs=await readList(cur); if(cur.code) RS.seen(cur.code);
   $('#scChat').classList.toggle('ro',roNow());
   $('#txt').placeholder='메시지 입력';
   hClose(); $('#whenHint').classList.remove('on');
@@ -5647,6 +5927,25 @@ function makeCode(){
 }
 $('#btnShare').onclick=async()=>{
   if(!cur) return;
+  if(!cur.code&&SYNC_ON){
+    /* 서버에 방을 만든다 — 다른 사람이 코드로 들어오려면 로그인과 인터넷이 필요하다 */
+    if(!(SB&&me)){ toast('공유하려면 로그인하세요'); return; }
+    if(!navigator.onLine){ toast('인터넷에 연결하면 공유할 수 있어요'); return; }
+    let code=null, rid=null, err=null;
+    for(let t=0;t<5&&!rid;t++){
+      code=makeCode();
+      const {data,error}=await SB.rpc('create_room',{p_code:code,p_name:cur.name,p_perm:'edit',p_display:RS.myName()});
+      if(!error) rid=data; else if(error.code!=='23505'){ err=error; break; }
+    }
+    if(!rid){ console.warn(err); toast('공유하지 못했어요. 잠시 후 다시 해 주세요'); return; }
+    cur.code=code; cur.rid=rid; cur._members=1; cur._perm='edit';
+    await S.set('room:'+code,{name:cur.name,messages:msgs,perm:'edit',rid,
+      mem:[{uid:me.id,name:RS.myName(),role:'owner'}]},true);
+    RS.adopt(code,rid);
+    await S.del('msgs:'+cur.id);
+    RS.mark(cur);
+    await saveRooms(); drawRooms(); $('#btnShare').classList.add('hl');
+  }
   if(!cur.code){
     cur.code=makeCode(); cur._members=1; cur._perm='edit';
     await S.set('room:'+cur.code,{name:cur.name,messages:msgs,members:1,perm:'edit'},true);
@@ -5659,12 +5958,20 @@ $('#btnShare').onclick=async()=>{
   cur._perm=d.perm||'edit';
   $('#permBox').style.display=cur.joined?'none':'';
   $('#permMine').textContent=cur.joined?(cur._perm==='view'?'이 방은 보기만 할 수 있게 공유됐어요.':'이 방은 함께 수정할 수 있게 공유됐어요.'):'';
-  drawPerm();
-  $('#shareWho').textContent=(cur._members>1)
-    ? `지금 ${cur._members}명이 이 방을 함께 보고 있어요.`
-    : '';
+  drawPerm(); drawWho(d);
   open('#shShare');
+  /* 열어 둔 사이 멤버가 바뀌었을 수 있으니 받아서 다시 그린다 */
+  if(cur.rid) RS.sync().then(async()=>{ if($('#shShare').classList.contains('on')&&cur&&cur.code) drawWho(await S.get('room:'+cur.code,true)||{}); });
 };
+function drawWho(d){
+  const mem=(d&&d.mem)||[];
+  if(mem.length){
+    cur._members=mem.length;
+    $('#shareWho').textContent=mem.length>1
+      ? `함께 쓰는 사람 ${mem.length}명 · `+mem.map(x=>(x.name||'이름 없음')+(x.role==='owner'?'(방장)':'')).join(', ')
+      : '아직 이 코드로 들어온 사람이 없어요.';
+  }else $('#shareWho').textContent=(cur._members>1)?`지금 ${cur._members}명이 이 방을 함께 보고 있어요.`:'';
+}
 const PERM_DESC={edit:'받은 사람도 메모를 쓰고, 고치고, 지울 수 있어요.',
   view:'받은 사람은 메모를 읽기만 할 수 있어요. 쓰기·수정·삭제·완료 표시는 막혀요.'};
 function drawPerm(){
@@ -5675,6 +5982,11 @@ function drawPerm(){
 document.querySelectorAll('#permSeg button').forEach(b=>b.onclick=async()=>{
   if(!cur||!cur.code||cur.joined) return;
   const p=b.dataset.p; if(p===cur._perm) return;
+  if(cur.rid){
+    if(!(SB&&me)){ toast('로그인하세요'); return; }
+    const {error}=await SB.from('rooms').update({perm:p}).eq('id',cur.rid);
+    if(error){ toast('바꾸지 못했어요. 인터넷 연결을 확인하세요'); return; }
+  }
   const d=await S.get('room:'+cur.code,true)||{};
   d.perm=p; await S.set('room:'+cur.code,d,true);
   cur._perm=p; drawPerm();
@@ -5684,11 +5996,29 @@ $('#doCopy').onclick=async()=>{
   try{await navigator.clipboard.writeText(cur.code); toast('코드를 복사했어요');}
   catch(e){toast('코드: '+cur.code);}
 };
-function openJoin(){ $('#joinCode').value=''; open('#shJoin'); setTimeout(()=>$('#joinCode').focus(),80); }
+function openJoin(){ $('#joinCode').value=''; $('#joinName').value=SB&&me?RS.myName():'';
+  $('#joinName').style.display=SYNC_ON?'':'none';
+  open('#shJoin'); setTimeout(()=>$('#joinCode').focus(),80); }
 $('#doJoin').onclick=async()=>{
   const c=$('#joinCode').value.trim().toUpperCase();
   if(c.length!==6){toast('6자리 코드를 입력하세요'); return;}
   if(rooms.some(r=>r.code===c)){toast('이미 참여한 방이에요'); close('#shJoin'); return;}
+  if(SYNC_ON){
+    if(!(SB&&me)){ toast('참여하려면 로그인하세요'); return; }
+    const nm=($('#joinName').value.trim()||RS.myName()).slice(0,20);
+    const {data,error}=await SB.rpc('join_room',{p_code:c,p_display:nm});
+    if(error){ toast(/too many/.test(error.message||'')?'여러 번 틀렸어요. 10분 뒤에 다시 해 주세요':'참여하지 못했어요. 인터넷 연결을 확인하세요'); return; }
+    const x=data&&data[0];
+    if(!x){ toast('그 코드의 방을 찾지 못했어요'); return; }
+    if(rooms.some(r=>r.rid===x.room_id)){ toast('이미 참여한 방이에요'); close('#shJoin'); return; }
+    await S.set('room:'+c,{name:x.name,messages:[],perm:x.perm,rid:x.room_id,mem:[]},true);
+    rooms.unshift({id:'r'+Date.now(),name:x.name,preview:'',at:null,code:c,rid:x.room_id,pin:false,_due:0,
+      _members:2,joined:true,_perm:x.perm});
+    normalize(); await saveRooms(); drawRooms(); close('#shJoin');
+    toast(x.perm==='view'?'방에 참여했어요 · 보기만 할 수 있어요':'방에 참여했어요 · 기록을 받는 중…');
+    await RS.sync(); await countDue(); drawRooms();
+    return;
+  }
   const d=await S.get('room:'+c,true);
   if(!d){toast('그 코드의 방을 찾지 못했어요'); return;}
   d.members=(d.members||1)+1;
@@ -5732,7 +6062,7 @@ function openOut(){ const pv=me&&me.app_metadata&&me.app_metadata.provider;
 $('#doOut').onclick=async()=>{
   const b=$('#doOut'); b.disabled=true;
   while(pushing) await sleep(200);
-  await pushNow();
+  await pushNow(); await RS.flush();
   if(unsent()){ b.disabled=false; toast('아직 서버에 못 올린 기록이 있어요. 인터넷 연결을 확인해 주세요'); return; }
   try{ await SB.auth.signOut(); }catch(e){}
   await wipeLocal(); location.replace(location.pathname);
@@ -5766,13 +6096,16 @@ async function refreshView(){
   if(briefOn){ if(!$('#scChat').classList.contains('hopen')) openBrief(); return; }
   const r=cur&&rooms.find(x=>x.id===cur.id);
   if(!r){ openBrief(); return; }
-  cur=r; msgs=await readList(cur); drawStream(); drawRail();
+  cur=r; msgs=await readList(cur); if(cur.code) RS.seen(cur.code);
+  $('#scChat').classList.toggle('ro',roNow());   /* 방장이 권한을 바꾸면 열린 화면에도 바로 반영 */
+  drawStream(); drawRail();
 }
 async function syncNow(){
   if(!SB||!me||leaving) return;
   let ch=false; try{ ch=await pull(); }catch(e){ console.warn('서버에서 받지 못함',e); }
   schedPush(100);
   if(ch) await refreshView();
+  RS.sync();
 }
 async function boot(){
   if(SYNC_ON&&await loadJS(SB_JS,6000)&&window.supabase){
@@ -5800,6 +6133,7 @@ async function boot(){
     }else if(!(lsGet(OWNER)&&!navigator.onLine)){ showLogin(); return; }
   }
   await loadRooms(); openBrief();
+  if(SB&&me) RS.start();
 }
 boot();
 })();
