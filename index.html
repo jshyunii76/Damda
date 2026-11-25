@@ -2031,6 +2031,8 @@ const LMSP=(()=>{
   function event(o){
     const uid=o.UID&&o.UID.v, w=o.DTSTART&&when(o.DTSTART.p,o.DTSTART.v);
     if(!uid||!w) return null;
+    /* 시각 없이 날짜만 온 과제는 그날 23:59 마감 (한양대 LMS 원본 마감과 대조해 22개 모두 확인) */
+    if(!w.dueTime&&/assignment/i.test(uid)) w.dueTime='23:59';
     let title=unesc((o.SUMMARY&&o.SUMMARY.v)||'').replace(/\s+/g,' ').trim(), course='';
     const b=/^(.*\S)?\s*\[([^\[\]]+)\]$/.exec(title);           /* 맨 끝 대괄호 = 과목 */
     if(b&&b[1]){ title=b[1]; course=b[2].replace(/^[0-9A-Za-z]+_/,'').trim(); }
@@ -2059,7 +2061,9 @@ const LMSP=(()=>{
       /* 글: 내가 고친 글은 그대로 둔다 */
       const t=textOf(e); if(t!==L.text){ if(base===L.text) n.text=t; n.lms.text=t; changed=true; }
       /* 마감: Canvas에서 바뀌었을 때만 (내가 따로 고친 마감은 Canvas가 다시 바꾸기 전까지 그대로) */
-      if(e.due!==L.due||e.dueTime!==L.dueTime){ n.due=e.due; n.dueTime=e.dueTime; n.dueStart=null; n.lms.due=e.due; n.lms.dueTime=e.dueTime; changed=true; }
+      if(e.due===L.due&&!L.dueTime&&e.dueTime==='23:59'){           /* 예전에 날짜만 담은 것에 시각 채우기 — 내가 고친 마감은 그대로 */
+        n.lms.dueTime=e.dueTime; if(m.due===L.due&&!m.dueTime) n.dueTime=e.dueTime; changed=true;
+      }else if(e.due!==L.due||e.dueTime!==L.dueTime){ n.due=e.due; n.dueTime=e.dueTime; n.dueStart=null; n.lms.due=e.due; n.lms.dueTime=e.dueTime; changed=true; }
       if((e.url||'')!==(L.url||'')){ n.lms.url=e.url; changed=true; }
       return n;
     });
@@ -2130,7 +2134,7 @@ const LMS=(()=>{
     try{
       const evs=await get(st.url), r=await apply(evs,st);
       const now=await load(); if(!now||now.url!==st.url) return null;         /* 받는 사이 연결을 끊음 */
-      await store({...now,at:Date.now(),seen:r.seen,courses:new Set(evs.map(e=>e.cid)).size,err:null});
+      await store({...now,at:Date.now(),seen:r.seen,err:null});
       if(r.added||r.changed) await refreshView();
       if(r.added) toast(`Canvas 일정 ${r.added}개를 담았어요`); else if(manual) toast('새로 담을 일정이 없어요');
       return r;
@@ -2180,8 +2184,10 @@ const LMS=(()=>{
   }
   async function draw(){
     const st=await load(), on=!!(st&&st.url);
+    let nRoom=0, nDue=0;
+    if(on) for(const r of rooms){ const n=(await readList(r)).filter(m=>m&&m.lms&&m.lms.uid&&!m.done&&m.due>=todayKey()).length; if(n){ nRoom++; nDue+=n; } }
     $('#lmsOff').style.display=on?'none':''; $('#lmsOn').style.display=on?'':'none';
-    $('#lmsInfo').textContent=!(SB&&me)?MSG.login:on?(st.err?MSG[st.err]:`연결됨 · 과목 ${st.courses||0}개 · `+(st.at?new Date(st.at).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'})+'에 받음':'아직 받지 않음')):'학교 LMS의 과제·시험 마감을 과목방에 자동으로 담아요.';
+    $('#lmsInfo').textContent=!(SB&&me)?MSG.login:on?(st.err?MSG[st.err]:`연결됨 · 과목방 ${nRoom}개 · 남은 마감 ${nDue}개 · `+(st.at?new Date(st.at).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'})+'에 받음':'아직 받지 않음')):'학교 LMS의 과제·시험 마감을 과목방에 자동으로 담아요.';
     schools();
     const my=++drawN, btns=[];                 /* 동시에 두 번 그려도 버튼이 겹치지 않게 마지막 것만 쓴다 */
     if(!on){ $('#lmsTeams').replaceChildren(); return; }

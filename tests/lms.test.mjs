@@ -21,7 +21,9 @@ check('제목 앞 대괄호는 남음', by[102].title === '[과제] 2주차 정�
 check('쉼표 풀기', by[301].title === '기말시험 대체 과제, 최종', by[301].title);
 check('세계시 → 서울 시간 (13:59Z → 22:59)', by[101].due === '2026-12-01' && by[101].dueTime === '22:59', by[101]);
 check('14:59Z → 23:59', by[201].due === '2026-12-10' && by[201].dueTime === '23:59', by[201]);
-check('비표준 날짜형(VALUE=DATE+시간) → 날짜만', by[102].due === '2026-12-05' && by[102].dueTime === null, by[102]);
+check('날짜형 과제(VALUE=DATE) → 그날 23:59', by[102].due === '2026-12-05' && by[102].dueTime === '23:59', by[102]);
+const cal = L.parse(ics.replace('UID:event-assignment-102', 'UID:event-calendar-event-102')).find(e => e.uid.endsWith('-102'));
+check('과제가 아닌 하루 일정은 시각 없음', cal.dueTime === null && cal.kind === '일정', cal);
 const late = L.parse(ics.replace('DTSTART:20261201T135900Z', 'DTSTART:20261231T153000Z')).find(e => e.uid.endsWith('-101'));
 check('날짜가 넘어가는 변환 (12/31 15:30Z → 1/1 00:30)', late.due === '2027-01-01' && late.dueTime === '00:30', late);
 check('접힌 줄(URL) 이어붙이기', by[101].url.endsWith('#assignment_101') && by[101].cid === 'course_1', by[101].url);
@@ -53,6 +55,14 @@ r = L.update(base.map(x => x.lms.uid.endsWith('-101') ? { ...x, text: '내가 �
 check('내가 고친 글은 안 덮음', r.list.find(x => x.lms.uid.endsWith('-101')).text === '내가 고친 글');
 r = L.update(base.map(x => x.lms.uid.endsWith('-101') ? { ...x, due: '2026-11-30' } : x), map(ev), today);
 check('내가 고친 마감은 Canvas가 안 바뀌면 그대로', r.list.find(x => x.lms.uid.endsWith('-101')).due === '2026-11-30' && !r.changed);
+const was = base.map(x => x.lms.uid.endsWith('-102') ? { ...x, dueTime: null, done: true, lms: { ...x.lms, dueTime: null } } : x);
+r = L.update(was, map(ev), today); m = r.list.find(x => x.lms.uid.endsWith('-102'));
+check('예전에 날짜만 담은 과제에 23:59 채움(완료 유지)', r.changed && m.dueTime === '23:59' && m.done, m);
+check('한 번 채우면 다시 안 바뀜', !L.update(r.list, map(ev), today).changed);
+r = L.update(was.map(x => x.lms.uid.endsWith('-102') ? { ...x, due: '2026-12-04' } : x), map(ev), today); m = r.list.find(x => x.lms.uid.endsWith('-102'));
+check('내가 날짜를 고친 과제는 23:59를 안 붙이고 그대로', m.due === '2026-12-04' && m.dueTime === null, m);
+r = L.update(was.map(x => x.lms.uid.endsWith('-102') ? { ...x, dueTime: '18:00' } : x), map(ev), today); m = r.list.find(x => x.lms.uid.endsWith('-102'));
+check('내가 시각을 정한 과제도 그대로', m.dueTime === '18:00', m);
 const less = ev.filter(e => !e.uid.endsWith('-102'));
 r = L.update(base, map(less), today); m = r.list.find(x => x.lms.uid.endsWith('-102'));
 check('사라진 일정 → 지우지 않고 표시', m && m.text.endsWith('(Canvas에서 사라짐)') && m.lms.gone, m);
