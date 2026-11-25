@@ -6042,7 +6042,9 @@ async function refreshView(){
   if(briefOn){ if(!$('#scChat').classList.contains('hopen')) openBrief(); return; }
   const r=cur&&rooms.find(x=>x.id===cur.id);
   if(!r){ openBrief(); return; }
-  cur=r; msgs=await readList(cur); drawStream(); drawRail();
+  cur=r; msgs=await readList(cur);
+  $('#scChat').classList.toggle('ro',roNow());   /* 방장이 권한을 바꾸면 열린 화면에도 바로 반영 */
+  drawStream(); drawRail();
 }
 async function syncNow(){
   if(!SB||!me||leaving) return;
