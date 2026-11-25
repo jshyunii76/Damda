@@ -47,6 +47,7 @@ create table if not exists private.join_fail (       -- 코드 맞히기 시도 
   at      timestamptz not null default now()
 );
 create index if not exists join_fail_user on private.join_fail (user_id, at);
+alter table private.join_fail enable row level security;   -- 정책 없음 = 앱에서 직접 못 읽음. 서버 함수(security definer)만 쓴다
 
 -- 2) 작성자·시각은 서버가 정한다 (앱이 보낸 값은 믿지 않는다) --------------
 create or replace function private.msg_stamp() returns trigger
