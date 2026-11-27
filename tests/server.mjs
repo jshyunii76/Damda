@@ -5,6 +5,7 @@ import http from 'node:http';
 import { readFileSync, existsSync } from 'node:fs';
 import { join, extname, resolve } from 'node:path';
 import { handle } from '../supabase/functions/canvas-feed/index.ts';
+import { handle as aiHandle } from '../supabase/functions/ai/index.ts';
 
 const APP = resolve(process.argv[2]), SQL = join(APP, 'supabase');
 const db = new PGlite();
@@ -23,10 +24,12 @@ grant usage on schema storage to authenticated; grant select, insert, update, de
 create publication supabase_realtime;`);
 await db.exec(readFileSync(join(SQL, 'setup.sql'), 'utf8'));
 await db.exec(readFileSync(join(SQL, 'rooms.sql'), 'utf8'));
+await db.exec(readFileSync(join(SQL, 'ai.sql'), 'utf8'));
 for (const c of 'abc') await db.query('insert into auth.users values ($1)', ['00000000-0000-0000-0000-00000000000' + c]);
 const blobs = new Map();
 const rt = new Map(); let rtN = 0;
 let feed = { status: 200, text: readFileSync(new URL('./fixtures/sample.ics', import.meta.url), 'utf8') }, feedCalls = 0;
+let aiKeyMock = 'K';
 let q = Promise.resolve();   // 요청을 하나씩 (역할 전환이 섞이지 않게)
 const serial = fn => (q = q.then(fn, fn));
 
@@ -68,6 +71,17 @@ http.createServer(async (req, res) => {
       const r = await handle(new Request('http://f/', { method: 'POST', body: await body(req) }), async () => new Response(feed.text, { status: feed.status }), async () => true);
       res.writeHead(r.status, { 'content-type': r.headers.get('content-type') }); return res.end(await r.text());
     }
+    if (url.pathname === '/api/fn/ai') {   /* 진짜 함수 코드 + 진짜 하루 한도(ai.sql), Gemini 답만 가짜 */
+      const uid = url.searchParams.get('uid');
+      const gem = async (u, o) => { const b = JSON.parse(o.body);
+        if (/:embedContent$/.test(u)) return new Response(JSON.stringify({ embedding: { values: [0.1, 0.2, 0.3, 0.4] } }));
+        const json = b.generationConfig && b.generationConfig.responseMimeType === 'application/json';
+        return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: json ? '{}' : 'ok' }] } }] })); };
+      const r = await aiHandle(new Request('http://f/', { method: 'POST', body: await body(req) }), { fetcher: gem, key: aiKeyMock,
+        count: async (_r, kind) => { if (!uid) return null; const o = await serial(() => asUser(uid, 'select public.ai_take($1) n', [kind])); return o.error ? null : o.rows[0].n; } });
+      res.writeHead(r.status, { 'content-type': 'application/json' }); return res.end(await r.text());
+    }
+    if (url.pathname === '/api/aikey') { aiKeyMock = url.searchParams.get('on') === '1' ? 'K' : ''; res.writeHead(200); return res.end('ok'); }   /* 시험용: 서버 키 있음/없음 */
     if (url.pathname === '/api/fixture') {          /* 시험용: 가짜 피드 바꾸기 */
       if (req.method === 'POST') feed = JSON.parse(await body(req));
       res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ ...feed, calls: feedCalls }));

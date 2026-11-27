@@ -133,6 +133,18 @@ r = await rtSend('A', 'meet:00000000-0000-0000-0000-000000000000'); check('회�
 r = await rtSend('A', 'meetx:' + rid); check('회의실: 다른 이름 채널 거절', !!r.err, r);
 await topic(null, '');
 
+// 담다 AI 하루 한도 (ai.sql)
+await db.exec(readFileSync(dir + '/ai.sql', 'utf8')); await db.exec(readFileSync(dir + '/ai.sql', 'utf8'));
+r = await as('A', `select public.ai_take('gen') n`); check('AI 한도: 첫 사용 → 59번 남음', r.rows?.[0]?.n === 59, r);
+r = await as('B', `select public.ai_take('gen') n`); check('AI 한도: 사람마다 따로', r.rows?.[0]?.n === 59, r);
+r = await as('A', `select public.ai_take('emb') n`); check('AI 한도: 벡터는 600번', r.rows?.[0]?.n === 599, r);
+for (let i = 0; i < 59; i++) await as('A', `select public.ai_take('gen')`);
+r = await as('A', `select public.ai_take('gen') n`); check('AI 한도: 61번째는 -1', r.rows?.[0]?.n === -1, r);
+r = await as('A', `select public.ai_take('etc')`); check('AI 한도: 모르는 종류 거절', !!r.err, r);
+r = await as('anon', `select public.ai_take('gen')`); check('AI 한도: 로그인 안 하면 거절', !!r.err, r);
+r = await as('A', `select * from private.ai_usage`); check('AI 한도: 사용 기록 표는 직접 못 봄', !!r.err, r);
+r = await as('A', `update private.ai_usage set n = 0`); check('AI 한도: 횟수 직접 못 고침', !!r.err, r);
+
 // T7 나가기
 r = await as('B', `delete from public.room_members where user_id=$1`, [U.A]); check('B가 A를 내보내기 불가', r.n === 0, r);
 r = await as('B', `delete from public.room_members where user_id=$1`, [U.B]); check('B 나가기 (T7)', r.n === 1, r);

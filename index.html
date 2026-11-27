@@ -558,7 +558,9 @@ html.kb body{align-items:flex-start}
 .seat .row .pri{background:var(--accent);border-color:var(--accent);color:#fff}
 .seat input{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:7px;font:inherit;font-size:14px;margin-top:6px}
 #mtSeatNew{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;padding:8px;font:inherit;font-size:14px}
-#mtCols,#mtAccs,#avCols,#avAccs{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+#mtCols,#mtAccs,#avCols,#avAccs,#obCols,#obAccs{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.obstep{display:none;width:100%}.obstep.on{display:block}#obPrev{image-rendering:pixelated}
+.obdots{display:flex;gap:6px;justify-content:center;margin:0 0 6px}.obdots i{width:7px;height:7px;border-radius:50%;background:var(--line)}.obdots i.on{background:var(--accent);width:18px;border-radius:4px}
 .maj{display:flex;flex-direction:column;align-items:center;gap:2px;width:68px;padding:4px 2px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;font:inherit;font-size:10.5px;color:var(--ink)}
 .maj.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}.maj canvas{width:40px;height:50px;image-rendering:pixelated}
 .avrow{display:flex;align-items:center;gap:6px;width:100%;justify-content:center;margin-top:4px}.avrow>span{font-size:12px;color:var(--ink-3);width:40px}
@@ -1202,9 +1204,11 @@ body.rzing *{user-select:none!important}
   <div id="lightbox"><img id="lbImg" alt="확대한 이미지"></div>
 
   <div class="sheet" id="shAI"><div class="card">
-    <h2>AI 정리</h2>
-    <p>AI 정리를 켜면 메모와 사진이 Google Gemini로 보내져요. 무료 키를 쓰면 Google이 보낸 내용을 서비스 개선에 쓸 수 있어요.</p>
+    <h2>AI 담다</h2>
+    <p>켜면 팀플 계획 나누기·회의 정리·메모 정리를 AI가 해 줘요. 메모와 사진이 Google Gemini로 보내지고, 무료 등급에선 Google이 받은 내용을 서비스 개선에 쓸 수 있어요.</p>
     <div class="aistat" id="aiStat"></div>
+    <button class="btn" id="aiSrvTog" style="width:100%;margin:0 0 6px">키 없이 바로 켜기</button>
+    <p class="pdesc">키 없이 쓰면 하루 60번까지예요. 더 쓰려면 내 Gemini 키를 넣으세요.</p>
     <a class="btn ghost" id="aiGet" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;margin:0 0 8px">무료 키 받으러 가기 (구글 로그인 → Create API key → 복사)</a>
     <div class="keyrow">
       <input type="text" id="aiKey" placeholder="복사한 키를 붙여 넣으면 바로 켜져요" autocomplete="off">
@@ -1233,6 +1237,21 @@ body.rzing *{user-select:none!important}
     <button class="btn ghost" id="kkAdd" style="width:100%;margin:6px 0">+ 할 일 추가</button>
     <label class="kkpoll"><input type="checkbox" id="kkPoll" checked> 첫 회의 시간 투표도 같이 올리기</label>
     <div class="btns"><button class="btn ghost" data-close>취소</button><button class="btn" id="kkOk">팀플방에 넣기</button></div>
+  </div></div>
+
+  <div class="sheet" id="shOnb"><div class="card" style="align-items:center;text-align:center;max-height:92vh;overflow:auto">
+    <div class="obdots"><i></i><i></i><i></i></div>
+    <div class="obstep" data-s="0"><h2>나는 무슨 전공?</h2><p>팀플방·회의실에서 이 캐릭터로 보여요.</p>
+      <canvas id="obPrev" width="120" height="120"></canvas><div id="obCols" class="palrow"></div><div id="obAccs" class="palrow"></div></div>
+    <div class="obstep" data-s="1"><h2>AI 담다 켜기</h2>
+      <p>키 없이 바로 써요. 팀 과제를 할 일·담당·마감으로 나눠 주고, 회의를 정리하고, 마감 전에 대신 독촉해 줘요.</p>
+      <button class="btn" id="obAiOn" style="width:100%;margin:6px 0">켜기</button>
+      <p class="pdesc">켜면 메모와 사진이 Google Gemini로 보내져요. 하루 60번까지 무료 · 별 버튼에서 언제든 끌 수 있어요.</p></div>
+    <div class="obstep" data-s="2"><h2>학교 LMS 연결</h2>
+      <p>과제·시험 마감이 과목방에 저절로 들어오고, 팀 과제는 눌러서 바로 팀플방을 만들어요.</p>
+      <button class="btn" id="obLms" style="width:100%;margin:6px 0">Canvas 연결하기</button>
+      <p class="pdesc">LMS 캘린더에서 피드 주소를 복사해 붙여 넣기만 하면 돼요.</p></div>
+    <div class="btns"><button class="btn ghost" id="obSkip">건너뛰기</button><button class="btn" id="obNext">다음</button></div>
   </div></div>
 
   <div class="sheet" id="shPal"><div class="card" style="align-items:center;text-align:center">
@@ -2455,7 +2474,7 @@ const LMS=(()=>{
     const got=lo.at?new Date(lo.at).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'})+'에 받음':'아직 받지 않음';
     $('#lmsInfo').textContent=!(SB&&me)?MSG.login:!on?'학교 LMS의 과제·시험 마감을 과목방에 자동으로 담아요.'
       :(lo.err?MSG[lo.err]+' · ':`연결됨 · 과목방 ${nRoom}개 · 남은 마감 ${nDue}개 · `)+got
-        +(aiKey?' · 과제 설명은 AI가 한 줄로 요약해요':' · AI 키를 넣으면 과제 설명 요약도 붙어요');
+        +(aiKey?' · 과제 설명은 AI가 한 줄로 요약해요':' · AI 담다를 켜면 과제 설명 요약도 붙어요');
     btns.sort((a,b)=>a._rank-b._rank||(a._due<b._due?-1:1));
     const hd=el('p','pdesc'); hd.textContent='팀 과제를 눌러 팀플방을 만들면, AI 담다가 할 일·마감·담당을 나눠 드려요.';
     schools(); $('#lmsTeams').replaceChildren(...(btns.length?[hd]:[]),...btns);
@@ -3033,6 +3052,22 @@ $('#mtSeatClose').onclick=()=>$('#mtSeatBox').classList.remove('on');
 $('#mtSeatAdd').onclick=async()=>{ const t=$('#mtSeatNew').value.split(/\n/); await MEET.addSeats(t); $('#mtSeatNew').value=''; };
 $('#mtSeatFromTask').onclick=()=>MEET.fromTasks();
 $('#mtMic').onclick=()=>MEET.voice();
+/* 처음 쓰는 사람 안내: 한 번만 뜬다 (건너뛰어도 다시 안 뜸) */
+const ONB='damda:onb'; let obS=0, obAv=null;
+function obShow(i){ obS=i; document.querySelectorAll('#shOnb .obstep').forEach(x=>x.classList.toggle('on',+x.dataset.s===i));
+  document.querySelectorAll('#shOnb .obdots i').forEach((x,k)=>x.classList.toggle('on',k===i));
+  $('#obNext').textContent=i===2?'시작하기':i===1?'나중에 할게요':'다음'; $('#obSkip').style.visibility=i===2?'hidden':'';
+  if(i===1&&aiKey){ $('#obAiOn').textContent='켜져 있어요 ✓'; $('#obAiOn').disabled=true; } }
+async function maybeOnboard(){
+  let seen=false; try{ seen=!!localStorage.getItem(ONB); localStorage.setItem(ONB,'1'); }catch(e){ seen=true; }
+  if(seen||await S.get('avatar')) return;
+  obAv=await myAvatar(); open('#shOnb'); obShow(0); dressUI('#ob',()=>obAv,v=>{ obAv=v; });
+}
+async function obSaveAv(){ if(obAv){ await S.set('avatar',obAv); palAv=obAv; } }
+$('#obNext').onclick=async()=>{ if(obS===0) await obSaveAv(); if(obS<2) obShow(obS+1); else $('#shOnb').classList.remove('on'); };
+$('#obSkip').onclick=async()=>{ await obSaveAv(); $('#shOnb').classList.remove('on'); };
+$('#obAiOn').onclick=()=>{ setAiSrv(true); toast('AI 담다를 켰어요'); obShow(2); };
+$('#obLms').onclick=async()=>{ $('#shOnb').classList.remove('on'); await LMS.draw(); open('#shLms'); };
 $('#avOk').onclick=async()=>{ await S.set('avatar',palAv); $('#shPal').classList.remove('on'); toast('캐릭터를 바꿨어요'); };
 
 /* ---------- 5바퀴: AI 팀플 매니저 ---------- */
@@ -3104,7 +3139,7 @@ const KICK=(()=>{
         if(Array.isArray(o.tasks)&&o.tasks.length) return {note:String(o.note||''),tasks:assign(o.tasks.map(x=>({t:String(x.t||'').slice(0,40),due:clampDue(x.due,today,last),role:String(x.role||'')})),r)};
       }catch(e){ console.warn('AI 계획 실패',e); }
     }
-    return {note:aiKey?'':'AI 키가 없어서 기본 계획표로 짰어요. 설정에서 AI 키를 넣으면 과제 설명을 읽고 맞춤 계획을 짜요.',tasks:assign(template(today,last),r)};
+    return {note:aiKey?'':'AI가 꺼져 있어서 기본 계획표로 짰어요. 홈 위쪽 별(AI 담다)을 켜면 과제 설명을 읽고 맞춤 계획을 짜요.',tasks:assign(template(today,last),r)};
   }
   const clampDue=(d,a,b)=>!/^\d{4}-\d\d-\d\d$/.test(d||'')?b:d<a?a:d>b?b:d;
   function template(today,last){
@@ -3312,8 +3347,31 @@ const TAG_SYS=`너는 개인 메모를 나중에 찾기 쉽게 정리하는 도�
 const cleanKey=k=>String(k||'').replace(/[^\x21-\x7E]/g,'').replace(/^["']|["']$/g,'');
 try{ aiKey=cleanKey(localStorage.getItem(AI_KEY_STORE)); }catch(e){}
 if(/^sk-/.test(aiKey)){ aiKey=''; try{localStorage.removeItem(AI_KEY_STORE);}catch(e){} }  /* 예전 OpenAI 키는 버린다 */
+/* 담다 AI: 내 키가 없어도, 켜기에 동의하면 담다 서버(functions/ai)가 대신 Gemini 를 부른다 (하루 한도 있음)
+   aiKey 가 SRV 이면 서버를 쓰는 중. SRV 는 저장하지 않는다 */
+const SRV='@server', AI_SRV_STORE='damda:aisrv';
+let aiSrv=false; try{ aiSrv=localStorage.getItem(AI_SRV_STORE)==='1'; }catch(e){}
+if(!aiKey&&aiSrv) aiKey=SRV;
+function setAiSrv(on){ aiSrv=!!on; try{ on?localStorage.setItem(AI_SRV_STORE,'1'):localStorage.removeItem(AI_SRV_STORE); }catch(e){}
+  if(aiKey===SRV||!aiKey) aiKey=on?SRV:''; gTextOk=gEmbOk=null; if(typeof updAIBtn==='function') updAIBtn(); }
+async function srvFetch(path,body){
+  if(!(SB&&me)){ const err=new Error('login'); err.kind='login'; throw err; }
+  let res;
+  try{ res=await SB.functions.invoke('ai',{body:{path,body}}); }catch(e){ const err=new Error('network'); err.kind='network'; throw err; }
+  const {data,error}=res;
+  if(!error) return typeof data==='string'?JSON.parse(data):data;
+  const rs=error.context; let j={}; try{ j=await rs.json(); }catch(e){}
+  const st=rs&&rs.status||0;
+  if(st===503&&j.error==='nokey'){ const err=new Error('nokey'); err.kind='nokey'; throw err; }
+  if(st===429&&j.error==='limit'){ const err=new Error('limit'); err.kind='limit'; err.status=429; throw err; }
+  if(st===401){ const err=new Error('login'); err.kind='login'; throw err; }
+  if(!st||st===502){ const err=new Error('network'); err.kind='network'; throw err; }
+  const er=j.error&&typeof j.error==='object'?j.error:{};
+  const err=new Error(st+' '+(er.status||'')+' '+(er.message||'')); err.status=st; err.code=(er.status||'')+' '; err.msg=er.message||''; throw err;
+}
 
 async function gFetch(path,body){
+  if(aiKey===SRV) return srvFetch(path,body);
   let r;
   try{
     r=await fetch(G_BASE+path,{
@@ -3422,6 +3480,9 @@ function aiWhy(e){
       ? '이 화면에서는 Gemini 연결이 막혀 있어요. 받은 파일을 크롬이나 엣지로 직접 열어주세요.'
       : 'Gemini에 연결하지 못했어요. 인터넷 연결을 확인하거나, 받은 파일을 크롬·엣지로 직접 열었는지 확인해주세요.';
   if(e.kind==='blocked') return 'Gemini가 이 내용은 답하지 않았어요.';
+  if(e.kind==='limit') return '오늘 담다 AI 무료 사용량을 다 썼어요. 내일 다시 쓰거나, 아래에 내 Gemini 키를 넣으면 계속 쓸 수 있어요.';
+  if(e.kind==='nokey') return '담다 AI가 아직 준비 중이에요. 아래에 내 Gemini 키를 넣으면 바로 쓸 수 있어요.';
+  if(e.kind==='login') return '담다 AI는 로그인해야 쓸 수 있어요.';
   if(e.kind==='empty') return 'Gemini가 빈 답을 보냈어요. 새로고침 후 다시 해주세요.';
   if(/API_KEY_INVALID|API key not valid|API_KEY/i.test(c)||e.status===401)
     return 'API 키가 맞지 않아요. Google AI Studio에서 키를 다시 복사해 넣어주세요.';
@@ -3508,28 +3569,32 @@ function updAIBtn(){ const b=$('#btnAI'); if(b){ b.classList.toggle('aion',!!aiK
 updAIBtn();
 function aiStat(){
   const box=$('#aiStat');
-  if(!aiKey){ box.innerHTML='아직 <b>꺼져 있습니다.</b> 아래에 키를 넣으면 켜집니다.'; return; }
+  $('#aiSrvTog').textContent=aiSrv?'키 없이 쓰기 끄기':'키 없이 바로 켜기'; $('#aiSrvTog').className=aiSrv?'btn ghost':'btn';
+  if(!aiKey){ box.innerHTML='아직 <b>꺼져 있습니다.</b> 위 버튼을 누르면 바로 켜져요.'; return; }
+  if(aiKey===SRV){ box.innerHTML='<b>켜져 있습니다</b> · 담다 AI (키 없이)'; return; }
   if(!cur){ box.innerHTML='<b>켜져 있습니다.</b>'; return; }
   const done=msgs.filter(m=>m.tags&&m.tags.length).length;
   box.innerHTML=`켜져 있습니다. 이 방에서 <b>${done}개</b> / ${msgs.length}개 메모가 정리됐습니다.`;
 }
-$('#btnAI').onclick=()=>{ $('#aiKey').value=aiKey; aiStat(); open('#shAI'); };
+$('#btnAI').onclick=()=>{ $('#aiKey').value=aiKey===SRV?'':aiKey; aiStat(); open('#shAI'); };
+$('#aiSrvTog').onclick=async()=>{ setAiSrv(!aiSrv); aiStat(); if(aiSrv&&aiKey===SRV){ toast('AI 담다를 켰어요'); $('#aiTest').click(); } else toast(aiSrv?'내 키로 쓰는 중이에요':'키 없이 쓰기를 껐어요'); };
 $('#aiSave').onclick=()=>{
-  aiKey=cleanKey($('#aiKey').value);
-  if(/^sk-/.test(aiKey)){ aiKey=''; $('#aiKey').value=''; toast('OpenAI 키예요. Gemini 키(AIza…)를 넣어주세요'); aiStat(); return; }
-  try{ aiKey?localStorage.setItem(AI_KEY_STORE,aiKey):localStorage.removeItem(AI_KEY_STORE); }catch(e){}
-  aiStat(); updAIBtn(); toast(aiKey?'AI 정리를 켰어요':'AI 정리를 껐어요');
+  let k=cleanKey($('#aiKey').value);
+  if(/^sk-/.test(k)){ $('#aiKey').value=''; toast('OpenAI 키예요. Gemini 키(AIza…)를 넣어주세요'); aiStat(); return; }
+  try{ k?localStorage.setItem(AI_KEY_STORE,k):localStorage.removeItem(AI_KEY_STORE); }catch(e){}
+  aiKey=k||(aiSrv?SRV:''); gTextOk=gEmbOk=null;
+  aiStat(); updAIBtn(); toast(k?'내 키로 AI를 켰어요':aiSrv?'담다 AI(키 없이)로 돌아왔어요':'AI를 껐어요');
 };
 /* 키처럼 생긴 걸 붙여 넣으면 저장 → 연결 확인까지 한 번에 */
 $('#aiKey').addEventListener('input',()=>{ const v=$('#aiKey').value, m=v.match(/AIza[0-9A-Za-z_\-]{30,}/);
   if(m&&m[0]!==aiKey){ $('#aiKey').value=m[0]; $('#aiSave').click(); $('#aiTest').click(); } });
 $('#aiTest').onclick=async()=>{
-  if(!aiKey){ toast('먼저 키를 저장해주세요'); return; }
+  if(!aiKey){ toast('먼저 AI를 켜 주세요'); return; }
   const lb=$('#aiTestLb'); lb.textContent='확인 중…';
   try{
     await gText({parts:[{text:'"ok" 한 단어로만 답해.'}],maxTokens:256});
     $('#aiStat').innerHTML='';
-    $('#aiStat').append('연결 ',Object.assign(document.createElement('b'),{textContent:'성공'}),`. ${gTextOk} 모델로 동작해요.`);
+    $('#aiStat').append('연결 ',Object.assign(document.createElement('b'),{textContent:'성공'}),aiKey===SRV?'. 담다 AI로 동작해요.':`. ${gTextOk} 모델로 동작해요.`);
   }catch(e){
     console.error(e);
     $('#aiStat').textContent=aiWhy(e);
@@ -7477,6 +7542,7 @@ async function boot(){
   if(SB&&me){ RS.start(); LMS.start(); setTimeout(()=>REMIND.run().catch(()=>{}),6000);
     let pj=null; try{ pj=localStorage.getItem('damda:join'); localStorage.removeItem('damda:join'); }catch(e){}
     if(pj){ const ex=rooms.find(r=>r.code===pj); if(!ex) await joinCode(pj,''); const nr=rooms.find(r=>r.code===pj); if(nr) openRoom(nr.id); }
+    maybeOnboard().catch(e=>console.warn(e));
     document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') setTimeout(()=>REMIND.run().catch(()=>{}),3000); }); }
 }
 (()=>{ try{ const j=new URLSearchParams(location.search).get('join');
