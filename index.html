@@ -548,6 +548,15 @@ html.kb body{align-items:flex-start}
 #mtLog{background:rgba(255,255,255,.1);color:#fff}
 #mtDressBox{position:absolute;left:0;right:0;bottom:0;background:#fff;color:var(--ink);border-radius:16px 16px 0 0;padding:14px;display:none;flex-direction:column;align-items:center;gap:10px;z-index:2}
 #mtDressBox.on{display:flex}
+#mtSeatBox{position:absolute;left:0;right:0;bottom:0;max-height:72%;overflow:auto;background:#fff;color:var(--ink);border-radius:16px 16px 0 0;padding:14px;display:none;z-index:2}
+#mtSeatBox.on{display:block}
+#mtSeatBox .sbh{display:flex;flex-direction:column;gap:2px;margin-bottom:8px}#mtSeatBox .sbh span{font-size:12px;color:var(--ink-3)}
+.seat{border:1px solid var(--line);border-radius:12px;padding:9px 10px;margin:6px 0}
+.seat.hl{box-shadow:0 0 0 2px #E9B44C}.seat .st{font-size:12.5px;color:var(--ink-2);margin:2px 0 6px}
+.seat .row{display:flex;gap:6px;flex-wrap:wrap}.seat .row button,.seat .row a{font:inherit;font-size:13px;border:1px solid var(--line);background:#fff;border-radius:9px;padding:6px 10px;cursor:pointer;color:var(--ink);text-decoration:none}
+.seat .row .pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.seat input{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:7px;font:inherit;font-size:14px;margin-top:6px}
+#mtSeatNew{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;padding:8px;font:inherit;font-size:14px}
 #mtCols,#mtAccs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 #mtCols button{width:30px;height:30px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px var(--line);cursor:pointer}
 #mtCols button.on{box-shadow:0 0 0 2px var(--ink)}
@@ -1127,6 +1136,7 @@ body.rzing *{user-select:none!important}
     <div class="bar">
       <button class="ic" id="mtClose" aria-label="나가기"><svg viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg></button>
       <h1 id="mtTitle">회의실</h1>
+      <button class="ic" id="mtSeatBtn" aria-label="자리(목차) 보기"><svg viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="5" rx="1.5"/><path d="M6 14v5M18 14v5M8 9V6h8v3"/></svg></button>
       <button class="ic" id="mtTheme" aria-label="회의실 테마 바꾸기"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-1 1.6-2.1-.4-1.2.4-2.4 1.7-2.4H18a3 3 0 0 0 3-3C21 7 17 3 12 3z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10" cy="7" r="1.2"/><circle cx="14.5" cy="7" r="1.2"/></svg></button>
       <button class="ic" id="mtDress" aria-label="캐릭터 꾸미기"><svg viewBox="0 0 24 24"><path d="M8 4l-4 3 2 4 2-1v10h8V10l2 1 2-4-4-3c-.5 1.7-2 2.8-4 2.8S8.5 5.7 8 4z"/></svg></button>
     </div>
@@ -1136,6 +1146,15 @@ body.rzing *{user-select:none!important}
       <div id="mtEmo"><button id="mtMic" class="mic" aria-pressed="false">🎤 음성 켜기</button><button data-e="👋">👋</button><button data-e="👍">👍</button><button data-e="😂">😂</button><button data-e="🎉">🎉</button><button data-e="🤔">🤔</button></div>
       <form id="mtSay"><input id="mtTxt" maxlength="60" placeholder="말하기 (말풍선으로 떠요)" autocomplete="off"><button class="btn" type="submit">보내기</button></form>
       <div class="btns" style="margin:0"><button class="btn ghost" id="mtLog">출석만 남기기</button><button class="btn" id="mtSum">AI 회의 정리</button><button class="btn ghost" id="mtPoll">시간 투표</button></div>
+    </div>
+    <div id="mtSeatBox">
+      <div class="sbh"><b>자리 = 목차</b><span>앉으면 '맡음', 이미 누가 있으면 줄 서기. 회의를 나가면 풀려요.</span></div>
+      <div id="mtSeatList"></div>
+      <div class="sbadd">
+        <textarea id="mtSeatNew" rows="3" placeholder="목차를 한 줄에 하나씩 붙여 넣으세요&#10;예) 문제 정의&#10;시장 분석&#10;해결책"></textarea>
+        <div class="btns" style="margin:6px 0 0"><button class="btn ghost" id="mtSeatFromTask">할 일에서 가져오기</button><button class="btn" id="mtSeatAdd">자리 만들기</button></div>
+      </div>
+      <button class="btn ghost" id="mtSeatClose" style="width:100%;margin-top:8px">닫기</button>
     </div>
     <div id="mtDressBox">
       <canvas id="mtPrev" width="120" height="120"></canvas>
@@ -2546,7 +2565,10 @@ const MEET=(()=>{
      STUN 만 써서 일부 학교·회사·모바일 망에서는 연결이 안 될 수 있다 (TURN 서버 필요) */
   const ICE=[{urls:'stun:stun.l.google.com:19302'}];
   let mic=null, meLevel=null, ac=null, pcs=new Map(), vAt=0;
-  const meta=()=>({n:myName(),av,v:!!mic});
+  /* 자리(목차): 목록은 방 기록(type 'seat'), 앉음·줄은 회의 중 프레즌스로만 (나가면 풀림) */
+  let seats=[], mySeat=null, sitAt=0, myWait=null, waitAt=0, seatPrev={}, seatSeen={}, seatFocus=null, seatsAt=0;
+  const SEATPOS=[[3,4.9],[3,7.4],[17,5.3],[17,7.8],[17,10.3],[6,10.75],[13.6,10.75],[10,9.95]];
+  const meta=()=>({n:myName(),av,v:!!mic,seat:mySeat,sitAt,wait:myWait,waitAt});
   function meter(stream){
     try{ ac=ac||new (window.AudioContext||window.webkitAudioContext)(); const src=ac.createMediaStreamSource(stream), an=ac.createAnalyser(); an.fftSize=256; src.connect(an);
       const a=new Uint8Array(an.fftSize); return ()=>{ an.getByteTimeDomainData(a); let s=0; for(const v of a){ const x=(v-128)/128; s+=x*x; } return Math.sqrt(s/a.length); }; }
@@ -2621,7 +2643,7 @@ const MEET=(()=>{
   async function open(r){
     if(!r||!r.rid){ toast('공유방에서만 회의실을 열 수 있어요'); return; }
     if(!SB||!me||!navigator.onLine){ toast('인터넷에 연결하고 로그인해야 회의실에 들어갈 수 있어요'); return; }
-    leave(); room=r; log=[]; aiSay=null; aiT=0;   /* 받아 적은 대화는 이 방 회의에서만 */
+    leave(); room=r; log=[]; aiSay=null; aiT=0; mySeat=null; myWait=null; sitAt=0; waitAt=0; seatPrev={}; seatSeen={}; seatFocus=null; seats=[]; $('#mtSeatBox').classList.remove('on'); loadSeats();   /* 받아 적은 대화는 이 방 회의에서만 */
     const d=await S.get('room:'+r.code,true)||{}; memCache=d.mem||[];
     av=await myAvatar();
     const sp=[...me.id].reduce((a,c)=>a+c.charCodeAt(0),0)%7;   /* 사람마다 문 앞 다른 자리 */
@@ -2637,7 +2659,7 @@ const MEET=(()=>{
         else if(st==='CHANNEL_ERROR'&&ch){ toast('회의실에 들어가지 못했어요. 이 방 멤버인지 확인해 주세요'); } });
     t0=performance.now(); last=t0; raf=requestAnimationFrame(loop); who();
     /* 움직임·음성 연결은 그리기와 따로 돈다 — 화면이 가려져 그리기가 멈춰도 계속 */
-    tick=setInterval(()=>{ const now=performance.now(); if(!$('#meetview').classList.contains('on')){ leave(); return; } step(Math.min(.05,(now-last)/1000)); last=now; manageVoice(now); },33);
+    tick=setInterval(()=>{ const now=performance.now(); if(!$('#meetview').classList.contains('on')){ leave(); return; } step(Math.min(.05,(now-last)/1000)); last=now; manageVoice(now); if(now-seatsAt>3000){ seatsAt=now; loadSeats(); } },33);
   }
   function leave(){
     voiceOff();
@@ -2651,10 +2673,11 @@ const MEET=(()=>{
     for(const k of [...peers.keys()]) if(!here.has(k)) peers.delete(k);
     for(const k of here){ if(k===me.id) continue; const meta=(st[k]||[])[0]||{};
       const p=peers.get(k)||{x:10*T,y:11*T,tx:10*T,ty:11*T,dir:1,moving:false,say:null,sayT:0,emo:null,emoT:9,seed:k.length};
-      p.n=String(meta.n||'?').slice(0,10); p.av=meta.av; p.v=!!meta.v; peers.set(k,p);
+      p.n=String(meta.n||'?').slice(0,10); p.av=meta.av; p.v=!!meta.v; p.seat=typeof meta.seat==='string'?meta.seat:null; p.sitAt=+meta.sitAt||0;
+      p.wait=typeof meta.wait==='string'?meta.wait:null; p.waitAt=+meta.waitAt||0; peers.set(k,p);
       if(!peers.has(k+'#seen')){ peers.set(k+'#seen',1); sendPos(true); }   /* 새로 온 사람에게 내 위치를 알린다 */
     }
-    who();
+    who(); seatCheck();
   }
   function who(){ $('#mtWho').replaceChildren(...[[myName()+' (나)'],...[...peers].filter(([k])=>!k.includes('#')).map(([,p])=>[p.n])].map(([n])=>{ const s=el('span'); s.textContent=n; return s; })); }
   function onMsg(m){
@@ -2737,7 +2760,7 @@ const MEET=(()=>{
     const g=c.getContext('2d'), sc=Math.min(cw/(W*T),chh/(H*T)), ox=(cw-W*T*sc)/2, oy=(chh-H*T*sc)/2;
     g.setTransform(pr,0,0,pr,0,0); g.fillStyle=MEET_THEMES[theme].bg; g.fillRect(0,0,cw,chh); $('#meetview').style.background=MEET_THEMES[theme].bg;
     g.setTransform(pr*sc,0,0,pr*sc,pr*ox,pr*oy); C.sc=sc; C.ox=ox; C.oy=oy;
-    drawRoom(g,t);
+    drawRoom(g,t); drawSeatsOnMap(g);
     const look=p=>({dir:p.dir,moving:p.moving,say:p.sayT>0?p.say:null,talk:p.sayT>3.6,emo:p.emoT<1.2?p.emo:null,emoT:p.emoT/1.2,face:p.emoT<2.2?(EMO_FACE[p.emo]||'smile'):'smile',seed:p.seed});
     const all=[...[...peers].filter(([k])=>!k.includes('#')).map(([k,p])=>({p:{...p,k},o:{name:p.n,...look(p)}})),
       {p:{...me_,av},o:{name:myName(),me:1,...look({...me_,seed:3})}}].sort((a,b)=>a.p.y-b.p.y);
@@ -2754,6 +2777,98 @@ const MEET=(()=>{
     raf=requestAnimationFrame(loop);
   }
   const C={sc:1,ox:0,oy:0};
+  /* ---- 자리 ---- */
+  async function loadSeats(){
+    if(!room) return; const d=await S.get('room:'+room.code,true)||{};
+    const nx=(d.messages||[]).filter(m=>m&&m.type==='seat'&&m.title).sort((a,b)=>(a.order||0)-(b.order||0)||a.ts-b.ts).slice(0,8);
+    const changed=JSON.stringify(nx.map(x=>[x.id,x.title,x.link||''])) !== JSON.stringify(seats.map(x=>[x.id,x.title,x.link||'']));
+    seats=nx; if(changed&&$('#mtSeatBox').classList.contains('on')) drawSeats();
+  }
+  const people=()=>[{k:me.id,n:myName(),seat:mySeat,sitAt,wait:myWait,waitAt},...[...peers].filter(([k])=>!k.includes('#')).map(([k,p])=>({k,n:p.n,seat:p.seat,sitAt:p.sitAt,wait:p.wait,waitAt:p.waitAt}))];
+  /* 같은 자리에 둘이 앉으면 먼저 앉은 사람이 주인 (같으면 ID 순) — 모든 기기가 같은 답을 낸다 */
+  const byTime=(ka,kb)=>(a,b)=>(a[ka]-b[ka])||(a.k<b.k?-1:1);
+  const ownerOf=id=>people().filter(x=>x.seat===id).sort(byTime('sitAt'))[0]||null;
+  const queueOf=id=>{ const o=ownerOf(id); return people().filter(x=>x.wait===id&&(!o||x.k!==o.k)).sort(byTime('waitAt')); };
+  const seatTitle=id=>(seats.find(x=>x.id===id)||{}).title||'자리';
+  function retrack(){ if(ch) try{ ch.track(meta()); }catch(e){} seatCheck(); if($('#mtSeatBox').classList.contains('on')) drawSeats(); }
+  function seatCheck(){
+    if(!me) return;
+    /* 내가 앉았는데 다른 사람이 먼저였으면 → 줄로 */
+    if(mySeat){ const o=ownerOf(mySeat); if(o&&o.k!==me.id){ myWait=mySeat; waitAt=sitAt; mySeat=null; sitAt=0; toast(iga(o.n)+' 먼저 앉았어요 · 줄 섰어요'); retrack(); return; } }
+    for(const st of seats){
+      const o=ownerOf(st.id), prev=seatPrev[st.id];
+      if(prev&&!o){   /* 자리가 비었다 → 줄 맨 앞 사람에게 '비었어요' */
+        const q=queueOf(st.id);
+        if(q[0]){ aiSay=`'${st.title}' 비었어요 → ${q[0].n}`; aiT=6;
+          if(q[0].k===me.id&&!seatSeen[st.id+prev]){ seatSeen[st.id+prev]=1; toast(`'${st.title}' 비었어요! 앉을까요?`); openSeats(st.id); } }
+      }
+      seatPrev[st.id]=o?o.k:null;
+    }
+    if($('#mtSeatBox').classList.contains('on')) drawSeats();
+  }
+  function sit(id){
+    const o=ownerOf(id); if(o&&o.k!==me.id){ wait(id); return; }
+    mySeat=id; sitAt=Date.now(); if(myWait===id){ myWait=null; waitAt=0; }
+    const i=seats.findIndex(x=>x.id===id), pos=SEATPOS[i]; if(pos) target={x:pos[0]*T-54,y:pos[1]*T+12};   /* 책상 왼쪽 옆 (이름표를 가리지 않게) */
+    retrack(); toast(`'${seatTitle(id)}' 맡았어요`);
+  }
+  function stand(){ if(!mySeat) return; const t=seatTitle(mySeat); mySeat=null; sitAt=0; retrack(); toast(`'${t}'에서 일어났어요`); }
+  function wait(id){ myWait=id; waitAt=Date.now(); retrack(); toast(`'${seatTitle(id)}' 줄 섰어요 · 비면 알려 드려요`); }
+  function unwait(){ myWait=null; waitAt=0; retrack(); }
+  async function saveSeats(fn){
+    if(!room||isRO(room)){ toast('보기만 할 수 있는 방이에요'); return false; }
+    const list=await readList(room), nl=fn(list); await saveList(room,nl);
+    if(cur&&cur.id===room.id&&!briefOn){ msgs=nl; drawStream(true); }
+    await loadSeats(); drawSeats(); return true;
+  }
+  async function addSeats(titles){
+    titles=titles.map(t=>String(t).replace(/^[\s\-*·•\d.)]+/,'').trim().slice(0,30)).filter(Boolean);
+    const room8=8-seats.length; if(room8<=0){ toast('자리는 8개까지예요'); return; }
+    if(titles.length>room8){ toast(`자리는 8개까지라 앞의 ${room8}개만 만들어요`); titles=titles.slice(0,room8); }
+    let ts=Date.now(), o=seats.length;
+    const add=titles.map(t=>({id:'st'+(ts++).toString(36)+Math.random().toString(36).slice(2,4),type:'seat',text:'[자리] '+t,title:t,link:'',order:o++,file:null,ts,due:null,dueStart:null,dueTime:null,done:false}));
+    if(await saveSeats(l=>l.concat(add))) toast(`자리 ${add.length}개를 만들었어요`);
+  }
+  async function setLink(id,url){
+    url=String(url||'').trim();
+    if(url&&!/^https:\/\/\S+$/i.test(url)){ toast('https:// 로 시작하는 문서 주소를 넣어 주세요'); return; }
+    await saveSeats(l=>l.map(m=>m&&m.id===id?{...m,link:url}:m)); toast(url?'문서 링크를 달았어요':'링크를 뺐어요');
+  }
+  async function delSeat(id){ if(ownerOf(id)){ toast('누가 앉아 있는 자리는 지울 수 없어요'); return; } await saveSeats(l=>l.filter(m=>!(m&&m.id===id))); }
+  function openSeats(focus){ seatFocus=focus||null; $('#mtSeatBox').classList.add('on'); $('#mtDressBox').classList.remove('on'); loadSeats().then(drawSeats); }
+  function drawSeats(){
+    const box=$('#mtSeatList'); box.replaceChildren();
+    if(!seats.length){ const e=el('p','pdesc'); e.textContent='아직 자리가 없어요. 아래에 목차를 붙여 넣거나 할 일에서 가져오세요.'; box.appendChild(e); }
+    for(const st of seats){
+      const o=ownerOf(st.id), q=queueOf(st.id), mine=o&&o.k===me.id, waiting=myWait===st.id;
+      const d=el('div','seat'+(seatFocus===st.id?' hl':'')), h=el('b'), stx=el('div','st'), row=el('div','row');
+      h.textContent=st.title;
+      stx.textContent=(o?(mine?'내가 작업 중':o.n+' 작업 중'):'비어 있음')+(q.length?` · 줄 ${q.map(x=>x.k===me.id?'나':x.n).join(' → ')}`:'');
+      const btn=(t,f,pri)=>{ const b=el('button',pri?'pri':''); b.type='button'; b.textContent=t; b.onclick=f; row.appendChild(b); };
+      if(mine) btn('일어나기',stand,1); else if(!o) btn(mySeat?'여기로 옮겨 앉기':'앉기',()=>sit(st.id),1); else if(waiting) btn('줄 빼기',unwait); else btn('줄 서기',()=>wait(st.id),1);
+      if(st.link){ const a=el('a'); a.href=st.link; a.target='_blank'; a.rel='noopener'; a.textContent='문서 열기 ↗'; row.appendChild(a); }
+      btn(st.link?'링크 바꾸기':'문서 링크 달기',()=>{ if(d.querySelector('input')) return; const i=el('input'); i.placeholder='구글 슬라이드·문서 / OneDrive 주소 (https://…)'; i.value=st.link||'';
+        i.onkeydown=e=>{ if(e.key==='Enter') setLink(st.id,i.value); }; const ok=el('button','pri'); ok.textContent='저장'; ok.type='button'; ok.onclick=()=>setLink(st.id,i.value); d.append(i,ok); i.focus(); });
+      if(!o) btn('지우기',()=>delSeat(st.id));
+      d.append(h,stx,row); box.appendChild(d);
+    }
+  }
+  function drawSeatsOnMap(g){
+    seats.forEach((st,i)=>{ const pos=SEATPOS[i]; if(!pos) return; const x=pos[0]*T, y=pos[1]*T, o=ownerOf(st.id), q=queueOf(st.id).length;
+      g.fillStyle='rgba(0,0,0,.14)'; roundRect(g,x-36,y-12,72,28,7); g.fill();
+      g.fillStyle=o?'#FFE3CC':'#E3F4E5'; g.strokeStyle=o?'#E07A5F':'#5DBB63'; g.lineWidth=2; roundRect(g,x-36,y-16,72,28,7); g.fill(); g.stroke();
+      g.fillStyle='#1B2024'; g.font='bold 9px sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(fit(g,st.title,66),x,y-8);
+      g.font='8px sans-serif'; g.fillStyle=o?'#B5532F':'#2E7D32'; g.fillText(o?fit(g,o.n+' 작업 중',66):'비어 있음 · 앉기',x,y+3);
+      if(q){ g.fillStyle='#E9B44C'; g.beginPath(); g.arc(x+34,y-16,8,0,Math.PI*2); g.fill(); g.fillStyle='#fff'; g.font='bold 9px sans-serif'; g.fillText('줄'+q,x+34,y-16); }
+    });
+  }
+  function seatAt(x,y){ for(let i=0;i<seats.length;i++){ const pos=SEATPOS[i]; if(pos&&Math.abs(x-pos[0]*T)<=38&&Math.abs(y-pos[1]*T+2)<=18) return seats[i]; } return null; }
+  async function fromTasks(){
+    if(!room) return; const list=await readList(room);
+    const t=list.filter(m=>m&&!m.done&&/^\[할 일\]/.test(m.text||'')).map(m=>mlabel(m).replace(/^\[할 일\]\s*/,''));
+    if(!t.length){ toast('가져올 할 일이 없어요. 목차를 직접 붙여 넣어 주세요'); return; }
+    const have=new Set(seats.map(x=>x.title)); await addSeats(t.filter(x=>!have.has(x)));
+  }
   function say(s){ s=String(s||'').trim().slice(0,60); if(!s) return; me_.say=s; me_.sayT=5; send({t:'say',s}); heard(myName(),s); }
   /* AI 담다가 회의 대화를 받아 적는다 (내 화면에 들린 말만, 서버에 저장 안 함) */
   let log=[], aiSay=null, aiT=0;
@@ -2805,8 +2920,10 @@ const MEET=(()=>{
   document.addEventListener('keydown',e=>{ if(!$('#meetview').classList.contains('on')||e.target.tagName==='INPUT') return; const k=KEYMAP[e.key]; if(k){ keys.add(k); target=null; e.preventDefault(); } });
   document.addEventListener('keyup',e=>{ const k=KEYMAP[e.key]; if(k) keys.delete(k); });
   addEventListener('blur',()=>keys.clear());
-  function tap(e){ const r=cv().getBoundingClientRect(); const x=(e.clientX-r.left-C.ox)/C.sc, y=(e.clientY-r.top-C.oy)/C.sc; if(x>=0&&y>=0&&x<=W*T&&y<=H*T) target={x,y}; }
-  return {open,leave,say,emo,logMeeting,summarize,dress,dressDone,nextTheme,voice,tap,get state(){ return {me:me_,voice:{on:!!mic,pcs:[...pcs].map(([k,x])=>({k,st:x.pc.connectionState,audio:!!x.audio,vol:x.audio?Math.round(x.audio.volume*100)/100:null,lv:x.level?Math.round(x.level()*1000)/1000:0}))},peers:[...peers].filter(([k])=>!k.includes('#')).map(([k,p])=>({k,n:p.n,x:Math.round(p.x),y:Math.round(p.y),say:p.sayT>0?p.say:null})),board}; }};
+  function tap(e){ const r=cv().getBoundingClientRect(); const x=(e.clientX-r.left-C.ox)/C.sc, y=(e.clientY-r.top-C.oy)/C.sc;
+    const st=seatAt(x,y); if(st){ openSeats(st.id); return; }   /* 책상을 누르면 그 자리 */
+    if(x>=0&&y>=0&&x<=W*T&&y<=H*T) target={x,y}; }
+  return {open,leave,say,emo,logMeeting,summarize,dress,dressDone,nextTheme,voice,tap,openSeats,addSeats,fromTasks,sit,stand,wait,unwait,setLink,seatsState:()=>({seats:seats.map(x=>({id:x.id,t:x.title,link:x.link,owner:(ownerOf(x.id)||{}).n||null,queue:queueOf(x.id).map(q=>q.n)})),mySeat,myWait}),get state(){ return {me:me_,voice:{on:!!mic,pcs:[...pcs].map(([k,x])=>({k,st:x.pc.connectionState,audio:!!x.audio,vol:x.audio?Math.round(x.audio.volume*100)/100:null,lv:x.level?Math.round(x.level()*1000)/1000:0}))},peers:[...peers].filter(([k])=>!k.includes('#')).map(([k,p])=>({k,n:p.n,x:Math.round(p.x),y:Math.round(p.y),say:p.sayT>0?p.say:null})),board}; }};
 })();
 $('#btnMeet').onclick=()=>MEET.open(cur);
 $('#mtClose').onclick=()=>{ $('#meetview').classList.remove('on'); MEET.leave(); };
@@ -2819,6 +2936,10 @@ $('#mtPoll').onclick=async()=>{ if(cur&&cur.rid&&await POLL.create(cur)!==false)
 $('#mtDress').onclick=()=>MEET.dress();
 $('#mtDressOk').onclick=()=>MEET.dressDone();
 $('#mtTheme').onclick=()=>MEET.nextTheme();
+$('#mtSeatBtn').onclick=()=>MEET.openSeats();
+$('#mtSeatClose').onclick=()=>$('#mtSeatBox').classList.remove('on');
+$('#mtSeatAdd').onclick=async()=>{ const t=$('#mtSeatNew').value.split(/\n/); await MEET.addSeats(t); $('#mtSeatNew').value=''; };
+$('#mtSeatFromTask').onclick=()=>MEET.fromTasks();
 $('#mtMic').onclick=()=>MEET.voice();
 $('#avOk').onclick=async()=>{ await S.set('avatar',palAv); $('#shPal').classList.remove('on'); toast('캐릭터를 바꿨어요'); };
 
@@ -3446,7 +3567,7 @@ async function saveList(r,list){
     ok=await S.set('room:'+r.code,d,true);
     RS.mark(r);
   }else ok=await S.set('msgs:'+r.id,list);
-  const shown_=list.filter(x=>x&&x.type!=='vote'), last=shown_[shown_.length-1];
+  const shown_=list.filter(x=>x&&x.type!=='vote'&&x.type!=='seat'), last=shown_[shown_.length-1];
   r.preview=last?((last.file&&!last.text)?(last.file.name||'파일'):(last.text||'').split('\n')[0]):'';
   r.at=last?last.ts:null;
   await saveRooms(); await countDue(); drawRooms();
@@ -3941,7 +4062,7 @@ function drawStream(keep){
   const s=clearStream();
   const add=n=>s.appendChild(n);
   /* 모아담기에서 그룹을 골랐으면 그 그룹의 메모만 보여준다 */
-  const view=(grpF?msgs.filter(m=>grpF.ids.has(m.id)):msgs).filter(m=>m.type!=='vote');   /* 투표 표시는 투표 카드 안에만 */
+  const view=(grpF?msgs.filter(m=>grpF.ids.has(m.id)):msgs).filter(m=>m.type!=='vote'&&m.type!=='seat');   /* 투표 표·자리는 각자 화면에만 */
   /* 그룹 방 제목: 방이름-그룹이름 */
   if(grpF) $('#chatName').innerHTML=`${esc(cur?cur.name:'')}<span class="gsep">-</span>${esc(grpF.name)}<span class="gcnt">${view.length}</span>`;
   if(selMode) updSel();
@@ -4686,7 +4807,7 @@ function updSel(){
   if(roNow()) ['#sDone','#sPin','#sDel'].forEach(x=>{ $(x).disabled=true; });
   $('#sDoneLb').textContent=n&&L.every(x=>x.done)?'완료 취소':'완료';
   $('#sPinLb').textContent=n&&L.every(x=>x.pin)?'고정 해제':'고정';
-  const view=(grpF?msgs.filter(x=>grpF.ids.has(x.id)):msgs).filter(x=>x.type!=='vote');
+  const view=(grpF?msgs.filter(x=>grpF.ids.has(x.id)):msgs).filter(x=>x.type!=='vote'&&x.type!=='seat');
   $('#btnSelAll').textContent=n&&n===view.length?'선택 해제':'전체 선택';
 }
 $('#gSel').onclick=()=>{ const m=msgTarget; close('#shMsg'); enterSel(m); };
@@ -4795,7 +4916,7 @@ async function shareMsgs(list){
 $('#gShare').onclick=()=>{ const m=msgTarget; close('#shMsg'); if(m) shareMsgs([m]); };
 $('#sShare').onclick=async()=>{ const L=selList(); if(!L.length) return; await shareMsgs(L); };
 $('#btnSelAll').onclick=()=>{
-  const view=(grpF?msgs.filter(x=>grpF.ids.has(x.id)):msgs).filter(x=>x.type!=='vote');   /* 숨긴 투표 표는 고르지 않는다 */
+  const view=(grpF?msgs.filter(x=>grpF.ids.has(x.id)):msgs).filter(x=>x.type!=='vote'&&x.type!=='seat');   /* 숨긴 투표 표·자리는 고르지 않는다 */
   if(sel.size===view.length) sel.clear(); else view.forEach(x=>sel.add(x.id));
   view.forEach(x=>{ const b=document.getElementById('b'+x.id); if(b) b.classList.toggle('picked',sel.has(x.id)); });
   updSel();
