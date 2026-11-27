@@ -568,8 +568,6 @@ html.kb body{align-items:flex-start}
 .poll .slot.on{border-color:var(--accent);background:var(--soft)}.poll .slot.best{box-shadow:0 0 0 2px #E9B44C inset}
 .poll .slot .c{margin-left:auto;font-weight:700;color:var(--accent)}.poll .slot .nm{font-size:11.5px;color:var(--ink-3)}
 .poll .fix{margin-top:6px;font-size:13px;padding:7px 10px}
-#evRows .er{display:flex;align-items:center;gap:8px;margin:8px 0}#evRows .er span{flex:1}#evRows input[type=range]{flex:2}#evRows b{width:42px;text-align:right}
-.rpwarn{color:#C0392B;font-weight:700}
 .lmslink{display:inline-block;margin-top:4px;font-size:12.5px;color:var(--accent);text-decoration:none;font-weight:600}
 .hm-pal{display:flex;justify-content:center;margin:-6px 0 -10px}.hm-pal canvas{width:320px;max-width:100%;height:150px;cursor:pointer}
 .palrow{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:6px 0}
@@ -1217,10 +1215,9 @@ body.rzing *{user-select:none!important}
     <p id="rpSub"></p>
     <div class="rpbars" id="rpBars"></div>
     <table id="rpTable"></table>
-    <p class="pdesc">· 쓴 글·자료는 서버가 기록한 작성자 기준(자동으로 들어간 할 일·회의록 제외) · 맡은 일은 담당자 기준 완료/전체 · 회의는 회의실 기록 기준 · 본인 주장·팀원 평가는 동료 평가(균등 몫 100점) 평균, 본인 주장이 30점 넘게 높으면 ⚠</p>
+    <p class="pdesc">· 쓴 글·자료는 서버가 기록한 작성자 기준(자동으로 들어간 할 일·회의록 제외) · 맡은 일은 담당자 기준 완료/전체 · 회의는 회의실 기록 기준</p>
     <div id="rpAi"></div>
-    <div class="btns"><button class="btn ghost" id="rpEval">동료 평가 하기</button><button class="btn ghost" id="rpAiBtn">AI 진행 요약</button></div>
-    <div class="btns"><button class="btn ghost" id="rpCopy">글로 복사</button></div>
+    <div class="btns"><button class="btn ghost" id="rpAiBtn">AI 진행 요약</button><button class="btn ghost" id="rpCopy">글로 복사</button></div>
     <div class="btns"><button class="btn" data-close>닫기</button></div>
   </div></div>
 
@@ -1232,14 +1229,6 @@ body.rzing *{user-select:none!important}
     <button class="btn ghost" id="kkAdd" style="width:100%;margin:6px 0">+ 할 일 추가</button>
     <label class="kkpoll"><input type="checkbox" id="kkPoll" checked> 첫 회의 시간 투표도 같이 올리기</label>
     <div class="btns"><button class="btn ghost" data-close>취소</button><button class="btn" id="kkOk">팀플방에 넣기</button></div>
-  </div></div>
-
-  <div class="sheet" id="shEval"><div class="card" style="max-height:88vh;overflow:auto">
-    <h2>동료 평가</h2>
-    <p>똑같이 했으면 모두 <b>100점</b>이에요. 더 한 사람은 높게, 덜 한 사람은 낮게 — 합계가 <b id="evTarget">300</b>점이 되게 맞춰 주세요. 내가 준 점수는 아무도 못 보고, 사람별 평균만 공개돼요.</p>
-    <div id="evRows"></div>
-    <p class="pdesc" id="evSum"></p>
-    <div class="btns"><button class="btn ghost" data-close>취소</button><button class="btn" id="evOk">평가 제출</button></div>
   </div></div>
 
   <div class="sheet" id="shPal"><div class="card" style="align-items:center;text-align:center">
@@ -2869,13 +2858,9 @@ const REPORT=(()=>{
     $('#rpSub').textContent=`기록 ${R.total}개 · 회의 ${R.meets}번 · ${dkey(new Date())} 기준`;
     $('#rpBars').replaceChildren(...R.rows.map(x=>{ const l=el('div','l'), n=el('span'), b=el('div','rpbar'), v=el('span');
       n.textContent=x.name; b.style.width=Math.max(4,Math.round(x.posts/max*100))+'%'; v.textContent=x.posts+'개'; v.style.width='auto'; l.append(n,b,v); return l; }));
-    const ev=await EVAL.summary(r), evOf=uid=>ev.find(y=>y.ratee===uid)||{};
-    for(const x of R.rows){ const e=evOf(x.uid); x.claimed=e.claimed; x.perceived=e.perceived; }
-    const t=$('#rpTable'); t.innerHTML='<tr><th>이름</th><th>쓴 글</th><th>자료</th><th>맡은 일</th><th>회의</th><th>본인 주장</th><th>팀원 평가</th></tr>';
+    const t=$('#rpTable'); t.innerHTML='<tr><th>이름</th><th>쓴 글</th><th>자료</th><th>맡은 일</th><th>회의</th><th>마지막</th></tr>';
     for(const x of R.rows){ const tr=el('tr');
-      for(const v of [x.name,x.posts,x.files,x.tasks?`${x.tdone}/${x.tasks}`:(x.done?x.done+' 완료':'-'),x.meet,x.claimed==null?'-':x.claimed,x.perceived==null?'-':x.perceived]){ const td=el('td'); td.textContent=v; tr.appendChild(td); }
-      /* 본인 주장이 팀원 평가보다 30점 넘게 높으면 표시 (TEAMMATES 의 claimed/perceived 차이 방식) */
-      if(x.claimed!=null&&x.perceived!=null&&x.claimed-x.perceived>=30){ tr.lastChild.classList.add('rpwarn'); tr.lastChild.textContent+=' ⚠'; }
+      for(const v of [x.name,x.posts,x.files,x.tasks?`${x.tdone}/${x.tasks}`:(x.done?x.done+' 완료':'-'),x.meet,day(x.last)]){ const td=el('td'); td.textContent=v; tr.appendChild(td); }
       t.appendChild(tr); }
     $('#rpAi').style.display='none'; $('#rpAi').textContent='';
     $('#shShare').classList.remove('on'); open('#shReport');
@@ -2883,7 +2868,7 @@ const REPORT=(()=>{
   function text(){
     const R=last; if(!R) return '';
     return [`[${R.name}] 팀플 기여 리포트 (${dkey(new Date())})`,`기록 ${R.total}개 · 회의 ${R.meets}번`,
-      ...R.rows.map(x=>`- ${x.name}: 쓴 글 ${x.posts} · 자료 ${x.files} · 맡은 일 ${x.tdone}/${x.tasks} 완료 · 회의 ${x.meet} · 마지막 활동 ${day(x.last)}`+(x.claimed!=null?` · 본인 주장 ${x.claimed}`:'')+(x.perceived!=null?` · 팀원 평가 ${x.perceived}`:'')),
+      ...R.rows.map(x=>`- ${x.name}: 쓴 글 ${x.posts} · 자료 ${x.files} · 맡은 일 ${x.tdone}/${x.tasks} 완료 · 회의 ${x.meet} · 마지막 활동 ${day(x.last)}`),
       ($('#rpAi').textContent?'\n'+$('#rpAi').textContent:''),'(담다 팀플방 기록으로 자동 작성)'].join('\n').trim();
   }
   async function ai(){
@@ -3095,34 +3080,6 @@ const REMIND=(()=>{
   }
   return {run};
 })();
-
-/* 동료 평가: 균등 몫 100점 기준으로 나와 팀원을 매긴다 (supabase/evals.sql) */
-const EVAL=(()=>{
-  let room=null;
-  async function open_(r){
-    room=r; const mem=roomMem(r), target=mem.length*100;
-    let mine=[]; try{ const {data}=await SB.from('room_evals').select('ratee,points').eq('room_id',r.rid); mine=data||[]; }catch(e){}
-    $('#evTarget').textContent=target;
-    $('#evRows').replaceChildren(...mem.map(x=>{ const d=el('div','er'), n=el('span'), i=el('input'), b=el('b');
-      n.textContent=x.name+(me&&x.uid===me.id?' (나)':''); i.type='range'; i.min=0; i.max=250; i.step=5; i.dataset.uid=x.uid;
-      const old=mine.find(y=>y.ratee===x.uid); i.value=old?old.points:100; b.textContent=i.value; i.oninput=()=>{ b.textContent=i.value; sum(); };
-      d.append(n,i,b); return d; }));
-    sum(); open('#shEval');
-  }
-  function sum(){ const t=[...$('#evRows').querySelectorAll('input')].reduce((a,i)=>a+ +i.value,0), want=+$('#evTarget').textContent;
-    $('#evSum').textContent=`합계 ${t}점 / ${want}점`+(t===want?' ✓':' — 제출하면 비율대로 맞춰져요'); }
-  async function submit(){
-    const rows=[...$('#evRows').querySelectorAll('input')].map(i=>({room_id:room.rid,ratee:i.dataset.uid,points:+i.value}));
-    const {error}=await SB.from('room_evals').upsert(rows,{onConflict:'room_id,rater,ratee'});
-    if(error){ console.warn(error); toast('평가를 저장하지 못했어요'); return; }
-    $('#shEval').classList.remove('on'); toast('평가를 제출했어요 · 내가 준 점수는 아무도 못 봐요');
-    if(cur&&cur.rid) REPORT.show(cur);
-  }
-  async function summary(r){ try{ const {data,error}=await SB.rpc('room_eval_summary',{p_room:r.rid}); if(error) throw error; return data||[]; }catch(e){ return []; } }
-  return {open:open_,submit,summary};
-})();
-$('#evOk').onclick=()=>EVAL.submit();
-$('#rpEval').onclick=()=>{ if(cur&&cur.rid){ $('#shReport').classList.remove('on'); EVAL.open(cur); } };
 
 const urlCache=new Map();
 async function fileURL(f){
