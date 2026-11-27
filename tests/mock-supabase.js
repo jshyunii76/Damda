@@ -83,12 +83,22 @@
         async remove() { return { error: null }; }
       })
     },
-    channel() {   // 실시간 흉내: 2초마다 서버 상태가 바뀌었는지 보고 알린다
-      const hs = []; let t = null, last = null;
+    channel(topic) {   // 실시간 흉내: 표 변경은 2초마다 서버 상태 비교, Broadcast·Presence 는 /api/rt 로 150ms마다
+      const hs = [], bc = [], ps = []; let t = null, last = null, since = 0, state = {}, me = null, stop = false;
+      const rt = o => fetch('/api/rt', { method: 'POST', body: JSON.stringify({ topic, key: user.id, since, ...o }) }).then(r => r.json());
       const ch = {
-        on(_, __, fn) { hs.push(fn); return ch; },
-        subscribe() { t = setInterval(async () => { try { const v = await fetch('/api/ver').then(r => r.text()); if (last !== null && v !== last) hs.forEach(f => f({})); last = v; } catch (e) {} }, 2000); return ch; },
-        _stop() { clearInterval(t); }
+        on(kind, filt, fn) { (kind === 'broadcast' ? bc : kind === 'presence' ? ps : hs).push(fn); return ch; },
+        subscribe(cb) {
+          if (hs.length) t = setInterval(async () => { try { const v = await fetch('/api/ver').then(r => r.text()); if (last !== null && v !== last) hs.forEach(f => f({})); last = v; } catch (e) {} }, 2000);
+          if (bc.length || ps.length) { const poll = async () => { if (stop) return; try { const r = await rt(me ? {} : {}); since = r.n; r.msgs.forEach(m => bc.forEach(f => f({ payload: m.msg }))); if (JSON.stringify(r.pres) !== JSON.stringify(state)) { state = r.pres; ps.forEach(f => f()); } } catch (e) {} setTimeout(poll, 150); }; rt({}).then(r => { since = r.n; cb && cb('SUBSCRIBED'); poll(); }); }
+          else cb && setTimeout(() => cb('SUBSCRIBED'), 0);
+          return ch;
+        },
+        async track(meta) { me = meta; const r = await rt({ track: meta }); state = r.pres; ps.forEach(f => f()); },
+        async untrack() { me = null; await rt({ track: null }); },
+        send(o) { rt({ send: o.payload }); return Promise.resolve('ok'); },
+        presenceState() { return state; },
+        _stop() { clearInterval(t); stop = true; if (me) rt({ track: null }); }
       };
       return ch;
     },

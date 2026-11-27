@@ -25,6 +25,7 @@ await db.exec(readFileSync(join(SQL, 'setup.sql'), 'utf8'));
 await db.exec(readFileSync(join(SQL, 'rooms.sql'), 'utf8'));
 for (const c of 'abc') await db.query('insert into auth.users values ($1)', ['00000000-0000-0000-0000-00000000000' + c]);
 const blobs = new Map();
+const rt = new Map(); let rtN = 0;
 let feed = { status: 200, text: readFileSync(new URL('./fixtures/sample.ics', import.meta.url), 'utf8') }, feedCalls = 0;
 let q = Promise.resolve();   // 요청을 하나씩 (역할 전환이 섞이지 않게)
 const serial = fn => (q = q.then(fn, fn));
@@ -70,6 +71,17 @@ http.createServer(async (req, res) => {
     if (url.pathname === '/api/fixture') {          /* 시험용: 가짜 피드 바꾸기 */
       if (req.method === 'POST') feed = JSON.parse(await body(req));
       res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ ...feed, calls: feedCalls }));
+    }
+    if (url.pathname === '/api/rt') {   /* 실시간 흉내: Broadcast 는 쌓아 두고, Presence 는 6초 안에 소식 있는 사람만 */
+      const q = JSON.parse(await body(req)), tp = rt.get(q.topic) || { msgs: [], pres: new Map() }; rt.set(q.topic, tp);
+      const now = Date.now();
+      if (q.send) tp.msgs.push({ n: ++rtN, from: q.key, msg: q.send });
+      if (q.track !== undefined) { if (q.track === null) tp.pres.delete(q.key); else tp.pres.set(q.key, { meta: q.track, at: now }); }
+      else if (tp.pres.has(q.key)) tp.pres.get(q.key).at = now;
+      for (const [k, v] of tp.pres) if (now - v.at > 6000) tp.pres.delete(k);
+      if (tp.msgs.length > 500) tp.msgs.splice(0, tp.msgs.length - 500);
+      const out = { n: rtN, msgs: tp.msgs.filter(m => m.n > (q.since || 0) && m.from !== q.key), pres: Object.fromEntries([...tp.pres].map(([k, v]) => [k, [v.meta]])) };
+      res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify(out));
     }
     if (url.pathname === '/api/ver') {
       const r = await serial(() => db.query(`select (select coalesce(max(updated_at)::text,'') from public.room_msgs) || (select count(*)::text from public.room_members) || (select count(*)::text from public.room_msgs) || (select string_agg(perm,'') from public.rooms) v`));

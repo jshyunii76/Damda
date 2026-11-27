@@ -308,7 +308,7 @@ html.kb body{align-items:flex-start}
   padding:6px 8px calc(8px + env(safe-area-inset-bottom))}
 #scChat.sel #selbar{display:flex}
 #scChat.sel #compose,#scChat.sel #pinbar,#scChat.sel #btnCal,
-#scChat.sel #btnGroup,#scChat.sel #btnShare{display:none}
+#scChat.sel #btnGroup,#scChat.sel #btnShare,#scChat.sel #btnMeet{display:none!important}
 .sbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;border:0;background:transparent;
   font:inherit;font-size:11.5px;font-weight:600;color:var(--ink-2);padding:6px 0;border-radius:10px;cursor:pointer}
 .sbtn:hover{background:var(--mute)}
@@ -418,7 +418,7 @@ html.kb body{align-items:flex-start}
 
 /* ===== 어제·오늘 요약방 ===== */
 #scChat.brief #pinbar,#scChat.brief #btnBack,
-#scChat.brief #btnCal,#scChat.brief #btnShare,#scChat.brief #btnGroup{display:none}
+#scChat.brief #btnCal,#scChat.brief #btnShare,#scChat.brief #btnGroup,#scChat.brief #btnMeet{display:none!important}
 /* 홈(요약) 화면에서만: 모든 방 일정 · AI 설정 */
 #btnHomeCal,#btnAI,#hChat,#whenHint{display:none}
 #scChat:not(.brief) #hFold{display:none!important}
@@ -530,6 +530,28 @@ html.kb body{align-items:flex-start}
 #noteview,#calview,#grpview,#allfold,#setview{position:absolute;inset:0;background:var(--app);z-index:26;
   display:none;flex-direction:column}
 #noteview.on,#calview.on,#grpview.on,#allfold.on,#setview.on{display:flex}
+/* ---------- 팀 회의실 (3바퀴) ---------- */
+#meetview{position:absolute;inset:0;background:#1F2A2E;z-index:27;display:none;flex-direction:column;color:#fff}
+#meetview.on{display:flex}
+#meetview .bar{background:#263338;color:#fff}#meetview .bar .ic svg{stroke:#fff}
+#mtWho{display:flex;gap:6px;flex-wrap:wrap;padding:6px 12px;font-size:12.5px;min-height:20px}
+#mtWho span{background:rgba(255,255,255,.12);border-radius:20px;padding:3px 9px}
+#mtStage{flex:1;position:relative;min-height:0}
+#mtCv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;image-rendering:pixelated}
+#mtHint{position:absolute;left:0;right:0;bottom:6px;text-align:center;font-size:12px;opacity:.7;pointer-events:none}
+#mtBar{padding:8px 10px 12px;background:#263338;display:flex;flex-direction:column;gap:8px}
+#mtEmo{display:flex;gap:6px;justify-content:center}
+#mtEmo button{font-size:20px;background:rgba(255,255,255,.1);border:0;border-radius:10px;padding:5px 10px;cursor:pointer}
+#mtSay{display:flex;gap:6px}#mtSay input{flex:1;min-width:0;border:0;border-radius:10px;padding:10px;font:inherit;font-size:16px}
+#mtSay .btn{flex:0 0 auto;padding:10px 14px}
+#mtLog{background:rgba(255,255,255,.1);color:#fff}
+#mtDressBox{position:absolute;left:0;right:0;bottom:0;background:#fff;color:var(--ink);border-radius:16px 16px 0 0;padding:14px;display:none;flex-direction:column;align-items:center;gap:10px;z-index:2}
+#mtDressBox.on{display:flex}
+#mtCols,#mtAccs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+#mtCols button{width:30px;height:30px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px var(--line);cursor:pointer}
+#mtCols button.on{box-shadow:0 0 0 2px var(--ink)}
+#mtAccs button{border:1px solid var(--line);background:#fff;border-radius:10px;padding:6px 10px;font:inherit;cursor:pointer}
+#mtAccs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 .setlist{padding:8px 10px}
 /* 가운데에 뜨는 확인 창 */
 .sheet.pop{align-items:center;padding:16px}
@@ -614,7 +636,7 @@ html.kb body{align-items:flex-start}
 .gnote b{display:block;color:var(--ink);font-size:13px}
 /* 그룹만 보이는 방 */
 #scChat.grp #pinbar,#scChat.grp #hSearch,
-#scChat.grp #btnCal,#scChat.grp #btnShare{display:none}
+#scChat.grp #btnCal,#scChat.grp #btnShare,#scChat.grp #btnMeet{display:none!important}
 #scChat.grp #btnGroup{color:var(--accent);background:rgba(255,255,255,.6)}
 /* 폴더 채팅방은 윗줄을 조금 짙게 — 전체 채팅방과 한눈에 구분 */
 #scChat.grp #chatMain>.bar{background:var(--soft-2);border-bottom-color:#BCD6CA}
@@ -1002,6 +1024,9 @@ body.rzing *{user-select:none!important}
         <svg viewBox="0 0 24 24"><path d="M3 17.7V6.3a1.8 1.8 0 0 1 1.8-1.8h4.3l2.1 2.2h8A1.8 1.8 0 0 1 21 8.5v9.2a1.8 1.8 0 0 1-1.8 1.8H4.8A1.8 1.8 0 0 1 3 17.7z"/></svg>
       </button>
       <button class="selall" id="btnSelAll">전체 선택</button>
+      <button class="ic" id="btnMeet" aria-label="팀 회의실" style="display:none">
+        <svg viewBox="0 0 24 24"><circle cx="8" cy="9" r="3"/><circle cx="16.5" cy="9" r="3"/><path d="M3 19c.6-3 2.6-4.6 5-4.6s4.4 1.6 5 4.6M11.5 19c.6-3 2.6-4.6 5-4.6s4.4 1.6 5 4.6"/></svg>
+      </button>
       <button class="ic" id="btnShare" aria-label="공유 코드">
         <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.4 10.8l7.2-4.2M8.4 13.2l7.2 4.2"/></svg>
       </button>
@@ -1075,6 +1100,26 @@ body.rzing *{user-select:none!important}
       <button class="mrow danger" id="toAcctDel">
         <svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>
         <span>계정 삭제</span></button>
+    </div>
+  </section>
+
+  <section id="meetview" aria-label="팀 회의실">
+    <div class="bar">
+      <button class="ic" id="mtClose" aria-label="나가기"><svg viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg></button>
+      <h1 id="mtTitle">회의실</h1>
+      <button class="ic" id="mtDress" aria-label="캐릭터 꾸미기"><svg viewBox="0 0 24 24"><path d="M8 4l-4 3 2 4 2-1v10h8V10l2 1 2-4-4-3c-.5 1.7-2 2.8-4 2.8S8.5 5.7 8 4z"/></svg></button>
+    </div>
+    <div id="mtWho"></div>
+    <div id="mtStage"><canvas id="mtCv"></canvas><div id="mtHint">방향키·WASD 또는 바닥을 눌러 움직여요</div></div>
+    <div id="mtBar">
+      <div id="mtEmo"><button data-e="👋">👋</button><button data-e="👍">👍</button><button data-e="😂">😂</button><button data-e="🎉">🎉</button><button data-e="🤔">🤔</button></div>
+      <form id="mtSay"><input id="mtTxt" maxlength="60" placeholder="말하기 (말풍선으로 떠요)" autocomplete="off"><button class="btn" type="submit">보내기</button></form>
+      <button class="btn ghost" id="mtLog">회의 출석 남기기</button>
+    </div>
+    <div id="mtDressBox">
+      <canvas id="mtPrev" width="120" height="120"></canvas>
+      <div id="mtCols"></div><div id="mtAccs"></div>
+      <button class="btn" id="mtDressOk">다 했어요</button>
     </div>
   </section>
 
@@ -2117,7 +2162,7 @@ const LMS=(()=>{
   const mine=uid=>!leaving&&!!me&&me.id===uid&&lsGet(OWNER)===uid;
   const still=(uid,g)=>mine(uid)&&g===gen;
   /* 쓰는 중이거나 다른 창이 열려 있으면 자동 받기는 기다린다 (고치던 글·열어 둔 화면이 사라지지 않게) */
-  const uiBusy=()=>!!document.querySelector('.sheet.on,#setview.on,#calview.on,#grpview.on,#allfold.on,#pinlist.on,#search.on,#noteview.on')
+  const uiBusy=()=>!!document.querySelector('.sheet.on,#setview.on,#calview.on,#grpview.on,#allfold.on,#pinlist.on,#search.on,#noteview.on,#meetview.on')
     ||selMode||!!noteEd||$('#scChat').classList.contains('hopen');
   async function get(url){
     const {data,error}=await SB.functions.invoke('canvas-feed',{body:{url}});
@@ -2355,6 +2400,201 @@ $('#toLms').onclick=async()=>{ await LMS.draw(); open('#shLms'); };
 const lmsAct=(id,f)=>{ $(id).onclick=async()=>{ const b=$(id), t=b.textContent; b.disabled=true; b.textContent='받는 중…'; try{ await f(); }finally{ b.disabled=false; b.textContent=t; } }; };
 lmsAct('#lmsLink',()=>LMS.link($('#lmsUrl').value)); lmsAct('#lmsPaste',()=>LMS.paste()); lmsAct('#lmsNow',()=>LMS.pull(true));
 $('#lmsCut').onclick=()=>LMS.cut();
+
+/* ---------- 팀 회의실 (3바퀴): 공유방 멤버가 캐릭터로 모이는 2D 방 ----------
+   위치처럼 자주 바뀌는 값은 Broadcast, 누가 들어와 있는지는 Presence (Supabase 권장 방식).
+   서버에 저장하는 것은 없다. '회의 출석 남기기'만 방에 메모 한 줄을 남긴다 */
+const AV_COLORS=['#2E6A63','#E07A5F','#3D5A80','#E9B44C','#81B29A','#B5838D','#6D597A','#4EA5D9'];
+const AV_ACCS=[['none','없음'],['sprout','새싹'],['cap','모자'],['glasses','안경'],['ribbon','리본'],['phones','헤드폰']];
+/* 담다 캐릭터: 로고의 말풍선(D)을 닮은 동글한 몸 + 얼굴 + 꾸미기 */
+function drawAvatar(g,x,y,av,o={}){
+  const c=AV_COLORS.includes(av&&av.c)?av.c:AV_COLORS[0], acc=(av&&av.a)||'none', t=o.t||0;
+  const bob=o.moving?Math.sin(t*14)*1.6:Math.sin(t*2.2)*.6, by=y-16+bob, dir=o.dir||1;
+  g.save();
+  g.fillStyle='rgba(0,0,0,.22)'; g.beginPath(); g.ellipse(x,y,11,4,0,0,Math.PI*2); g.fill();
+  /* 몸 (말풍선 꼬리 포함) */
+  const shade=c+'';
+  g.fillStyle=c; g.strokeStyle='rgba(0,0,0,.35)'; g.lineWidth=1.5;
+  g.beginPath();
+  const w=26,h=24,l=x-w/2,tp=by-h/2,r=9;
+  g.moveTo(l+r,tp); g.lineTo(l+w-r,tp); g.quadraticCurveTo(l+w,tp,l+w,tp+r); g.lineTo(l+w,tp+h-r); g.quadraticCurveTo(l+w,tp+h,l+w-r,tp+h);
+  g.lineTo(x+(dir>0?-3:7),tp+h); g.lineTo(x+(dir>0?-9:9),tp+h+6); g.lineTo(x+(dir>0?-7:3),tp+h);
+  g.lineTo(l+r,tp+h); g.quadraticCurveTo(l,tp+h,l,tp+h-r); g.lineTo(l,tp+r); g.quadraticCurveTo(l,tp,l+r,tp);
+  g.fill(); g.stroke();
+  g.fillStyle='rgba(255,255,255,.25)'; g.beginPath(); g.ellipse(x-5,tp+6,6,3,-.4,0,Math.PI*2); g.fill();
+  /* 얼굴 */
+  const blink=(Math.floor(t*10+(o.seed||0))%42)===0, ex=x+dir*2;
+  g.fillStyle='#1B2024';
+  if(blink){ g.fillRect(ex-6,by-1,4,1.5); g.fillRect(ex+2,by-1,4,1.5); }
+  else{ g.beginPath(); g.arc(ex-4,by-1,2.2,0,Math.PI*2); g.arc(ex+4,by-1,2.2,0,Math.PI*2); g.fill();
+    g.fillStyle='#fff'; g.beginPath(); g.arc(ex-3.3,by-1.8,.8,0,Math.PI*2); g.arc(ex+4.7,by-1.8,.8,0,Math.PI*2); g.fill(); }
+  g.fillStyle='rgba(255,140,140,.55)'; g.beginPath(); g.arc(ex-8,by+3,2,0,Math.PI*2); g.arc(ex+8,by+3,2,0,Math.PI*2); g.fill();
+  g.strokeStyle='#1B2024'; g.lineWidth=1.2; g.beginPath(); g.arc(ex,by+2.5,2.2,.15*Math.PI,.85*Math.PI); g.stroke();
+  /* 꾸미기 */
+  g.lineWidth=1.5;
+  if(acc==='sprout'){ g.strokeStyle='#3F8F4A'; g.beginPath(); g.moveTo(x,tp); g.lineTo(x,tp-6); g.stroke();
+    g.fillStyle='#5DBB63'; g.beginPath(); g.ellipse(x-4,tp-7,4,2.2,-.5,0,Math.PI*2); g.ellipse(x+4,tp-8,4,2.2,.5,0,Math.PI*2); g.fill(); }
+  if(acc==='cap'){ g.fillStyle='#F4F1DE'; g.beginPath(); g.arc(x,tp+3,11,Math.PI,0); g.fill(); g.fillStyle='#E07A5F'; g.fillRect(x+(dir>0?2:-14),tp+1,12,3); }
+  if(acc==='glasses'){ g.strokeStyle='#1B2024'; g.beginPath(); g.arc(ex-4,by-1,3.6,0,Math.PI*2); g.moveTo(ex+7.6,by-1); g.arc(ex+4,by-1,3.6,0,Math.PI*2); g.moveTo(ex-.4,by-1); g.lineTo(ex+.4,by-1); g.stroke(); }
+  if(acc==='ribbon'){ g.fillStyle='#F28482'; g.beginPath(); g.moveTo(x+6,tp+1); g.lineTo(x+1,tp-5); g.lineTo(x+1,tp+5); g.closePath(); g.moveTo(x+6,tp+1); g.lineTo(x+11,tp-5); g.lineTo(x+11,tp+5); g.closePath(); g.fill(); }
+  if(acc==='phones'){ g.strokeStyle='#33363A'; g.lineWidth=2.5; g.beginPath(); g.arc(x,by,14,Math.PI*1.1,Math.PI*1.9); g.stroke(); g.fillStyle='#33363A'; g.fillRect(x-16,by-4,5,9); g.fillRect(x+11,by-4,5,9); }
+  /* 이름표 */
+  if(o.name){ g.font='bold 9px sans-serif'; const tw=g.measureText(o.name).width+8;
+    g.fillStyle=o.me?'rgba(46,106,99,.92)':'rgba(0,0,0,.55)'; roundRect(g,x-tw/2,y+4,tw,12,6); g.fill();
+    g.fillStyle='#fff'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(o.name,x,y+10.5); }
+  /* 말풍선 */
+  if(o.say){ g.font='10px sans-serif'; const lines=wrapTxt(g,o.say,110), lh=12, bw=Math.max(...lines.map(l=>g.measureText(l).width))+12, bh=lines.length*lh+8, bx=x-bw/2, byy=tp-14-bh-(acc==='none'?0:6);
+    g.fillStyle='#fff'; roundRect(g,bx,byy,bw,bh,7); g.fill(); g.beginPath(); g.moveTo(x-4,byy+bh); g.lineTo(x,byy+bh+5); g.lineTo(x+4,byy+bh); g.fill();
+    g.fillStyle='#1B2024'; g.textAlign='center'; g.textBaseline='top'; lines.forEach((l,i)=>g.fillText(l,x,byy+4+i*lh)); }
+  if(o.emo){ g.font='18px sans-serif'; g.textAlign='center'; g.textBaseline='bottom'; g.globalAlpha=Math.max(0,1-o.emoT); g.fillText(o.emo,x+14,tp-4-o.emoT*18); g.globalAlpha=1; }
+  g.restore();
+}
+function roundRect(g,x,y,w,h,r){ g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath(); }
+function wrapTxt(g,s,max){ const out=[]; let cur=''; for(const ch of String(s)){ if(g.measureText(cur+ch).width>max){ out.push(cur); cur=ch; if(out.length===2){ cur='…'; break; } } else cur+=ch; } out.push(cur); return out.slice(0,3); }
+
+const MEET=(()=>{
+  const T=32, W=20, H=13, SPEED=130, BLOCK=[[0,0,20,2],[7,5,6,3],[0.6,9,3.4,2.4],[17.4,2.2,2,1.6],[0.4,2.2,1.4,1.4]];
+  let ch=null, room=null, me_=null, peers=new Map(), raf=0, last=0, keys=new Set(), target=null, sentAt=0, sentPos='', board=[], av=null, t0=0;
+  const cv=()=>$('#mtCv');
+  const blocked=(x,y)=>x<12||y<2*T+6||x>W*T-12||y>H*T-6||BLOCK.some(([bx,bym,bw,bh])=>x>bx*T-8&&x<(bx+bw)*T+8&&y>bym*T&&y<(bym+bh)*T+8);
+  function myName(){ const d=room&&memCache, m=d&&d.find(x=>x.uid===me.id); return ((m&&m.name)||RS.myName()).slice(0,10); }
+  let memCache=null;
+  async function open(r){
+    if(!r||!r.rid){ toast('공유방에서만 회의실을 열 수 있어요'); return; }
+    if(!SB||!me||!navigator.onLine){ toast('인터넷에 연결하고 로그인해야 회의실에 들어갈 수 있어요'); return; }
+    leave(); room=r;
+    const d=await S.get('room:'+r.code,true)||{}; memCache=d.mem||[];
+    av=await S.get('avatar')||{c:AV_COLORS[Math.floor(Math.random()*AV_COLORS.length)],a:'sprout'};
+    const sp=[...me.id].reduce((a,c)=>a+c.charCodeAt(0),0)%7;   /* 사람마다 문 앞 다른 자리 */
+    me_={x:(7+sp)*T,y:10.6*T+(sp%2)*18,dir:sp%2?-1:1,moving:false,say:null,sayT:0,emo:null,emoT:9,seed:3};
+    board=(d.messages||[]).filter(m=>m&&m.due&&!m.done&&m.due>=todayKey()).sort((a,b)=>a.due<b.due?-1:1).slice(0,2).map(m=>md(m.due)+' '+mlabel(m));
+    $('#mtTitle').textContent=r.name+' 회의실'; $('#meetview').classList.add('on'); $('#mtDressBox').classList.remove('on');
+    ch=SB.channel('meet:'+r.rid,{config:{broadcast:{self:false},presence:{key:me.id}}});
+    ch.on('broadcast',{event:'m'},({payload})=>onMsg(payload))
+      .on('presence',{event:'sync'},()=>sync())
+      .subscribe(async st=>{ if(st==='SUBSCRIBED'&&ch){ await ch.track({n:myName(),av}); sendPos(true); } });
+    t0=performance.now(); last=t0; raf=requestAnimationFrame(loop); who();
+  }
+  function leave(){
+    cancelAnimationFrame(raf); raf=0;
+    if(ch){ try{ ch.untrack&&ch.untrack(); SB.removeChannel(ch); }catch(e){} }
+    ch=null; peers=new Map(); keys.clear(); target=null;
+  }
+  function sync(){
+    if(!ch) return;
+    const st=ch.presenceState(), here=new Set(Object.keys(st));
+    for(const k of [...peers.keys()]) if(!here.has(k)) peers.delete(k);
+    for(const k of here){ if(k===me.id) continue; const meta=(st[k]||[])[0]||{};
+      const p=peers.get(k)||{x:10*T,y:11*T,tx:10*T,ty:11*T,dir:1,moving:false,say:null,sayT:0,emo:null,emoT:9,seed:k.length};
+      p.n=String(meta.n||'?').slice(0,10); p.av=meta.av; peers.set(k,p);
+      if(!peers.has(k+'#seen')){ peers.set(k+'#seen',1); sendPos(true); }   /* 새로 온 사람에게 내 위치를 알린다 */
+    }
+    who();
+  }
+  function who(){ $('#mtWho').replaceChildren(...[[myName()+' (나)'],...[...peers].filter(([k])=>!k.includes('#')).map(([,p])=>[p.n])].map(([n])=>{ const s=el('span'); s.textContent=n; return s; })); }
+  function onMsg(m){
+    if(!m||!m.u||m.u===me.id) return; const p=peers.get(m.u); if(!p) return;
+    if(m.t==='pos'&&isFinite(m.x)&&isFinite(m.y)){ p.tx=Math.max(0,Math.min(W*T,m.x)); p.ty=Math.max(0,Math.min(H*T,m.y)); p.dir=m.d>0?1:-1; if(m.j){ p.x=p.tx; p.y=p.ty; } }
+    if(m.t==='say'&&typeof m.s==='string'){ p.say=m.s.slice(0,60); p.sayT=5; }
+    if(m.t==='emo'&&typeof m.e==='string'&&m.e.length<=4){ p.emo=m.e; p.emoT=0; }
+  }
+  const send=msg=>{ if(ch) try{ ch.send({type:'broadcast',event:'m',payload:{...msg,u:me.id}}); }catch(e){} };
+  function sendPos(force){
+    const k=Math.round(me_.x)+','+Math.round(me_.y), now=performance.now();
+    if(!force&&(k===sentPos||now-sentAt<100)) return;
+    sentPos=k; sentAt=now; send({t:'pos',x:Math.round(me_.x),y:Math.round(me_.y),d:me_.dir,j:force?1:0});
+  }
+  function step(dt){
+    let vx=0, vy=0;
+    if(keys.has('l')) vx--; if(keys.has('r')) vx++; if(keys.has('u')) vy--; if(keys.has('d')) vy++;
+    if(!vx&&!vy&&target){ const dx=target.x-me_.x, dy=target.y-me_.y, d=Math.hypot(dx,dy); if(d<3) target=null; else { vx=dx/d; vy=dy/d; } }
+    const n=Math.hypot(vx,vy); me_.moving=n>0;
+    if(n){ vx/=n; vy/=n; const nx=me_.x+vx*SPEED*dt, ny=me_.y+vy*SPEED*dt;
+      if(!blocked(nx,me_.y)) me_.x=nx; else if(target) target=null;
+      if(!blocked(me_.x,ny)) me_.y=ny; else if(target) target=null;
+      if(vx) me_.dir=vx>0?1:-1; sendPos(false); }
+    for(const [k,p] of peers){ if(k.includes('#')) continue; const dx=p.tx-p.x, dy=p.ty-p.y; p.moving=Math.hypot(dx,dy)>1.5; p.x+=dx*Math.min(1,dt*10); p.y+=dy*Math.min(1,dt*10); p.sayT-=dt; p.emoT+=dt; }
+    me_.sayT-=dt; me_.emoT+=dt;
+  }
+  function drawRoom(g,t){
+    /* 바닥: 나무 */
+    for(let y=2;y<H;y++) for(let x=0;x<W;x++){ g.fillStyle=(x+y)%2?'#D9B98C':'#D2B080'; g.fillRect(x*T,y*T,T,T); g.fillStyle='rgba(0,0,0,.05)'; g.fillRect(x*T,y*T+T-2,T,2); }
+    /* 벽 */
+    g.fillStyle='#A7C4BC'; g.fillRect(0,0,W*T,2*T); g.fillStyle='#8FB0A7'; g.fillRect(0,2*T-8,W*T,8);
+    /* 창문 */
+    for(const wx of [1.5,15.5]){ g.fillStyle='#DDF1F7'; g.fillRect(wx*T,.4*T,2.6*T,1.1*T); g.strokeStyle='#fff'; g.lineWidth=3; g.strokeRect(wx*T,.4*T,2.6*T,1.1*T); g.beginPath(); g.moveTo((wx+1.3)*T,.4*T); g.lineTo((wx+1.3)*T,1.5*T); g.stroke(); }
+    /* 화이트보드: 이 방의 다가오는 마감 */
+    g.fillStyle='#fff'; roundRect(g,5.5*T,.25*T,9*T,1.6*T,6); g.fill(); g.strokeStyle='#5A6570'; g.lineWidth=2; g.stroke();
+    g.fillStyle='#2E6A63'; g.font='bold 12px sans-serif'; g.textAlign='left'; g.textBaseline='top'; g.fillText('📌 우리 팀 마감',5.8*T,.32*T);
+    g.fillStyle='#1B2024'; g.font='11px sans-serif';
+    (board.length?board:['아직 마감이 없어요']).slice(0,2).forEach((l,i)=>g.fillText(fit(g,l,8.4*T),5.8*T,(.32+.5+i*.42)*T));
+    /* 회의 테이블 + 의자 */
+    g.fillStyle='rgba(0,0,0,.15)'; roundRect(g,7*T+4,5*T+8,6*T,3*T,14); g.fill();
+    g.fillStyle='#8C5E3C'; roundRect(g,7*T,5*T,6*T,3*T,14); g.fill(); g.fillStyle='#A87148'; roundRect(g,7*T+4,5*T+4,6*T-8,3*T-10,12); g.fill();
+    g.fillStyle='#fff'; g.fillRect(8.2*T,5.8*T,18,13); g.fillRect(10.6*T,6.3*T,16,12); g.fillStyle='#F4D35E'; g.fillRect(11.6*T,5.7*T,12,12);
+    for(const [cx,cy] of [[7.8,4.5],[9.5,4.5],[11.2,4.5],[7.8,8.3],[9.5,8.3],[11.2,8.3],[12.6,4.5],[12.6,8.3]]){ g.fillStyle='#3D5A80'; roundRect(g,cx*T,cy*T,22,14,5); g.fill(); }
+    /* 소파 */
+    g.fillStyle='#E07A5F'; roundRect(g,.6*T,9*T,3.4*T,2.4*T,10); g.fill(); g.fillStyle='#F2A28B'; roundRect(g,.9*T,9.9*T,2.8*T,1.2*T,8); g.fill();
+    /* 화분·책장 */
+    g.fillStyle='#6D4C3D'; g.fillRect(17.4*T,2.2*T,2*T,1.6*T); g.fillStyle='#F2CC8F'; g.fillRect(17.6*T,2.4*T,.5*T,1.2*T); g.fillStyle='#81B29A'; g.fillRect(18.2*T,2.4*T,.4*T,1.2*T); g.fillStyle='#3D5A80'; g.fillRect(18.7*T,2.4*T,.5*T,1.2*T);
+    plant(g,1.1*T,2.9*T,t); plant(g,18.7*T,11.9*T,t+1);
+    /* 문 */
+    g.fillStyle='#6D4C3D'; g.fillRect(9*T,H*T-6,2*T,6);
+  }
+  function plant(g,x,y,t){ g.fillStyle='#C0703A'; g.fillRect(x-9,y,18,14); g.fillStyle='#5DBB63'; for(let i=0;i<5;i++){ g.beginPath(); g.ellipse(x+Math.cos(i*1.3+Math.sin(t)*.05)*7,y-6+Math.sin(i*2)*4,7,4,i,0,Math.PI*2); g.fill(); } }
+  const fit=(g,s,w)=>{ let x=String(s); while(x.length>1&&g.measureText(x).width>w) x=x.slice(0,-2)+'…'; return x; };
+  function loop(now){
+    if(!$('#meetview').classList.contains('on')){ leave(); return; }
+    const dt=Math.min(.05,(now-last)/1000); last=now; const t=(now-t0)/1000;
+    step(dt);
+    const c=cv(), pr=window.devicePixelRatio||1, cw=c.clientWidth, chh=c.clientHeight;
+    if(c.width!==Math.round(cw*pr)||c.height!==Math.round(chh*pr)){ c.width=Math.round(cw*pr); c.height=Math.round(chh*pr); }
+    const g=c.getContext('2d'), sc=Math.min(cw/(W*T),chh/(H*T)), ox=(cw-W*T*sc)/2, oy=(chh-H*T*sc)/2;
+    g.setTransform(pr,0,0,pr,0,0); g.fillStyle='#1F2A2E'; g.fillRect(0,0,cw,chh);
+    g.setTransform(pr*sc,0,0,pr*sc,pr*ox,pr*oy); C.sc=sc; C.ox=ox; C.oy=oy;
+    drawRoom(g,t);
+    const all=[...[...peers].filter(([k])=>!k.includes('#')).map(([,p])=>({p,o:{name:p.n,dir:p.dir,moving:p.moving,say:p.sayT>0?p.say:null,emo:p.emoT<1.2?p.emo:null,emoT:p.emoT/1.2,seed:p.seed}})),
+      {p:{...me_,av},o:{name:myName(),me:1,dir:me_.dir,moving:me_.moving,say:me_.sayT>0?me_.say:null,emo:me_.emoT<1.2?me_.emo:null,emoT:me_.emoT/1.2,seed:3}}].sort((a,b)=>a.p.y-b.p.y);
+    for(const {p,o} of all){ g.save(); g.translate(p.x,p.y); g.scale(1.35,1.35); drawAvatar(g,0,0,p.av,{...o,t}); g.restore(); }
+    raf=requestAnimationFrame(loop);
+  }
+  const C={sc:1,ox:0,oy:0};
+  function say(s){ s=String(s||'').trim().slice(0,60); if(!s) return; me_.say=s; me_.sayT=5; send({t:'say',s}); }
+  function emo(e){ me_.emo=e; me_.emoT=0; send({t:'emo',e}); }
+  async function logMeeting(){
+    if(!room||!cur||cur.id!==room.id){ toast('방으로 돌아가서 다시 해 주세요'); return; }
+    if(isRO(cur)){ toast('보기만 할 수 있는 방이에요'); return; }
+    const names=[myName(),...[...peers].filter(([k])=>!k.includes('#')).map(([,p])=>p.n)];
+    const d=new Date(), tm=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+    msgs.push({id:'m'+Date.now().toString(36),type:'memo',text:`[회의] ${md(todayKey())} ${tm} 회의실 · 참석 ${names.length}명: ${names.join(', ')}`,file:null,ts:Date.now(),due:null,dueStart:null,dueTime:null,done:false});
+    await persist(); drawStream(); toast('회의 출석을 방에 남겼어요');
+  }
+  /* 꾸미기 */
+  function dress(){
+    const box=$('#mtDressBox'); box.classList.add('on');
+    const draw=()=>{ const g=$('#mtPrev').getContext('2d'); g.setTransform(1,0,0,1,0,0); g.clearRect(0,0,120,120); g.setTransform(2.4,0,0,2.4,0,0); drawAvatar(g,25,38,av,{t:performance.now()/1000,dir:1});
+      $('#mtCols').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.c===av.c)); $('#mtAccs').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.a===av.a)); };
+    $('#mtCols').replaceChildren(...AV_COLORS.map(c=>{ const b=el('button'); b.style.background=c; b.dataset.c=c; b.setAttribute('aria-label','색 '+c); b.onclick=()=>{ av={...av,c}; draw(); }; return b; }));
+    $('#mtAccs').replaceChildren(...AV_ACCS.map(([a,n])=>{ const b=el('button'); b.textContent=n; b.dataset.a=a; b.onclick=()=>{ av={...av,a}; draw(); }; return b; }));
+    draw();
+  }
+  async function dressDone(){ $('#mtDressBox').classList.remove('on'); await S.set('avatar',av); if(ch) try{ await ch.track({n:myName(),av}); }catch(e){} }
+  /* 입력 */
+  const KEYMAP={ArrowLeft:'l',a:'l',A:'l',ArrowRight:'r',d:'r',D:'r',ArrowUp:'u',w:'u',W:'u',ArrowDown:'d',s:'d',S:'d'};
+  document.addEventListener('keydown',e=>{ if(!$('#meetview').classList.contains('on')||e.target.tagName==='INPUT') return; const k=KEYMAP[e.key]; if(k){ keys.add(k); target=null; e.preventDefault(); } });
+  document.addEventListener('keyup',e=>{ const k=KEYMAP[e.key]; if(k) keys.delete(k); });
+  addEventListener('blur',()=>keys.clear());
+  function tap(e){ const r=cv().getBoundingClientRect(); const x=(e.clientX-r.left-C.ox)/C.sc, y=(e.clientY-r.top-C.oy)/C.sc; if(x>=0&&y>=0&&x<=W*T&&y<=H*T) target={x,y}; }
+  return {open,leave,say,emo,logMeeting,dress,dressDone,tap,get state(){ return {me:me_,peers:[...peers].filter(([k])=>!k.includes('#')).map(([k,p])=>({k,n:p.n,x:Math.round(p.x),y:Math.round(p.y),say:p.sayT>0?p.say:null})),board}; }};
+})();
+$('#btnMeet').onclick=()=>MEET.open(cur);
+$('#mtClose').onclick=()=>{ $('#meetview').classList.remove('on'); MEET.leave(); };
+$('#mtCv').addEventListener('pointerdown',e=>MEET.tap(e));
+$('#mtSay').onsubmit=e=>{ e.preventDefault(); MEET.say($('#mtTxt').value); $('#mtTxt').value=''; };
+document.querySelectorAll('#mtEmo button').forEach(b=>b.onclick=()=>MEET.emo(b.dataset.e));
+$('#mtLog').onclick=()=>MEET.logMeeting();
+$('#mtDress').onclick=()=>MEET.dress();
+$('#mtDressOk').onclick=()=>MEET.dressDone();
 
 const urlCache=new Map();
 async function fileURL(f){
@@ -3192,7 +3432,7 @@ $('#doDel').onclick=async()=>{
 
 /* ---------- 채팅방 ---------- */
 function closeOverlays(){
-  ['#calview','#noteview','#search','#pinlist','#grpview','#allfold','#setview'].forEach(s=>$(s).classList.remove('on'));
+  ['#calview','#noteview','#search','#pinlist','#grpview','#allfold','#setview','#meetview'].forEach(s=>$(s).classList.remove('on'));
 }
 
 async function openRoom(id,jump){
@@ -3201,6 +3441,7 @@ async function openRoom(id,jump){
   briefOn=false; grpF=null; lastGrp=null; $('#scChat').classList.remove('brief','grp'); updBack();
   $('#chatName').textContent=cur.name;
   $('#btnShare').classList.toggle('hl',!!cur.code);
+  $('#btnMeet').style.display=cur.rid?'':'none';
   $('#scChat').classList.remove('hide'); drawRail();
   msgs=[]; folded={}; clearAtt(); pinOpen=true;
   $('#pinbar').innerHTML=''; vecCache.clear(); nVec.clear();
@@ -6338,7 +6579,7 @@ $('#btnShare').onclick=async()=>{
     await S.del('msgs:'+cur.id);
     await saveRooms(); drawRooms(); $('#btnShare').classList.add('hl');
   }
-  $('#shareCode').textContent=cur.code;
+  $('#shareCode').textContent=cur.code; $('#btnMeet').style.display=cur.rid?'':'none';
   /* 권한: 방을 공유한 사람만 고를 수 있다. 참여한 사람에게는 자기 권한만 보여 준다 */
   const d=await S.get('room:'+cur.code,true)||{};
   cur._perm=d.perm||'edit';
