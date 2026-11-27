@@ -102,7 +102,8 @@
       };
       return ch;
     },
-    removeChannel(ch) { ch && ch._stop && ch._stop(); }
+    removeChannel(ch) { ch && ch._stop && ch._stop(); },
+    realtime: { async setAuth() {} }
   };
   window.supabase = { createClient: () => client };
 })();

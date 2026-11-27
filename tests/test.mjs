@@ -20,12 +20,18 @@ create function storage.foldername(name text) returns text[] language sql immuta
 alter table storage.objects enable row level security;
 grant usage on schema storage to authenticated; grant select, insert, update, delete on storage.objects to authenticated;
 create publication supabase_realtime;
+create schema realtime;
+create table realtime.messages (id serial primary key, topic text, extension text, payload jsonb);
+alter table realtime.messages enable row level security;
+create function realtime.topic() returns text language sql stable as $$ select nullif(current_setting('realtime.topic', true), '') $$;
+grant usage on schema realtime to authenticated; grant select, insert on realtime.messages to authenticated; grant usage on sequence realtime.messages_id_seq to authenticated;
 `;
 await db.exec(MOCK);
 await db.exec(readFileSync(dir + '/setup.sql', 'utf8'));
 await db.exec(readFileSync(dir + '/rooms.sql', 'utf8'));
 await db.exec(readFileSync(dir + '/rooms.sql', 'utf8'));   // 두 번 실행해도 되는지
-console.log('SQL 실행 OK (setup.sql + rooms.sql ×2)');
+await db.exec(readFileSync(dir + '/meet.sql', 'utf8')); await db.exec(readFileSync(dir + '/meet.sql', 'utf8'));
+console.log('SQL 실행 OK (setup.sql + rooms.sql ×2 + meet.sql ×2)');
 
 const U = { A: '00000000-0000-0000-0000-00000000000a', B: '00000000-0000-0000-0000-00000000000b', C: '00000000-0000-0000-0000-00000000000c' };
 for (const id of Object.values(U)) await db.query('insert into auth.users values ($1)', [id]);
@@ -112,6 +118,20 @@ r = await as(null, `select tablename from pg_publication_tables where pubname='s
 await db.exec('reset role');
 r = await db.query(`select tablename from pg_publication_tables where pubname='supabase_realtime' order by 1`);
 check('실시간 대상 등록(room_members, room_msgs, rooms)', r.rows.map(x => x.tablename).join() === 'room_members,room_msgs,rooms', r.rows);
+
+// 회의실 채널: 방 멤버만 (meet.sql)
+const topic = async (who, t) => { await db.query(`select set_config('realtime.topic', $1, false)`, [t]); };
+const rtSend = async (who, t, ext = 'broadcast') => { await topic(who, t); return as(who, `insert into realtime.messages (topic, extension, payload) values ($1, $2, '{}')`, [t, ext]); };
+const rtListen = async (who, t) => { await topic(who, t); return as(who, `select 1 from realtime.messages where extension = 'broadcast' limit 1`); };
+await db.query(`insert into realtime.messages (topic, extension, payload) values ('x','broadcast','{}')`);
+r = await rtSend('B', 'meet:' + rid); check('회의실: 멤버 B 보내기', !r.err, r);
+r = await rtSend('B', 'meet:' + rid, 'presence'); check('회의실: 멤버 B 접속 표시', !r.err, r);
+r = await rtListen('A', 'meet:' + rid); check('회의실: 멤버 A 듣기', r.rows?.length === 1, r);
+r = await rtSend('C', 'meet:' + rid); check('회의실: 멤버 아닌 C 보내기 거절', !!r.err, r);
+r = await rtListen('C', 'meet:' + rid); check('회의실: 멤버 아닌 C 듣기 거절(0줄)', r.rows?.length === 0, r);
+r = await rtSend('A', 'meet:00000000-0000-0000-0000-000000000000'); check('회의실: 없는 방 채널 거절', !!r.err, r);
+r = await rtSend('A', 'meetx:' + rid); check('회의실: 다른 이름 채널 거절', !!r.err, r);
+await topic(null, '');
 
 // T7 나가기
 r = await as('B', `delete from public.room_members where user_id=$1`, [U.A]); check('B가 A를 내보내기 불가', r.n === 0, r);

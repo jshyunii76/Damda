@@ -2469,10 +2469,12 @@ const MEET=(()=>{
     me_={x:(7+sp)*T,y:10.6*T+(sp%2)*18,dir:sp%2?-1:1,moving:false,say:null,sayT:0,emo:null,emoT:9,seed:3};
     board=(d.messages||[]).filter(m=>m&&m.due&&!m.done&&m.due>=todayKey()).sort((a,b)=>a.due<b.due?-1:1).slice(0,2).map(m=>md(m.due)+' '+mlabel(m));
     $('#mtTitle').textContent=r.name+' 회의실'; $('#meetview').classList.add('on'); $('#mtDressBox').classList.remove('on');
-    ch=SB.channel('meet:'+r.rid,{config:{broadcast:{self:false},presence:{key:me.id}}});
+    try{ await SB.realtime.setAuth(); }catch(e){}            /* 방 멤버만 들어오는 채널 (supabase/meet.sql) */
+    ch=SB.channel('meet:'+r.rid,{config:{private:true,broadcast:{self:false},presence:{key:me.id}}});
     ch.on('broadcast',{event:'m'},({payload})=>onMsg(payload))
       .on('presence',{event:'sync'},()=>sync())
-      .subscribe(async st=>{ if(st==='SUBSCRIBED'&&ch){ await ch.track({n:myName(),av}); sendPos(true); } });
+      .subscribe(async st=>{ if(st==='SUBSCRIBED'&&ch){ await ch.track({n:myName(),av}); sendPos(true); }
+        else if(st==='CHANNEL_ERROR'&&ch){ toast('회의실에 들어가지 못했어요. 이 방 멤버인지 확인해 주세요'); } });
     t0=performance.now(); last=t0; raf=requestAnimationFrame(loop); who();
   }
   function leave(){
