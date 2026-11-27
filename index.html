@@ -541,6 +541,7 @@ html.kb body{align-items:flex-start}
 #mtHint{position:absolute;left:0;right:0;bottom:6px;text-align:center;font-size:12px;opacity:.7;pointer-events:none}
 #mtBar{padding:8px 10px 12px;background:#263338;display:flex;flex-direction:column;gap:8px}
 #mtEmo{display:flex;gap:6px;justify-content:center}
+#mtEmo .mic{font-size:13px;color:#fff;font-weight:600}#mtEmo .mic.on{background:#2E9E6B}
 #mtEmo button{font-size:20px;background:rgba(255,255,255,.1);border:0;border-radius:10px;padding:5px 10px;cursor:pointer}
 #mtSay{display:flex;gap:6px}#mtSay input{flex:1;min-width:0;border:0;border-radius:10px;padding:10px;font:inherit;font-size:16px}
 #mtSay .btn{flex:0 0 auto;padding:10px 14px}
@@ -1119,7 +1120,7 @@ body.rzing *{user-select:none!important}
     <div id="mtWho"></div>
     <div id="mtStage"><canvas id="mtCv"></canvas><div id="mtHint">방향키·WASD 또는 바닥을 눌러 움직여요</div></div>
     <div id="mtBar">
-      <div id="mtEmo"><button data-e="👋">👋</button><button data-e="👍">👍</button><button data-e="😂">😂</button><button data-e="🎉">🎉</button><button data-e="🤔">🤔</button></div>
+      <div id="mtEmo"><button id="mtMic" class="mic" aria-pressed="false">🎤 음성 켜기</button><button data-e="👋">👋</button><button data-e="👍">👍</button><button data-e="😂">😂</button><button data-e="🎉">🎉</button><button data-e="🤔">🤔</button></div>
       <form id="mtSay"><input id="mtTxt" maxlength="60" placeholder="말하기 (말풍선으로 떠요)" autocomplete="off"><button class="btn" type="submit">보내기</button></form>
       <button class="btn ghost" id="mtLog">회의 출석 남기기</button>
     </div>
@@ -2505,7 +2506,78 @@ const MEET_THEMES={
 const MEET=(()=>{
   const T=32, W=20, H=13, SPEED=130, BLOCK=[[0,0,20,2],[7,5,6,3],[0.6,9,3.4,2.4],[17.4,2.2,2,1.6],[0.4,2.2,1.4,1.4]];
   let theme='office';
-  let ch=null, room=null, me_=null, peers=new Map(), raf=0, last=0, keys=new Set(), target=null, sentAt=0, sentPos='', board=[], av=null, t0=0;
+  /* 가까이 가면 음성 (WebRTC). 신호는 회의실 채널(방 멤버만)로 주고받고, 소리는 브라우저끼리 직접 간다.
+     STUN 만 써서 일부 학교·회사·모바일 망에서는 연결이 안 될 수 있다 (TURN 서버 필요) */
+  const ICE=[{urls:'stun:stun.l.google.com:19302'}];
+  let mic=null, meLevel=null, ac=null, pcs=new Map(), vAt=0;
+  const meta=()=>({n:myName(),av,v:!!mic});
+  function meter(stream){
+    try{ ac=ac||new (window.AudioContext||window.webkitAudioContext)(); const src=ac.createMediaStreamSource(stream), an=ac.createAnalyser(); an.fftSize=256; src.connect(an);
+      const a=new Uint8Array(an.fftSize); return ()=>{ an.getByteTimeDomainData(a); let s=0; for(const v of a){ const x=(v-128)/128; s+=x*x; } return Math.sqrt(s/a.length); }; }
+    catch(e){ return ()=>0; }
+  }
+  function micBtn(){ const b=$('#mtMic'); b.classList.toggle('on',!!mic); b.setAttribute('aria-pressed',!!mic); b.textContent=mic?'🎤 음성 끄기':'🎤 음성 켜기'; }
+  async function voice(){
+    if(mic){ voiceOff(); toast('음성을 껐어요'); return; }
+    try{ mic=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}}); }
+    catch(e){ toast('마이크를 쓸 수 없어요. 브라우저에서 마이크를 허용해 주세요'); return; }
+    try{ ac=ac||new (window.AudioContext||window.webkitAudioContext)(); ac.resume&&ac.resume(); }catch(e){}
+    meLevel=meter(mic); micBtn(); if(ch) try{ await ch.track(meta()); }catch(e){}
+    toast('가까이 있는 팀원과 말할 수 있어요');
+  }
+  function voiceOff(){
+    for(const k of [...pcs.keys()]) hang(k);
+    if(mic) mic.getTracks().forEach(t=>t.stop()); mic=null; meLevel=null; micBtn();
+    if(ch) try{ ch.track(meta()); }catch(e){}
+  }
+  function newPc(k){
+    const pc=new RTCPeerConnection({iceServers:ICE}), x={pc,audio:null,level:null,q:[]};
+    pc.onicecandidate=e=>{ if(e.candidate) send({t:'rtc',to:k,kind:'ice',c:e.candidate.toJSON?e.candidate.toJSON():e.candidate}); };
+    pc.ontrack=e=>{ const a=new Audio(); a.autoplay=true; a.playsInline=true; a.srcObject=e.streams[0]; a.play().catch(()=>{}); x.audio=a; x.level=meter(e.streams[0]); };
+    pc.onconnectionstatechange=()=>{ if(pc.connectionState==='failed') hang(k,true); };
+    if(mic) mic.getTracks().forEach(t=>pc.addTrack(t,mic));
+    pcs.set(k,x); return x;
+  }
+  async function call(k){
+    const x=newPc(k);
+    try{ await x.pc.setLocalDescription(await x.pc.createOffer()); send({t:'rtc',to:k,kind:'offer',sdp:x.pc.localDescription.toJSON?x.pc.localDescription.toJSON():x.pc.localDescription}); }
+    catch(e){ hang(k,true); }
+  }
+  function hang(k,quiet){
+    const x=pcs.get(k); if(!x) return; pcs.delete(k);
+    try{ x.pc.close(); }catch(e){} if(x.audio){ x.audio.pause(); x.audio.srcObject=null; }
+    if(!quiet) send({t:'rtc',to:k,kind:'bye'});
+  }
+  async function onRtc(m){
+    const k=m.u;
+    try{
+      if(m.kind==='bye'){ hang(k,true); return; }
+      if(m.kind==='offer'){
+        if(!mic){ send({t:'rtc',to:k,kind:'bye'}); return; }
+        hang(k,true); const x=newPc(k);
+        await x.pc.setRemoteDescription(m.sdp); for(const c of x.q.splice(0)) await x.pc.addIceCandidate(c);
+        await x.pc.setLocalDescription(await x.pc.createAnswer());
+        send({t:'rtc',to:k,kind:'answer',sdp:x.pc.localDescription.toJSON?x.pc.localDescription.toJSON():x.pc.localDescription}); return;
+      }
+      const x=pcs.get(k); if(!x) return;
+      if(m.kind==='answer'){ await x.pc.setRemoteDescription(m.sdp); for(const c of x.q.splice(0)) await x.pc.addIceCandidate(c); }
+      if(m.kind==='ice'){ if(x.pc.remoteDescription) await x.pc.addIceCandidate(m.c); else x.q.push(m.c); }
+    }catch(e){ console.warn('음성 연결 실패',e&&e.message); hang(k,true); }
+  }
+  /* 가까워지면 잇고(4칸), 멀어지면 끊는다(6칸). 둘 중 ID가 작은 쪽이 먼저 건다 (동시에 걸어 꼬이지 않게) */
+  function manageVoice(now){
+    if(now-vAt<400) return; vAt=now;
+    const ON=4*T, OFF=6*T;
+    for(const [k,p] of peers){
+      if(k.includes('#')) continue;
+      const d=Math.hypot(p.x-me_.x,p.y-me_.y), has=pcs.has(k);
+      if(!mic||!p.v||d>OFF){ if(has) hang(k,!mic||!p.v); continue; }
+      if(!has&&d<ON&&me.id<k) call(k);
+      const x=pcs.get(k); if(x&&x.audio) x.audio.volume=Math.max(0,Math.min(1,1-(d-ON*.5)/(OFF-ON*.5)));
+    }
+    for(const k of [...pcs.keys()]) if(!peers.has(k)) hang(k,true);
+  }
+  let ch=null, room=null, me_=null, peers=new Map(), raf=0, tick=0, last=0, keys=new Set(), target=null, sentAt=0, sentPos='', board=[], av=null, t0=0;
   const cv=()=>$('#mtCv');
   const blocked=(x,y)=>x<12||y<2*T+6||x>W*T-12||y>H*T-6||BLOCK.some(([bx,bym,bw,bh])=>x>bx*T-8&&x<(bx+bw)*T+8&&y>bym*T&&y<(bym+bh)*T+8);
   function myName(){ const d=room&&memCache, m=d&&d.find(x=>x.uid===me.id); return ((m&&m.name)||RS.myName()).slice(0,10); }
@@ -2525,12 +2597,15 @@ const MEET=(()=>{
     ch=SB.channel('meet:'+r.rid,{config:{private:true,broadcast:{self:false},presence:{key:me.id}}});
     ch.on('broadcast',{event:'m'},({payload})=>onMsg(payload))
       .on('presence',{event:'sync'},()=>sync())
-      .subscribe(async st=>{ if(st==='SUBSCRIBED'&&ch){ await ch.track({n:myName(),av}); sendPos(true); }
+      .subscribe(async st=>{ if(st==='SUBSCRIBED'&&ch){ await ch.track(meta()); sendPos(true); }
         else if(st==='CHANNEL_ERROR'&&ch){ toast('회의실에 들어가지 못했어요. 이 방 멤버인지 확인해 주세요'); } });
     t0=performance.now(); last=t0; raf=requestAnimationFrame(loop); who();
+    /* 움직임·음성 연결은 그리기와 따로 돈다 — 화면이 가려져 그리기가 멈춰도 계속 */
+    tick=setInterval(()=>{ const now=performance.now(); if(!$('#meetview').classList.contains('on')){ leave(); return; } step(Math.min(.05,(now-last)/1000)); last=now; manageVoice(now); },33);
   }
   function leave(){
-    cancelAnimationFrame(raf); raf=0;
+    voiceOff();
+    cancelAnimationFrame(raf); raf=0; clearInterval(tick); tick=0;
     if(ch){ try{ ch.untrack&&ch.untrack(); SB.removeChannel(ch); }catch(e){} }
     ch=null; peers=new Map(); keys.clear(); target=null;
   }
@@ -2540,14 +2615,16 @@ const MEET=(()=>{
     for(const k of [...peers.keys()]) if(!here.has(k)) peers.delete(k);
     for(const k of here){ if(k===me.id) continue; const meta=(st[k]||[])[0]||{};
       const p=peers.get(k)||{x:10*T,y:11*T,tx:10*T,ty:11*T,dir:1,moving:false,say:null,sayT:0,emo:null,emoT:9,seed:k.length};
-      p.n=String(meta.n||'?').slice(0,10); p.av=meta.av; peers.set(k,p);
+      p.n=String(meta.n||'?').slice(0,10); p.av=meta.av; p.v=!!meta.v; peers.set(k,p);
       if(!peers.has(k+'#seen')){ peers.set(k+'#seen',1); sendPos(true); }   /* 새로 온 사람에게 내 위치를 알린다 */
     }
     who();
   }
   function who(){ $('#mtWho').replaceChildren(...[[myName()+' (나)'],...[...peers].filter(([k])=>!k.includes('#')).map(([,p])=>[p.n])].map(([n])=>{ const s=el('span'); s.textContent=n; return s; })); }
   function onMsg(m){
-    if(!m||!m.u||m.u===me.id) return; const p=peers.get(m.u); if(!p) return;
+    if(!m||!m.u||m.u===me.id) return;
+    if(m.t==='rtc'){ if(m.to===me.id) onRtc(m); return; }
+    const p=peers.get(m.u); if(!p) return;
     if(m.t==='pos'&&isFinite(m.x)&&isFinite(m.y)){ p.tx=Math.max(0,Math.min(W*T,m.x)); p.ty=Math.max(0,Math.min(H*T,m.y)); p.dir=m.d>0?1:-1; if(m.j){ p.x=p.tx; p.y=p.ty; } }
     if(m.t==='say'&&typeof m.s==='string'){ p.say=m.s.slice(0,60); p.sayT=5; }
     if(m.t==='emo'&&typeof m.e==='string'&&m.e.length<=4){ p.emo=m.e; p.emoT=0; }
@@ -2618,8 +2695,7 @@ const MEET=(()=>{
   const fit=(g,s,w)=>{ let x=String(s); while(x.length>1&&g.measureText(x).width>w) x=x.slice(0,-2)+'…'; return x; };
   function loop(now){
     if(!$('#meetview').classList.contains('on')){ leave(); return; }
-    const dt=Math.min(.05,(now-last)/1000); last=now; const t=(now-t0)/1000;
-    step(dt);
+    const t=(now-t0)/1000;
     const c=cv(), pr=window.devicePixelRatio||1, cw=c.clientWidth, chh=c.clientHeight;
     if(c.width!==Math.round(cw*pr)||c.height!==Math.round(chh*pr)){ c.width=Math.round(cw*pr); c.height=Math.round(chh*pr); }
     const g=c.getContext('2d'), sc=Math.min(cw/(W*T),chh/(H*T)), ox=(cw-W*T*sc)/2, oy=(chh-H*T*sc)/2;
@@ -2627,9 +2703,16 @@ const MEET=(()=>{
     g.setTransform(pr*sc,0,0,pr*sc,pr*ox,pr*oy); C.sc=sc; C.ox=ox; C.oy=oy;
     drawRoom(g,t);
     const look=p=>({dir:p.dir,moving:p.moving,say:p.sayT>0?p.say:null,talk:p.sayT>3.6,emo:p.emoT<1.2?p.emo:null,emoT:p.emoT/1.2,face:p.emoT<2.2?(EMO_FACE[p.emo]||'smile'):'smile',seed:p.seed});
-    const all=[...[...peers].filter(([k])=>!k.includes('#')).map(([,p])=>({p,o:{name:p.n,...look(p)}})),
+    const all=[...[...peers].filter(([k])=>!k.includes('#')).map(([k,p])=>({p:{...p,k},o:{name:p.n,...look(p)}})),
       {p:{...me_,av},o:{name:myName(),me:1,...look({...me_,seed:3})}}].sort((a,b)=>a.p.y-b.p.y);
-    for(const {p,o} of all){ g.save(); g.translate(p.x,p.y); g.scale(1.35,1.35); drawAvatar(g,0,0,p.av,{...o,t}); g.restore(); }
+    for(const {p,o} of all){
+      g.save(); g.translate(p.x,p.y); g.scale(1.35,1.35);
+      /* 말하는 중이면 발밑에 초록 고리, 음성을 켠 사람은 이름 옆 🎤 */
+      const lv=o.me?(meLevel?meLevel():0):(pcs.get(p.k)&&pcs.get(p.k).level?pcs.get(p.k).level():0);
+      if(lv>.03){ g.strokeStyle=`rgba(46,200,120,${Math.min(1,lv*12)})`; g.lineWidth=2.5; g.beginPath(); g.ellipse(0,0,15,6,0,0,Math.PI*2); g.stroke(); }
+      drawAvatar(g,0,0,p.av,{...o,t,name:o.name+((o.me?mic:p.v)?' 🎤':'')});
+      g.restore();
+    }
     raf=requestAnimationFrame(loop);
   }
   const C={sc:1,ox:0,oy:0};
@@ -2645,7 +2728,7 @@ const MEET=(()=>{
   }
   /* 꾸미기 */
   function dress(){ $('#mtDressBox').classList.add('on'); dressUI('#mt',()=>av,v=>{ av=v; }); }
-  async function dressDone(){ $('#mtDressBox').classList.remove('on'); await S.set('avatar',av); if(ch) try{ await ch.track({n:myName(),av}); }catch(e){} }
+  async function dressDone(){ $('#mtDressBox').classList.remove('on'); await S.set('avatar',av); if(ch) try{ await ch.track(meta()); }catch(e){} }
   function nextTheme(){ if(!room) return; const ks=Object.keys(MEET_THEMES); theme=ks[(ks.indexOf(theme)+1)%ks.length];
     try{ localStorage.setItem('damda:meetTheme:'+room.rid,theme); }catch(e){} $('#mtTitle').textContent=room.name+' · '+MEET_THEMES[theme].n; toast(MEET_THEMES[theme].n+' 테마로 바꿨어요'); }
   /* 입력 */
@@ -2654,7 +2737,7 @@ const MEET=(()=>{
   document.addEventListener('keyup',e=>{ const k=KEYMAP[e.key]; if(k) keys.delete(k); });
   addEventListener('blur',()=>keys.clear());
   function tap(e){ const r=cv().getBoundingClientRect(); const x=(e.clientX-r.left-C.ox)/C.sc, y=(e.clientY-r.top-C.oy)/C.sc; if(x>=0&&y>=0&&x<=W*T&&y<=H*T) target={x,y}; }
-  return {open,leave,say,emo,logMeeting,dress,dressDone,nextTheme,tap,get state(){ return {me:me_,peers:[...peers].filter(([k])=>!k.includes('#')).map(([k,p])=>({k,n:p.n,x:Math.round(p.x),y:Math.round(p.y),say:p.sayT>0?p.say:null})),board}; }};
+  return {open,leave,say,emo,logMeeting,dress,dressDone,nextTheme,voice,tap,get state(){ return {me:me_,voice:{on:!!mic,pcs:[...pcs].map(([k,x])=>({k,st:x.pc.connectionState,audio:!!x.audio,vol:x.audio?Math.round(x.audio.volume*100)/100:null,lv:x.level?Math.round(x.level()*1000)/1000:0}))},peers:[...peers].filter(([k])=>!k.includes('#')).map(([k,p])=>({k,n:p.n,x:Math.round(p.x),y:Math.round(p.y),say:p.sayT>0?p.say:null})),board}; }};
 })();
 $('#btnMeet').onclick=()=>MEET.open(cur);
 $('#mtClose').onclick=()=>{ $('#meetview').classList.remove('on'); MEET.leave(); };
@@ -2665,6 +2748,7 @@ $('#mtLog').onclick=()=>MEET.logMeeting();
 $('#mtDress').onclick=()=>MEET.dress();
 $('#mtDressOk').onclick=()=>MEET.dressDone();
 $('#mtTheme').onclick=()=>MEET.nextTheme();
+$('#mtMic').onclick=()=>MEET.voice();
 $('#avOk').onclick=async()=>{ await S.set('avatar',palAv); $('#shPal').classList.remove('on'); toast('캐릭터를 바꿨어요'); };
 
 const urlCache=new Map();

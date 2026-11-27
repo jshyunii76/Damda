@@ -101,7 +101,7 @@ http.createServer(async (req, res) => {
     let data = readFileSync(f);
     if (f.endsWith('index.html')) data = Buffer.from(data.toString('utf8').replace(/const SB_JS='[^']*';/, "const SB_JS='/mock-supabase.js';")
       /* 시험용: 앱 내부를 window.__dbg 로 들여다볼 수 있게 (가짜 서버에서만) */
-      .replace(/\r?\nboot\(\);\r?\n\}\)\(\);/, "\nwindow.__dbg={RS,saveList,readList,refreshView,get rooms(){return rooms},get cur(){return cur},get me(){return me}};\nboot();\n})();"));
+      .replace(/\r?\nboot\(\);\r?\n\}\)\(\);/, "\nwindow.__dbg={RS,MEET,saveList,readList,refreshView,get rooms(){return rooms},get cur(){return cur},get me(){return me}};\nboot();\n})();"));
     res.writeHead(200, { 'content-type': TYPES[extname(f)] || 'application/octet-stream' }); res.end(data);
   } catch (e) { console.error(e); res.writeHead(500); res.end(String(e)); }
 }).listen(8765, () => console.log('mock supabase on :8765'));
