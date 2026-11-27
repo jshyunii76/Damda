@@ -10,6 +10,7 @@ create table if not exists private.ai_usage (
   n       int  not null default 0,
   primary key (user_id, day, kind)
 );
+alter table private.ai_usage enable row level security;   -- 정책 없음 = 함수(ai_take) 말고는 아무도 못 읽고 못 씀
 revoke all on private.ai_usage from anon, authenticated;
 
 -- 한 번 쓸 때마다 1 늘리고, 남은 횟수를 돌려준다. 한도를 넘으면 -1
