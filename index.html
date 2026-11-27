@@ -555,9 +555,6 @@ html.kb body{align-items:flex-start}
 #mtAccs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 .msg.other{align-items:flex-start}.msg.other .brow{flex-direction:row-reverse}.msg.other .b{background:var(--bubble);border:1px solid var(--line)}
 .msg .who{font-size:11.5px;color:var(--ink-3);margin:0 0 3px 6px;font-weight:600}
-#rpTable{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0}#rpTable th,#rpTable td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:center}#rpTable th:first-child,#rpTable td:first-child{text-align:left}
-.rpbar{height:8px;border-radius:4px;background:var(--accent);opacity:.85}.rpbars{display:flex;flex-direction:column;gap:6px;margin:8px 0}.rpbars div.l{display:flex;align-items:center;gap:8px;font-size:12.5px}.rpbars span{width:64px;flex:0 0 64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#rpAi{font-size:13px;line-height:1.55;white-space:pre-wrap;background:var(--mute);border-radius:10px;padding:10px;margin:6px 0;display:none}
 #kkRows .kr{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0;padding-bottom:8px;border-bottom:1px solid var(--line)}
 #kkRows input,#kkRows select{border:1px solid var(--line);border-radius:8px;padding:7px;font:inherit;font-size:14px;min-width:0}
 #kkRows .kt{flex:1 1 100%}#kkRows .kd{flex:1 1 130px}#kkRows .kw{flex:1 1 90px}#kkRows .kx{border:0;background:none;font-size:18px;color:var(--ink-3);cursor:pointer}
@@ -1210,17 +1207,6 @@ body.rzing *{user-select:none!important}
       <button class="btn" id="doNew">만들기</button></div>
   </div></div>
 
-  <div class="sheet" id="shReport"><div class="card" style="max-height:86vh;overflow:auto">
-    <h2 id="rpTitle">팀플 기여 리포트</h2>
-    <p id="rpSub"></p>
-    <div class="rpbars" id="rpBars"></div>
-    <table id="rpTable"></table>
-    <p class="pdesc">· 쓴 글·자료는 서버가 기록한 작성자 기준(자동으로 들어간 할 일·회의록 제외) · 맡은 일은 담당자 기준 완료/전체 · 회의는 회의실 기록 기준</p>
-    <div id="rpAi"></div>
-    <div class="btns"><button class="btn ghost" id="rpAiBtn">AI 진행 요약</button><button class="btn ghost" id="rpCopy">글로 복사</button></div>
-    <div class="btns"><button class="btn" data-close>닫기</button></div>
-  </div></div>
-
   <div class="sheet" id="shKick"><div class="card" style="max-height:88vh;overflow:auto">
     <h2 id="kkTitle">AI 팀플 계획</h2>
     <p id="kkSub"></p>
@@ -1390,7 +1376,6 @@ body.rzing *{user-select:none!important}
     </div>
     <p class="pdesc" id="permMine"></p>
     <p id="shareWho"></p>
-    <button class="btn ghost" id="doReport" style="width:100%;margin:0 0 8px;display:none">팀플 기여 리포트 보기</button>
     <div class="btns"><button class="btn ghost" data-close>닫기</button>
       <button class="btn" id="doCopy">코드 복사</button></div>
   </div></div>
@@ -2836,63 +2821,6 @@ $('#mtDressOk').onclick=()=>MEET.dressDone();
 $('#mtTheme').onclick=()=>MEET.nextTheme();
 $('#mtMic').onclick=()=>MEET.voice();
 $('#avOk').onclick=async()=>{ await S.set('avatar',palAv); $('#shPal').classList.remove('on'); toast('캐릭터를 바꿨어요'); };
-
-/* ---------- 팀플 기여 리포트 (4바퀴): 누가 무엇을 했는지 방 기록에서 자동으로 ---------- */
-const REPORT=(()=>{
-  let last=null;
-  async function build(r,tried){
-    const d=await S.get('room:'+r.code,true)||{}, list=(d.messages||[]).filter(Boolean), mem=d.mem||[];
-    if(!tried&&list.some(m=>!m._by)&&RS.refill(r.code)){ toast('작성자 기록을 받는 중…'); await RS.sync(); return build(r,true); }   /* 한 번만 (지운 계정·못 올린 메모는 끝내 작성자가 없다) */
-    const blank=(uid,name)=>({uid,name,posts:0,files:0,done:0,meet:0,last:0,tasks:0,tdone:0});
-    const rows=new Map(mem.map(x=>[x.uid,blank(x.uid,x.name||'이름 없음')]));
-    const row=uid=>rows.get(uid)||(rows.set(uid,blank(uid,'나간 사람')),rows.get(uid));
-    for(const m of list){
-      if(m.type==='vote'||m.type==='poll'||/^\[알림\]/.test(m.text||'')) continue;   /* 투표·자동 알림은 기여로 안 셈 */
-      /* 맡은 일: 담당자 기준 (AI 계획·회의 정리로 나눈 할 일) */
-      if(m.who&&m.who.uid){ const x=row(m.who.uid); x.tasks++; if(m.done) x.tdone++; }
-      if(m._by){ const x=row(m._by); if(!/^\[(회의|할 일)\]/.test(m.text||'')){ x.posts++; if(m.file) x.files++; } x.last=Math.max(x.last,m.ts||0); }
-      if(m.done&&!m.who&&(m._ed||m._by)) row(m._ed||m._by).done++;
-      const at=/^\[회의\][^\n]*참석 \d+명: ([^\n]+)/.exec(m.text||'');
-      if(at) for(const nm of at[1].split(',').map(x=>x.trim())) for(const x of rows.values()) if(x.name===nm) x.meet++;
-    }
-    const meets=list.filter(m=>/^\[회의\][^\n]*참석 \d+명/.test(m.text||'')).length;   /* 투표로 정한 '예정' 회의는 안 셈 */
-    return {name:r.name,rows:[...rows.values()].filter(x=>mem.some(y=>y.uid===x.uid)||x.posts||x.done||x.tasks),total:list.filter(m=>m.type!=='vote'&&m.type!=='poll'&&!/^\[(회의|알림)\]/.test(m.text||'')).length,meets,list};
-  }
-  const day=ts=>ts?md(dkey(new Date(ts))):'-';
-  async function show(r){
-    last=await build(r); const R=last, max=Math.max(1,...R.rows.map(x=>x.posts));
-    $('#rpTitle').textContent=R.name+' · 팀플 기여 리포트';
-    $('#rpSub').textContent=`기록 ${R.total}개 · 회의 ${R.meets}번 · ${dkey(new Date())} 기준`;
-    $('#rpBars').replaceChildren(...R.rows.map(x=>{ const l=el('div','l'), n=el('span'), b=el('div','rpbar'), v=el('span');
-      n.textContent=x.name; b.style.width=Math.max(4,Math.round(x.posts/max*100))+'%'; v.textContent=x.posts+'개'; v.style.width='auto'; l.append(n,b,v); return l; }));
-    const t=$('#rpTable'); t.innerHTML='<tr><th>이름</th><th>쓴 글</th><th>자료</th><th>맡은 일</th><th>회의</th><th>마지막</th></tr>';
-    for(const x of R.rows){ const tr=el('tr');
-      for(const v of [x.name,x.posts,x.files,x.tasks?`${x.tdone}/${x.tasks}`:(x.done?x.done+' 완료':'-'),x.meet,day(x.last)]){ const td=el('td'); td.textContent=v; tr.appendChild(td); }
-      t.appendChild(tr); }
-    $('#rpAi').style.display='none'; $('#rpAi').textContent='';
-    $('#shShare').classList.remove('on'); open('#shReport');
-  }
-  function text(){
-    const R=last; if(!R) return '';
-    return [`[${R.name}] 팀플 기여 리포트 (${dkey(new Date())})`,`기록 ${R.total}개 · 회의 ${R.meets}번`,
-      ...R.rows.map(x=>`- ${x.name}: 쓴 글 ${x.posts} · 자료 ${x.files} · 맡은 일 ${x.tdone}/${x.tasks} 완료 · 회의 ${x.meet} · 마지막 활동 ${day(x.last)}`),
-      ($('#rpAi').textContent?'\n'+$('#rpAi').textContent:''),'(담다 팀플방 기록으로 자동 작성)'].join('\n').trim();
-  }
-  async function ai(){
-    if(!last) return; if(!aiKey){ toast('설정에서 AI 키를 넣으면 진행 요약을 만들 수 있어요'); return; }
-    const box=$('#rpAi'); box.style.display='block'; box.textContent='요약하는 중… (방 기록이 구글 Gemini로 보내져요)';
-    const lines=last.list.filter(m=>m.type!=='vote'&&m.type!=='poll').slice(-120).map(m=>`${memName({_mem:[...last.rows]},m._by)||'?'}: ${mlabel(m).slice(0,80)}${m.due?' (마감 '+m.due+')':''}${m.done?' [완료]':''}`).join('\n');
-    try{
-      const out=await gText({system:'대학 팀플 방의 기록을 보고 한국어로 짧게 정리한다. 형식: "진행: …" 한 줄, "결정된 것: …" 한 줄, "남은 일: …" 한 줄(담당자가 보이면 이름), "주의: …" 한 줄(없으면 생략). 기록에 없는 내용은 지어내지 않는다.',
-        parts:[{text:lines}],maxTokens:500,temperature:.2});
-      box.textContent=String(out||'').trim()||'요약할 내용이 없어요';
-    }catch(e){ box.textContent=aiWhy(e); }
-  }
-  return {show,text,ai,build};
-})();
-$('#doReport').onclick=()=>{ if(cur&&cur.rid) REPORT.show(cur); };
-$('#rpCopy').onclick=async()=>{ const t=REPORT.text(); try{ await navigator.clipboard.writeText(t); toast('리포트를 복사했어요'); }catch(e){ $('#fullTx')&&0; toast('복사하지 못했어요'); } };
-$('#rpAiBtn').onclick=()=>REPORT.ai();
 
 /* ---------- 5바퀴: AI 팀플 매니저 ---------- */
 const addDays=(k,n)=>{ const d=new Date(k+'T00:00'); d.setDate(d.getDate()+n); return dkey(d); };
@@ -7143,7 +7071,7 @@ $('#btnShare').onclick=async()=>{
   cur._perm=d.perm||'edit';
   $('#permBox').style.display=cur.joined?'none':'';
   $('#permMine').textContent=cur.joined?(cur._perm==='view'?'이 방은 보기만 할 수 있게 공유됐어요.':'이 방은 함께 수정할 수 있게 공유됐어요.'):'';
-  drawPerm(); drawWho(d); $('#doReport').style.display=cur.rid?'':'none';
+  drawPerm(); drawWho(d);
   open('#shShare');
   /* 열어 둔 사이 멤버가 바뀌었을 수 있으니 받아서 다시 그린다 */
   if(cur.rid) RS.sync().then(async()=>{ if($('#shShare').classList.contains('on')&&cur&&cur.code) drawWho(await S.get('room:'+cur.code,true)||{}); });
