@@ -76,6 +76,18 @@ r = U(base, map([]), today, { host: 'h', mine: () => false }); check('내가 담
 r = U(base, map([]), today, { host: 'other', mine: () => true }); check('다른 학교 메모는 안 건드림', !r.changed);
 const plain = [{ id: 'm1', text: '내 메모', due: '2026-12-01' }]; check('일반 메모는 안 건드림', !U(plain, map(ev), today).changed);
 
+console.log('AI 요약');
+check('과제 설명을 읽음(줄바꿈 풀기)', by[101].desc === '가짜 설명입니다. 실제 데이터 아님\n두 번째 줄', by[101].desc);
+check('설명 없으면 빈 값', by[102].desc === '');
+let s1 = L.withSum(base[0], by[101], '1차 제출자는 안 내도 됨');
+check('요약은 둘째 줄에', s1.text === '[과제] 1주차 보고서\n💡 1차 제출자는 안 내도 됨' && s1.lms.sum && !L.needSum(s1, by[101]), s1.text);
+check('요약을 붙여도 다시 받기에서 안 바뀜', !U([s1], map(ev), today).changed);
+check('설명이 바뀌면 다시 요약 대상', L.needSum(s1, { ...by[101], desc: '바뀐 설명' }));
+check('내가 고친 글에는 요약을 덧붙이지 않음', L.withSum({ ...base[0], text: '내 글' }, by[101], '요약').text === '내 글');
+const ren2 = U([s1], map(ev.map(e => e.uid.endsWith('-101') ? { ...e, title: '제목 바뀜' } : e)), today).list[0];
+check('제목이 바뀌어도 요약 줄은 유지', ren2.text === '[과제] 제목 바뀜\n💡 1차 제출자는 안 내도 됨', ren2.text);
+check('빈 요약이면 둘째 줄 없음', L.withSum(base[0], by[101], '').text === '[과제] 1주차 보고서');
+
 console.log('서버 함수: 주소 검사');
 const ok = 'https://learning.example.ac.kr/feeds/calendars/user_abcDEF1234567890.ics';
 check('정상 주소', !!checkUrl(ok)); check('앱 쪽 검사도 통과', L.okUrl(ok));

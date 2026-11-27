@@ -2050,9 +2050,10 @@ const LMSP=(()=>{
     const kind=/quiz|퀴즈|쪽지/i.test(title)?'퀴즈':/\bexam\b|시험|중간고사|기말고사|midterm|\bfinal\b/i.test(title)?'시험'
       :/assignment/i.test(uid)?'과제':'일정';
     const team=/팀|조별|그룹|프로젝트|\bteam\b|\bgroup\b|\bproject\b/i.test(title);
-    return {uid,title,course:course||'Canvas',cid:cid||('n_'+(course||'Canvas')),url,kind,team,...w};
+    const desc=unesc((o.DESCRIPTION&&o.DESCRIPTION.v)||'').replace(/[ \t]+/g,' ').replace(/\n{3,}/g,'\n\n').trim().slice(0,1500);
+    return {uid,title,course:course||'Canvas',cid:cid||('n_'+(course||'Canvas')),url,kind,team,desc,...w};
   }
-  const textOf=e=>e.title.startsWith(`[${e.kind}]`)?e.title:`[${e.kind}] ${e.title}`;
+  const textOf=(e,sum)=>(e.title.startsWith(`[${e.kind}]`)?e.title:`[${e.kind}] ${e.title}`)+(sum?'\n💡 '+sum:'');
   /* 일정 번호는 학교마다 따로 매기므로 학교 주소와 묶어서 구분한다 */
   const keyOf=(host,uid)=>host+' '+uid;
   const memoId=e=>'c'+hash(keyOf(e.host,e.uid));
@@ -2072,7 +2073,7 @@ const LMSP=(()=>{
       if(!L.host){ n.lms.host=o.host; changed=true; }
       if(L.gone){ n.text=base; delete n.lms.gone; changed=true; }
       /* 글: 내가 고친 글은 그대로 둔다 */
-      const t=textOf(e); if(t!==L.text){ if(base===L.text) n.text=t; n.lms.text=t; changed=true; }
+      const t=textOf(e,L.sum); if(t!==L.text){ if(base===L.text) n.text=t; n.lms.text=t; changed=true; }
       /* 마감: Canvas에서 바뀌었을 때만 (내가 따로 고친 마감은 Canvas가 다시 바꾸기 전까지 그대로) */
       if(e.due===L.due&&!L.dueTime&&e.dueTime==='23:59'){           /* 예전에 날짜만 담은 것에 시각 채우기 — 내가 고친 마감은 그대로 */
         n.lms.dueTime=e.dueTime; if(m.due===L.due&&!m.dueTime) n.dueTime=e.dueTime; changed=true;
@@ -2089,7 +2090,15 @@ const LMSP=(()=>{
   /* 복사한 글에서 피드 주소만 골라낸다 (앞뒤에 다른 글이 붙어 있거나 webcal:// 이어도 된다) */
   const findUrl=t=>{ const m=/(?:https|webcal):\/\/[^\s"'<>]+?\/feeds\/calendars\/user_[A-Za-z0-9]+\.ics/.exec(String(t||'')); return m?m[0].replace(/^webcal:/,'https:'):''; };
   const okUrl=u=>{ try{ const x=new URL(String(u).trim()); return x.protocol==='https:'&&!x.search&&!x.hash&&/^\/feeds\/calendars\/user_[A-Za-z0-9]{10,100}\.ics$/.test(x.pathname); }catch(e){ return false; } };
-  return {parse,update,make,memoId,keyOf,hash,okUrl,findUrl};
+  /* AI 요약을 붙인다: 내가 글을 고치지 않았을 때만 글도 바꾼다 */
+  function withSum(m,e,sum){
+    const L=m.lms, n={...m,lms:{...L,sum,dh:hash(e.desc||'')}}, t=textOf(e,sum);
+    const base=(m.text||'').endsWith(GONE)?m.text.slice(0,-GONE.length):(m.text||'');
+    if(base===L.text) n.text=t+((m.text||'').endsWith(GONE)?GONE:'');
+    n.lms.text=t; return n;
+  }
+  const needSum=(m,e)=>!!(e&&e.desc&&m.lms.dh!==hash(e.desc));
+  return {parse,update,make,memoId,keyOf,hash,okUrl,findUrl,withSum,needSum};
 })();
 /*LMS-PURE-END*/
 const LMS=(()=>{
@@ -2198,8 +2207,38 @@ const LMS=(()=>{
     setLocal(url,{at:Date.now(),err:null});
     if(r.added||r.changed) await redraw();
     toastResult(r,manual);
+    summarize(evs,url,uid,g).catch(e=>console.warn('과제 요약 실패',e&&e.message));
     return r;
   }
+  /* 과제 설명에서 놓치기 쉬운 조건만 한 줄로 (예: '1차 제출자는 안 내도 됨'). AI 키가 있을 때만 — 설명이 구글 Gemini 로 간다 */
+  async function summarize(evs,url,uid,g){
+    if(!aiKey) return;
+    const host=new URL(url).host, map=new Map(evs.map(e=>[e.uid,{...e,host}])), todo=[];
+    for(const r of rooms) if(!r.code) for(const m of await listOf(r)){
+      const L=m&&m.lms, e=L&&L.uid&&(L.host||host)===host&&!m.done&&m.due>=todayKey()&&map.get(L.uid);
+      if(e&&LMSP.needSum(m,e)&&!todo.some(x=>x.uid===e.uid)) todo.push(e);
+    }
+    let n=0;
+    for(let i=0;i<todo.length;i+=20){
+      const part=todo.slice(i,i+20);
+      const out=await gText({system:SUM_SYS,json:true,maxTokens:1200,temperature:0.1,
+        parts:[{text:part.map((e,k)=>`#${k+1} 제목: ${e.title}\n설명: ${e.desc}`).join('\n\n')}]});
+      let arr=[]; try{ arr=JSON.parse(out); }catch(e){}
+      if(!Array.isArray(arr)) arr=[];
+      const sums=new Map(part.map((e,k)=>[e.uid,String(arr[k]||'').replace(/\s+/g,' ').trim().slice(0,60)]));
+      if(!still(uid,g)) return;
+      for(const r of rooms){
+        if(r.code) continue;
+        const list=await listOf(r); let hit=false;
+        const nl=list.map(m=>{ const L=m&&m.lms; if(!L||!sums.has(L.uid)||(L.host||host)!==host) return m; hit=true; n++; return LMSP.withSum(m,map.get(L.uid),sums.get(L.uid)); });
+        if(hit&&still(uid,g)) await put(r,nl);
+      }
+    }
+    if(n&&still(uid,g)) await redraw();
+  }
+  const SUM_SYS='대학 과제 설명을 읽고, 학생이 놓치기 쉬운 것만 한국어 한 줄(40자 이내)로 적는다: 제출 조건·예외(예: "1차 제출자는 안 내도 됨"), 제출 방법·형식, 분량, 팀/개인 여부, 감점 조건. '
+    +'제목만 봐도 아는 내용이나 일반적인 인사말이면 빈 문자열. 설명에 없는 것은 지어내지 않는다. '
+    +'입력의 #번호 순서대로 문자열만 담은 JSON 배열로 답한다. 예: ["1차 제출자는 안 내도 됨",""]';
   function toastResult(r,manual){
     if(r.full) toast('저장 공간이 부족해 일부 일정을 담지 못했어요');
     else if(r.added) toast(`Canvas 일정 ${r.added}개를 담았어요`);
@@ -2300,7 +2339,8 @@ const LMS=(()=>{
     $('#lmsOff').style.display=on?'none':''; $('#lmsOn').style.display=on?'':'none';
     const got=lo.at?new Date(lo.at).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'})+'에 받음':'아직 받지 않음';
     $('#lmsInfo').textContent=!(SB&&me)?MSG.login:!on?'학교 LMS의 과제·시험 마감을 과목방에 자동으로 담아요.'
-      :(lo.err?MSG[lo.err]+' · ':`연결됨 · 과목방 ${nRoom}개 · 남은 마감 ${nDue}개 · `)+got;
+      :(lo.err?MSG[lo.err]+' · ':`연결됨 · 과목방 ${nRoom}개 · 남은 마감 ${nDue}개 · `)+got
+        +(aiKey?' · 과제 설명은 AI가 한 줄로 요약해요':' · AI 키를 넣으면 과제 설명 요약도 붙어요');
     schools(); $('#lmsTeams').replaceChildren(...btns);
   }
   /* 방 목록을 다 읽은 뒤에만 시작한다 — 그 전에 받으면 빈 방 목록을 저장해 버린다 */
