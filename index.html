@@ -1317,7 +1317,7 @@ body.rzing *{user-select:none!important}
       <span id="gPinLb">상단 고정</span></button>
     <button class="mrow" id="gKick">
       <svg viewBox="0 0 24 24"><path d="M4 6h10M4 12h7M4 18h10"/><path d="M17 14l2 2 3-4"/><circle cx="18" cy="6" r="2.5"/></svg>
-      <span>AI로 할 일 나누기</span></button>
+      <span id="gKickLb">AI로 할 일 나누기</span></button>
     <button class="mrow" id="gEdit">
       <svg viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>
       <span id="gEditLb">수정</span></button>
@@ -2437,9 +2437,10 @@ const LMS=(()=>{
       for(const m of await readList(r)){
         if(!(m&&m.lms&&m.lms.uid&&!m.done&&m.due>=todayKey())) continue;
         n++;
-        if(!m.lms.team) continue;
-        const b=el('button','btn ghost'); b.style.cssText='width:100%;margin:4px 0;text-align:left';
-        b.textContent=(rooms.some(x=>x.lmsTeam===LMSP.keyOf(m.lms.host||'',m.lms.uid))?'팀플방 열기 · ':'팀플방 만들기 · ')+m.text;
+        const b=el('button','btn ghost'); b.style.cssText='width:100%;margin:4px 0;text-align:left;font-weight:500';
+        const has=rooms.some(x=>x.lmsTeam===LMSP.keyOf(m.lms.host||'',m.lms.uid));
+        b.textContent=(has?'▶ 팀플방 열기 · ':(m.lms.team?'✨ 팀플방 만들기 · ':'+ 팀플방 만들기 · '))+(m.text||'').split('\n')[0]+' · '+md(m.due);
+        b._rank=has?0:m.lms.team?1:2; b._due=m.due;
         b.onclick=()=>teamRoom(m,r); btns.push(b);
       }
       if(n){ nRoom++; nDue+=n; }
@@ -2450,7 +2451,9 @@ const LMS=(()=>{
     $('#lmsInfo').textContent=!(SB&&me)?MSG.login:!on?'학교 LMS의 과제·시험 마감을 과목방에 자동으로 담아요.'
       :(lo.err?MSG[lo.err]+' · ':`연결됨 · 과목방 ${nRoom}개 · 남은 마감 ${nDue}개 · `)+got
         +(aiKey?' · 과제 설명은 AI가 한 줄로 요약해요':' · AI 키를 넣으면 과제 설명 요약도 붙어요');
-    schools(); $('#lmsTeams').replaceChildren(...btns);
+    btns.sort((a,b)=>a._rank-b._rank||(a._due<b._due?-1:1));
+    const hd=el('p','pdesc'); hd.textContent='팀 과제를 눌러 팀플방을 만들면, AI 담다가 할 일·마감·담당을 나눠 드려요.';
+    schools(); $('#lmsTeams').replaceChildren(...(btns.length?[hd]:[]),...btns);
   }
   /* 방 목록을 다 읽은 뒤에만 시작한다 — 그 전에 받으면 빈 방 목록을 저장해 버린다 */
   function start(){
@@ -3024,7 +3027,21 @@ const KICK=(()=>{
     if(!o.room.code&&!o.minutes) setTimeout(()=>{ if(cur&&cur.id===o.room.id&&!cur.code) $('#btnShare').click(); },400);
     return n;
   }
-  return {suggest,card,start,preview,confirm,fromTalk,planFor,template};
+  /* 제목만으로는 팀 과제를 못 알아볼 때: 팀플방이 하나도 없고 남은 Canvas 과제가 있으면 한 번 물어본다 */
+  function hint(){
+    if(!briefData||rooms.some(r=>r.code||r.lmsTeam)) return null;
+    let no={}; try{ no=JSON.parse(localStorage.getItem(DIS)||'{}'); }catch(e){} if(no._hint) return null;
+    const n=briefData.all.flatMap(({r,list})=>r.code?[]:list).filter(m=>m&&m.lms&&m.lms.uid&&!m.done&&m.due>=todayKey()).length;
+    if(!n) return null;
+    const c=el('div','hm-kick'); c.style.cssText='background:var(--soft);border-radius:14px;padding:12px 14px;margin:0 0 14px;text-align:left';
+    c.innerHTML='<div style="font-size:12.5px;color:var(--accent);font-weight:700">✨ AI 담다의 제안</div><div style="margin:4px 0 8px;font-size:14.5px">Canvas 과제 '+n+'개 중에 팀 과제가 있나요? 고르면 팀플방을 만들고 할 일을 나눠 드려요.</div>';
+    const go=el('button','btn'); go.textContent='팀 과제 고르기'; go.style.cssText='padding:9px 14px;margin-right:6px';
+    const nx=el('button','btn ghost'); nx.textContent='없어요'; nx.style.cssText='padding:9px 14px';
+    go.onclick=()=>{ openSet(); $('#toLms').click(); };
+    nx.onclick=()=>{ let d={}; try{ d=JSON.parse(localStorage.getItem(DIS)||'{}'); }catch(e){} d._hint=1; try{ localStorage.setItem(DIS,JSON.stringify(d)); }catch(e){} c.remove(); };
+    const row=el('div'); row.append(go,nx); c.appendChild(row); return c;
+  }
+  return {suggest,card,hint,start,preview,confirm,fromTalk,planFor,template};
 })();
 $('#kkOk').onclick=()=>KICK.confirm();
 $('#gKick').onclick=()=>{ const m=msgTarget; close('#shMsg'); if(m&&cur) KICK.start(m,cur); };
@@ -4902,6 +4919,7 @@ function askMsg(m){
   /* 사진·파일만 있는 메모는 수정 대신 추가 메모를 쓴다 */
   $('#gEdit').style.display=m.text?'':'none';
   $('#gKick').style.display=m.text&&!roNow()&&m.type!=='poll'?'':'none';
+  $('#gKickLb').textContent=m.lms&&m.lms.uid?'팀 과제로 팀플방 만들기':'AI로 할 일 나누기';
   $('#gCopy').style.display=m.text?'':'none';
   const cf=fileCopyKind(m);
   $('#gCopyF').style.display=cf?'':'none';
@@ -5124,7 +5142,7 @@ function drawBrief(fresh){
   /* 팀플방에 복사한 과제는, 내 과목방에 원본이 남아 있으면 홈에 한 번만 보여 준다 */
   const orig=new Set(briefData.all.flatMap(({r,list})=>r.code?[]:list.filter(m=>m&&m.lms&&m.lms.uid&&!m.done).map(m=>LMSP.keyOf(m.lms.host||'',m.lms.uid))));
   /* 새 팀 과제 → '팀플방 만들고 계획 짜 둘까요?' (피클처럼 먼저 제안, 실행은 내가 누를 때) */
-  const tm=KICK.suggest(); if(tm) box.appendChild(KICK.card(tm));
+  const tm=KICK.suggest(); if(tm) box.appendChild(KICK.card(tm)); else { const hc=KICK.hint(); if(hc) box.appendChild(hc); }
   const pool=briefData.all.flatMap(({r,list})=>list
       .filter(m=>m.due&&!m.done&&!meetingLink(m.text)&&ddays(dueOf(m))>=0&&!(m.teamOf&&orig.has(m.teamOf))).map(m=>({r,list,m})))
     .sort((a,b)=>dueKey(a.m)<dueKey(b.m)?-1:(dueKey(a.m)>dueKey(b.m)?1:0));
