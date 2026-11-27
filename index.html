@@ -558,6 +558,18 @@ html.kb body{align-items:flex-start}
 #rpTable{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0}#rpTable th,#rpTable td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:center}#rpTable th:first-child,#rpTable td:first-child{text-align:left}
 .rpbar{height:8px;border-radius:4px;background:var(--accent);opacity:.85}.rpbars{display:flex;flex-direction:column;gap:6px;margin:8px 0}.rpbars div.l{display:flex;align-items:center;gap:8px;font-size:12.5px}.rpbars span{width:64px;flex:0 0 64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #rpAi{font-size:13px;line-height:1.55;white-space:pre-wrap;background:var(--mute);border-radius:10px;padding:10px;margin:6px 0;display:none}
+#kkRows .kr{display:flex;gap:6px;align-items:center;margin:6px 0}
+#kkRows input,#kkRows select{border:1px solid var(--line);border-radius:8px;padding:7px;font:inherit;font-size:14px;min-width:0}
+#kkRows .kt{flex:1}#kkRows .kd{width:132px}#kkRows .kw{width:92px}#kkRows .kx{border:0;background:none;font-size:18px;color:var(--ink-3);cursor:pointer}
+#kkNote{font-size:13px;white-space:pre-wrap;background:var(--mute);border-radius:10px;padding:8px 10px;margin:4px 0 8px;display:none}
+.kkpoll{display:flex;gap:6px;align-items:center;font-size:13px;margin:4px 0 8px}
+.mwho{display:inline-block;margin-top:4px;font-size:12px;background:var(--soft);color:var(--accent);border-radius:20px;padding:2px 8px;font-weight:600}
+.poll .slot{display:flex;align-items:center;gap:8px;width:100%;margin:4px 0;padding:7px 9px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit;font-size:13.5px;cursor:pointer;text-align:left}
+.poll .slot.on{border-color:var(--accent);background:var(--soft)}.poll .slot.best{box-shadow:0 0 0 2px #E9B44C inset}
+.poll .slot .c{margin-left:auto;font-weight:700;color:var(--accent)}.poll .slot .nm{font-size:11.5px;color:var(--ink-3)}
+.poll .fix{margin-top:6px;font-size:13px;padding:7px 10px}
+#evRows .er{display:flex;align-items:center;gap:8px;margin:8px 0}#evRows .er span{flex:1}#evRows input[type=range]{flex:2}#evRows b{width:42px;text-align:right}
+.rpwarn{color:#C0392B;font-weight:700}
 .lmslink{display:inline-block;margin-top:4px;font-size:12.5px;color:var(--accent);text-decoration:none;font-weight:600}
 .hm-pal{display:flex;justify-content:center;margin:-6px 0 -10px}.hm-pal canvas{width:320px;max-width:100%;height:150px;cursor:pointer}
 .palrow{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:6px 0}
@@ -1128,7 +1140,7 @@ body.rzing *{user-select:none!important}
     <div id="mtBar">
       <div id="mtEmo"><button id="mtMic" class="mic" aria-pressed="false">🎤 음성 켜기</button><button data-e="👋">👋</button><button data-e="👍">👍</button><button data-e="😂">😂</button><button data-e="🎉">🎉</button><button data-e="🤔">🤔</button></div>
       <form id="mtSay"><input id="mtTxt" maxlength="60" placeholder="말하기 (말풍선으로 떠요)" autocomplete="off"><button class="btn" type="submit">보내기</button></form>
-      <button class="btn ghost" id="mtLog">회의 출석 남기기</button>
+      <div class="btns" style="margin:0"><button class="btn ghost" id="mtLog">출석만 남기기</button><button class="btn" id="mtSum">AI 회의 정리</button><button class="btn ghost" id="mtPoll">시간 투표</button></div>
     </div>
     <div id="mtDressBox">
       <canvas id="mtPrev" width="120" height="120"></canvas>
@@ -1205,10 +1217,29 @@ body.rzing *{user-select:none!important}
     <p id="rpSub"></p>
     <div class="rpbars" id="rpBars"></div>
     <table id="rpTable"></table>
-    <p class="pdesc">· 쓴 글·자료는 서버가 기록한 작성자 기준 · 완료는 마지막으로 완료 표시한 사람 기준(추정) · 회의는 '회의 출석 남기기' 기록 기준</p>
+    <p class="pdesc">· 쓴 글·자료는 서버가 기록한 작성자 기준(자동으로 들어간 할 일·회의록 제외) · 맡은 일은 담당자 기준 완료/전체 · 회의는 회의실 기록 기준 · 본인 주장·팀원 평가는 동료 평가(균등 몫 100점) 평균, 본인 주장이 30점 넘게 높으면 ⚠</p>
     <div id="rpAi"></div>
-    <div class="btns"><button class="btn ghost" id="rpAiBtn">AI 진행 요약</button><button class="btn ghost" id="rpCopy">글로 복사</button></div>
+    <div class="btns"><button class="btn ghost" id="rpEval">동료 평가 하기</button><button class="btn ghost" id="rpAiBtn">AI 진행 요약</button></div>
+    <div class="btns"><button class="btn ghost" id="rpCopy">글로 복사</button></div>
     <div class="btns"><button class="btn" data-close>닫기</button></div>
+  </div></div>
+
+  <div class="sheet" id="shKick"><div class="card" style="max-height:88vh;overflow:auto">
+    <h2 id="kkTitle">AI 팀플 계획</h2>
+    <p id="kkSub"></p>
+    <div id="kkNote"></div>
+    <div id="kkRows"></div>
+    <button class="btn ghost" id="kkAdd" style="width:100%;margin:6px 0">+ 할 일 추가</button>
+    <label class="kkpoll"><input type="checkbox" id="kkPoll" checked> 첫 회의 시간 투표도 같이 올리기</label>
+    <div class="btns"><button class="btn ghost" data-close>취소</button><button class="btn" id="kkOk">팀플방에 넣기</button></div>
+  </div></div>
+
+  <div class="sheet" id="shEval"><div class="card" style="max-height:88vh;overflow:auto">
+    <h2>동료 평가</h2>
+    <p>똑같이 했으면 모두 <b>100점</b>이에요. 더 한 사람은 높게, 덜 한 사람은 낮게 — 합계가 <b id="evTarget">300</b>점이 되게 맞춰 주세요. 내가 준 점수는 아무도 못 보고, 사람별 평균만 공개돼요.</p>
+    <div id="evRows"></div>
+    <p class="pdesc" id="evSum"></p>
+    <div class="btns"><button class="btn ghost" data-close>취소</button><button class="btn" id="evOk">평가 제출</button></div>
   </div></div>
 
   <div class="sheet" id="shPal"><div class="card" style="align-items:center;text-align:center">
@@ -1295,6 +1326,9 @@ body.rzing *{user-select:none!important}
     <button class="mrow" id="gPin">
       <svg viewBox="0 0 24 24"><path d="M9 4h6l-1 6 4 3v2H6v-2l4-3-1-6zM12 15v5"/></svg>
       <span id="gPinLb">상단 고정</span></button>
+    <button class="mrow" id="gKick">
+      <svg viewBox="0 0 24 24"><path d="M4 6h10M4 12h7M4 18h10"/><path d="M17 14l2 2 3-4"/><circle cx="18" cy="6" r="2.5"/></svg>
+      <span>AI로 할 일 나누기</span></button>
     <button class="mrow" id="gEdit">
       <svg viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>
       <span id="gEditLb">수정</span></button>
@@ -2165,12 +2199,13 @@ const LMSP=(()=>{
         moved.push({uid:L.uid,due:L.due,dueTime:L.dueTime||null,to:e});
         n.due=e.due; n.dueTime=e.dueTime; n.dueStart=null; n.lms.due=e.due; n.lms.dueTime=e.dueTime; changed=true; }
       if((e.url||'')!==(L.url||'')){ n.lms.url=e.url; changed=true; }
+      if((e.desc||'')!==(L.desc||'')){ n.lms.desc=e.desc||''; changed=true; }   /* AI 팀플 계획이 읽는 과제 설명 */
       return n;
     });
     return {list:changed?out:list,changed,moved};
   }
   const make=(e,ts)=>({id:memoId(e),type:'memo',text:textOf(e),file:null,ts,due:e.due,dueStart:null,dueTime:e.dueTime,done:false,
-    lms:{uid:e.uid,host:e.host,cid:e.cid,url:e.url,kind:e.kind,team:e.team,text:textOf(e),due:e.due,dueTime:e.dueTime}});
+    lms:{uid:e.uid,host:e.host,cid:e.cid,url:e.url,kind:e.kind,team:e.team,text:textOf(e),due:e.due,dueTime:e.dueTime,desc:e.desc||''}});
   /* 복사한 글에서 피드 주소만 골라낸다 (앞뒤에 다른 글이 붙어 있거나 webcal:// 이어도 된다) */
   const findUrl=t=>{ const m=/(?:https|webcal):\/\/[^\s"'<>]+?\/feeds\/calendars\/user_[A-Za-z0-9]+\.ics/.exec(String(t||'')); return m?m[0].replace(/^webcal:/,'https:'):''; };
   const okUrl=u=>{ try{ const x=new URL(String(u).trim()); return x.protocol==='https:'&&!x.search&&!x.hash&&/^\/feeds\/calendars\/user_[A-Za-z0-9]{10,100}\.ics$/.test(x.pathname); }catch(e){ return false; } };
@@ -2392,7 +2427,7 @@ const LMS=(()=>{
     $('#lmsUrl').value=''; toast('연결을 끊었어요. 담긴 일정은 그대로 있어요'); draw();
   }
   /* 팀 과제 → 사용자가 누를 때만 팀플방을 만든다. 제목과 마감만 옮긴다(내 추가 메모·태그·완료는 안 옮김) */
-  async function teamRoom(m,src){
+  async function teamRoom(m,src,quiet){
     const k=LMSP.keyOf(m.lms.host||'',m.lms.uid);
     let r=rooms.find(x=>x.lmsTeam===k);
     if(!r){
@@ -2402,7 +2437,8 @@ const LMS=(()=>{
     }
     $('#shLms').classList.remove('on'); $('#setview').classList.remove('on');
     await openRoom(r.id);
-    if(!r.code) $('#btnShare').click();
+    if(quiet) return;
+    KICK.start(m,src);
   }
   async function draw(){
     const my=++drawN, st=await load(), on=!!st, lo=on?local(st.url):{}, btns=[]; let nRoom=0, nDue=0;
@@ -2649,7 +2685,7 @@ const MEET=(()=>{
     if(m.t==='rtc'){ if(m.to===me.id) onRtc(m); return; }
     const p=peers.get(m.u); if(!p) return;
     if(m.t==='pos'&&isFinite(m.x)&&isFinite(m.y)){ p.tx=Math.max(0,Math.min(W*T,m.x)); p.ty=Math.max(0,Math.min(H*T,m.y)); p.dir=m.d>0?1:-1; if(m.j){ p.x=p.tx; p.y=p.ty; } }
-    if(m.t==='say'&&typeof m.s==='string'){ p.say=m.s.slice(0,60); p.sayT=5; }
+    if(m.t==='say'&&typeof m.s==='string'){ p.say=m.s.slice(0,60); p.sayT=5; heard(p.n,p.say); }
     if(m.t==='emo'&&typeof m.e==='string'&&m.e.length<=4){ p.emo=m.e; p.emoT=0; }
   }
   const send=msg=>{ if(ch) try{ ch.send({type:'broadcast',event:'m',payload:{...msg,u:me.id}}); }catch(e){} };
@@ -2728,6 +2764,8 @@ const MEET=(()=>{
     const look=p=>({dir:p.dir,moving:p.moving,say:p.sayT>0?p.say:null,talk:p.sayT>3.6,emo:p.emoT<1.2?p.emo:null,emoT:p.emoT/1.2,face:p.emoT<2.2?(EMO_FACE[p.emo]||'smile'):'smile',seed:p.seed});
     const all=[...[...peers].filter(([k])=>!k.includes('#')).map(([k,p])=>({p:{...p,k},o:{name:p.n,...look(p)}})),
       {p:{...me_,av},o:{name:myName(),me:1,...look({...me_,seed:3})}}].sort((a,b)=>a.p.y-b.p.y);
+    /* AI 담다: 게시판 옆에 서 있다 */
+    aiT-=1/60; all.push({p:{x:15.2*T,y:3.3*T,av:{c:'#2E6A63',a:'phones'}},o:{name:'AI 담다',dir:-1,say:aiT>0?aiSay:(log.length?'메모 '+log.length+'줄':null),face:aiT>0?'smile':'think',seed:7}}); all.sort((a,b)=>a.p.y-b.p.y);
     for(const {p,o} of all){
       g.save(); g.translate(p.x,p.y); g.scale(1.35,1.35);
       /* 말하는 중이면 발밑에 초록 고리, 음성을 켠 사람은 이름 옆 🎤 */
@@ -2739,7 +2777,10 @@ const MEET=(()=>{
     raf=requestAnimationFrame(loop);
   }
   const C={sc:1,ox:0,oy:0};
-  function say(s){ s=String(s||'').trim().slice(0,60); if(!s) return; me_.say=s; me_.sayT=5; send({t:'say',s}); }
+  function say(s){ s=String(s||'').trim().slice(0,60); if(!s) return; me_.say=s; me_.sayT=5; send({t:'say',s}); heard(myName(),s); }
+  /* AI 담다가 회의 대화를 받아 적는다 (내 화면에 들린 말만, 서버에 저장 안 함) */
+  let log=[], aiSay=null, aiT=0;
+  function heard(n,s){ log.push({n,s,t:Date.now()}); if(log.length>300) log.shift(); if(log.length===1){ aiSay='받아 적고 있어요 ✍️'; aiT=4; } }
   function emo(e){ me_.emo=e; me_.emoT=0; send({t:'emo',e}); }
   async function logMeeting(){
     if(!room||!cur||cur.id!==room.id){ toast('방으로 돌아가서 다시 해 주세요'); return; }
@@ -2752,6 +2793,30 @@ const MEET=(()=>{
   /* 꾸미기 */
   function dress(){ $('#mtDressBox').classList.add('on'); dressUI('#mt',()=>av,v=>{ av=v; }); }
   async function dressDone(){ $('#mtDressBox').classList.remove('on'); await S.set('avatar',av); if(ch) try{ await ch.track(meta()); }catch(e){} }
+  /* AI 회의 정리: 받아 적은 대화 → 요약·결정·할 일(담당·마감) → 미리보기 → 확정하면 방에 */
+  async function summarize(){
+    if(!room||!cur||cur.id!==room.id){ toast('방으로 돌아가서 다시 해 주세요'); return; }
+    if(!log.length){ toast('아직 받아 적은 대화가 없어요. 말풍선으로 회의해 보세요'); return; }
+    const names=[myName(),...[...peers].filter(([k])=>!k.includes('#')).map(([,p])=>p.n)];
+    aiSay='정리하는 중…'; aiT=30;
+    let plan=null;
+    if(aiKey){
+      try{
+        const out=await gText({json:true,temperature:.2,maxTokens:1200,
+          system:'대학 팀플 회의 대화를 정리한다. JSON 하나로만 답한다: {"summary":["한 줄",...최대3],"decisions":["결정",...],"tasks":[{"t":"할 일(20자 이내)","who":"참석자 이름 또는 빈 문자열","due":"YYYY-MM-DD 또는 빈 문자열"}]}. 오늘은 '+todayKey()+'. 참석자: '+names.join(', ')+'. 대화에 없는 내용은 지어내지 않는다.',
+          parts:[{text:log.map(x=>x.n+': '+x.s).join('\n')}]});
+        plan=JSON.parse(out);
+      }catch(e){ console.warn('회의 정리 실패',e); }
+    }
+    if(!plan||!Array.isArray(plan.tasks)) plan=KICK.fromTalk(log,names);   /* AI 키가 없거나 실패하면 '할게·맡을게' 말로 찾기 */
+    aiSay='정리했어요! 확인해 주세요'; aiT=6;
+    const head=`[회의] ${md(todayKey())} ${String(new Date().getHours()).padStart(2,'0')}:${String(new Date().getMinutes()).padStart(2,'0')} 회의실 · 참석 ${names.length}명: ${names.join(', ')}`;
+    const minutes=[head,...(plan.summary||[]).map(x=>'· '+x),...((plan.decisions||[]).length?['결정: '+plan.decisions.join(' / ')]:[])].join('\n');
+    $('#meetview').classList.remove('on');
+    KICK.preview({title:'회의에서 나온 할 일',sub:'회의록과 함께 방에 남겨요. 담당자와 마감을 확인해 주세요.',note:minutes,
+      tasks:(plan.tasks||[]).map(x=>({t:String(x.t||'').slice(0,40),due:/^\d{4}-\d\d-\d\d$/.test(x.due||'')?x.due:'',who:String(x.who||'')})),room:cur,minutes,poll:false});
+    log=[];
+  }
   function nextTheme(){ if(!room) return; const ks=Object.keys(MEET_THEMES); theme=ks[(ks.indexOf(theme)+1)%ks.length];
     try{ localStorage.setItem('damda:meetTheme:'+room.rid,theme); }catch(e){} $('#mtTitle').textContent=room.name+' · '+MEET_THEMES[theme].n; toast(MEET_THEMES[theme].n+' 테마로 바꿨어요'); }
   /* 입력 */
@@ -2760,7 +2825,7 @@ const MEET=(()=>{
   document.addEventListener('keyup',e=>{ const k=KEYMAP[e.key]; if(k) keys.delete(k); });
   addEventListener('blur',()=>keys.clear());
   function tap(e){ const r=cv().getBoundingClientRect(); const x=(e.clientX-r.left-C.ox)/C.sc, y=(e.clientY-r.top-C.oy)/C.sc; if(x>=0&&y>=0&&x<=W*T&&y<=H*T) target={x,y}; }
-  return {open,leave,say,emo,logMeeting,dress,dressDone,nextTheme,voice,tap,get state(){ return {me:me_,voice:{on:!!mic,pcs:[...pcs].map(([k,x])=>({k,st:x.pc.connectionState,audio:!!x.audio,vol:x.audio?Math.round(x.audio.volume*100)/100:null,lv:x.level?Math.round(x.level()*1000)/1000:0}))},peers:[...peers].filter(([k])=>!k.includes('#')).map(([k,p])=>({k,n:p.n,x:Math.round(p.x),y:Math.round(p.y),say:p.sayT>0?p.say:null})),board}; }};
+  return {open,leave,say,emo,logMeeting,summarize,dress,dressDone,nextTheme,voice,tap,get state(){ return {me:me_,voice:{on:!!mic,pcs:[...pcs].map(([k,x])=>({k,st:x.pc.connectionState,audio:!!x.audio,vol:x.audio?Math.round(x.audio.volume*100)/100:null,lv:x.level?Math.round(x.level()*1000)/1000:0}))},peers:[...peers].filter(([k])=>!k.includes('#')).map(([k,p])=>({k,n:p.n,x:Math.round(p.x),y:Math.round(p.y),say:p.sayT>0?p.say:null})),board}; }};
 })();
 $('#btnMeet').onclick=()=>MEET.open(cur);
 $('#mtClose').onclick=()=>{ $('#meetview').classList.remove('on'); MEET.leave(); };
@@ -2768,6 +2833,8 @@ $('#mtCv').addEventListener('pointerdown',e=>MEET.tap(e));
 $('#mtSay').onsubmit=e=>{ e.preventDefault(); MEET.say($('#mtTxt').value); $('#mtTxt').value=''; };
 document.querySelectorAll('#mtEmo button').forEach(b=>b.onclick=()=>MEET.emo(b.dataset.e));
 $('#mtLog').onclick=()=>MEET.logMeeting();
+$('#mtSum').onclick=()=>MEET.summarize();
+$('#mtPoll').onclick=()=>{ if(cur&&cur.rid){ POLL.create(cur); toast('방에 시간 투표를 올렸어요'); } };
 $('#mtDress').onclick=()=>MEET.dress();
 $('#mtDressOk').onclick=()=>MEET.dressDone();
 $('#mtTheme').onclick=()=>MEET.nextTheme();
@@ -2780,16 +2847,20 @@ const REPORT=(()=>{
   async function build(r){
     const d=await S.get('room:'+r.code,true)||{}, list=(d.messages||[]).filter(Boolean), mem=d.mem||[];
     if(list.some(m=>!m._by)&&RS.refill(r.code)){ toast('작성자 기록을 받는 중…'); await RS.sync(); return build(r); }
-    const rows=new Map(mem.map(x=>[x.uid,{uid:x.uid,name:x.name||'이름 없음',posts:0,files:0,done:0,meet:0,last:0}]));
-    const row=uid=>rows.get(uid)||(rows.set(uid,{uid,name:'나간 사람',posts:0,files:0,done:0,meet:0,last:0}),rows.get(uid));
+    const blank=(uid,name)=>({uid,name,posts:0,files:0,done:0,meet:0,last:0,tasks:0,tdone:0});
+    const rows=new Map(mem.map(x=>[x.uid,blank(x.uid,x.name||'이름 없음')]));
+    const row=uid=>rows.get(uid)||(rows.set(uid,blank(uid,'나간 사람')),rows.get(uid));
     for(const m of list){
-      if(m._by){ const x=row(m._by); if(/^\[회의\]/.test(m.text||'')) {} else { x.posts++; if(m.file) x.files++; } x.last=Math.max(x.last,m.ts||0); }
-      if(m.done&&(m._ed||m._by)) row(m._ed||m._by).done++;
+      if(m.type==='vote'||m.type==='poll'||/^\[알림\]/.test(m.text||'')) continue;   /* 투표·자동 알림은 기여로 안 셈 */
+      /* 맡은 일: 담당자 기준 (AI 계획·회의 정리로 나눈 할 일) */
+      if(m.who&&m.who.uid){ const x=row(m.who.uid); x.tasks++; if(m.done) x.tdone++; }
+      if(m._by){ const x=row(m._by); if(!/^\[(회의|할 일)\]/.test(m.text||'')){ x.posts++; if(m.file) x.files++; } x.last=Math.max(x.last,m.ts||0); }
+      if(m.done&&!m.who&&(m._ed||m._by)) row(m._ed||m._by).done++;
       const at=/^\[회의\][^\n]*참석 \d+명: ([^\n]+)/.exec(m.text||'');
       if(at) for(const nm of at[1].split(',').map(x=>x.trim())) for(const x of rows.values()) if(x.name===nm) x.meet++;
     }
     const meets=list.filter(m=>/^\[회의\]/.test(m.text||'')).length;
-    return {name:r.name,rows:[...rows.values()].filter(x=>mem.some(y=>y.uid===x.uid)||x.posts||x.done),total:list.filter(m=>!/^\[회의\]/.test(m.text||'')).length,meets,list};
+    return {name:r.name,rows:[...rows.values()].filter(x=>mem.some(y=>y.uid===x.uid)||x.posts||x.done||x.tasks),total:list.filter(m=>m.type!=='vote'&&m.type!=='poll'&&!/^\[(회의|알림)\]/.test(m.text||'')).length,meets,list};
   }
   const day=ts=>ts?md(dkey(new Date(ts))):'-';
   async function show(r){
@@ -2798,15 +2869,21 @@ const REPORT=(()=>{
     $('#rpSub').textContent=`기록 ${R.total}개 · 회의 ${R.meets}번 · ${dkey(new Date())} 기준`;
     $('#rpBars').replaceChildren(...R.rows.map(x=>{ const l=el('div','l'), n=el('span'), b=el('div','rpbar'), v=el('span');
       n.textContent=x.name; b.style.width=Math.max(4,Math.round(x.posts/max*100))+'%'; v.textContent=x.posts+'개'; v.style.width='auto'; l.append(n,b,v); return l; }));
-    const t=$('#rpTable'); t.innerHTML='<tr><th>이름</th><th>쓴 글</th><th>자료</th><th>완료</th><th>회의</th><th>마지막</th></tr>';
-    for(const x of R.rows){ const tr=el('tr'); for(const v of [x.name,x.posts,x.files,x.done,x.meet,day(x.last)]){ const td=el('td'); td.textContent=v; tr.appendChild(td); } t.appendChild(tr); }
+    const ev=await EVAL.summary(r), evOf=uid=>ev.find(y=>y.ratee===uid)||{};
+    for(const x of R.rows){ const e=evOf(x.uid); x.claimed=e.claimed; x.perceived=e.perceived; }
+    const t=$('#rpTable'); t.innerHTML='<tr><th>이름</th><th>쓴 글</th><th>자료</th><th>맡은 일</th><th>회의</th><th>본인 주장</th><th>팀원 평가</th></tr>';
+    for(const x of R.rows){ const tr=el('tr');
+      for(const v of [x.name,x.posts,x.files,x.tasks?`${x.tdone}/${x.tasks}`:(x.done?x.done+' 완료':'-'),x.meet,x.claimed==null?'-':x.claimed,x.perceived==null?'-':x.perceived]){ const td=el('td'); td.textContent=v; tr.appendChild(td); }
+      /* 본인 주장이 팀원 평가보다 30점 넘게 높으면 표시 (TEAMMATES 의 claimed/perceived 차이 방식) */
+      if(x.claimed!=null&&x.perceived!=null&&x.claimed-x.perceived>=30){ tr.lastChild.classList.add('rpwarn'); tr.lastChild.textContent+=' ⚠'; }
+      t.appendChild(tr); }
     $('#rpAi').style.display='none'; $('#rpAi').textContent='';
     $('#shShare').classList.remove('on'); open('#shReport');
   }
   function text(){
     const R=last; if(!R) return '';
     return [`[${R.name}] 팀플 기여 리포트 (${dkey(new Date())})`,`기록 ${R.total}개 · 회의 ${R.meets}번`,
-      ...R.rows.map(x=>`- ${x.name}: 쓴 글 ${x.posts} · 자료 ${x.files} · 완료 ${x.done} · 회의 ${x.meet} · 마지막 활동 ${day(x.last)}`),
+      ...R.rows.map(x=>`- ${x.name}: 쓴 글 ${x.posts} · 자료 ${x.files} · 맡은 일 ${x.tdone}/${x.tasks} 완료 · 회의 ${x.meet} · 마지막 활동 ${day(x.last)}`+(x.claimed!=null?` · 본인 주장 ${x.claimed}`:'')+(x.perceived!=null?` · 팀원 평가 ${x.perceived}`:'')),
       ($('#rpAi').textContent?'\n'+$('#rpAi').textContent:''),'(담다 팀플방 기록으로 자동 작성)'].join('\n').trim();
   }
   async function ai(){
@@ -2824,6 +2901,228 @@ const REPORT=(()=>{
 $('#doReport').onclick=()=>{ if(cur&&cur.rid) REPORT.show(cur); };
 $('#rpCopy').onclick=async()=>{ const t=REPORT.text(); try{ await navigator.clipboard.writeText(t); toast('리포트를 복사했어요'); }catch(e){ $('#fullTx')&&0; toast('복사하지 못했어요'); } };
 $('#rpAiBtn').onclick=()=>REPORT.ai();
+
+/* ---------- 5바퀴: AI 팀플 매니저 ---------- */
+const addDays=(k,n)=>{ const d=new Date(k+'T00:00'); d.setDate(d.getDate()+n); return dkey(d); };
+const roomMem=r=>(r&&r._mem&&r._mem.length?r._mem:(me?[{uid:me.id,name:RS.myName()}]:[]));
+/* 할 일을 방에 넣는다 (담당자 who, 원래 과제 from) */
+async function addTasks(r,tasks,extra){
+  const list=await readList(r); let ts=Date.now();
+  const add=(extra||[]).map(t=>({id:'m'+(ts++).toString(36),type:'memo',file:null,ts:ts,due:null,dueStart:null,dueTime:null,done:false,...t}));
+  for(const t of tasks){
+    if(!t.t) continue;
+    add.push({id:'m'+(ts++).toString(36)+Math.random().toString(36).slice(2,4),type:'memo',text:'[할 일] '+t.t,file:null,ts,due:t.due||null,dueStart:null,dueTime:t.due?'23:59':null,done:false,
+      ...(t.who&&t.who.uid?{who:{uid:t.who.uid,name:t.who.name}}:{}),...(t.from?{kickOf:t.from}:{})});
+  }
+  if(cur&&cur.id===r.id&&!briefOn){ msgs=msgs.concat(add); await saveList(r,msgs); drawStream(); }
+  else await saveList(r,list.concat(add));
+  return add.length;
+}
+const KICK=(()=>{
+  let ctx=null;
+  const DIS='damda:kickNo';
+  /* 아직 계획을 안 짠 팀 과제 하나 (홈 카드용) */
+  function suggest(){
+    if(!briefData) return null; let no={}; try{ no=JSON.parse(localStorage.getItem(DIS)||'{}'); }catch(e){}
+    for(const {r,list} of briefData.all){ if(r.code) continue;
+      for(const m of list){ if(!(m&&m.lms&&m.lms.team&&m.lms.uid&&!m.done&&m.due>=todayKey())) continue;
+        const k=LMSP.keyOf(m.lms.host||'',m.lms.uid); if(no[k]) continue;
+        const tr=rooms.find(x=>x.lmsTeam===k); if(tr&&tr._kicked) continue;
+        return {r,m,k,tr}; } }
+    return null;
+  }
+  function card({r,m,k,tr}){
+    const c=el('div','hm-kick'); c.style.cssText='background:var(--soft);border-radius:14px;padding:12px 14px;margin:0 0 14px;text-align:left';
+    c.innerHTML=`<div style="font-size:12.5px;color:var(--accent);font-weight:700">✨ AI 담다의 제안</div><div style="margin:4px 0 8px;font-size:14.5px"><b></b> — 새 팀 과제예요. 팀플방 만들고 할 일·마감·역할을 짜 둘까요?</div>`;
+    c.querySelector('b').textContent=(m.lms.text||m.text).split('\n')[0];
+    const go=el('button','btn'); go.textContent=tr?'계획 짜기':'좋아요, 짜 주세요'; go.style.cssText='padding:9px 14px;margin-right:6px';
+    const no=el('button','btn ghost'); no.textContent='나중에'; no.style.cssText='padding:9px 14px';
+    go.onclick=()=>start(m,r);
+    no.onclick=()=>{ let d={}; try{ d=JSON.parse(localStorage.getItem(DIS)||'{}'); }catch(e){} d[k]=1; try{ localStorage.setItem(DIS,JSON.stringify(d)); }catch(e){} c.remove(); };
+    const row=el('div'); row.append(go,no); c.appendChild(row); return c;
+  }
+  /* 팀 과제(또는 아무 마감 메모)로 계획 짜기: 팀플방이 없으면 만들고, AI(없으면 기본 틀)로 할 일을 나눈다 */
+  async function start(m,src){
+    let r=src;
+    if(m.lms&&m.lms.uid){
+      const k=LMSP.keyOf(m.lms.host||'',m.lms.uid);
+      r=rooms.find(x=>x.lmsTeam===k);
+      if(!r){ await LMS.teamRoom(m,src,true); r=rooms.find(x=>x.lmsTeam===k); }
+    }
+    if(!r) return;
+    if(!(cur&&cur.id===r.id)) await openRoom(r.id);
+    const title=(m.lms&&m.lms.text||m.text||'').split('\n')[0].replace(/^\[[^\]]+\]\s*/,'');
+    toast('AI 담다가 과제를 읽는 중…');
+    const plan=await planFor(title,(m.lms&&m.lms.desc)||m.desc||'',m.due,r);
+    preview({title:'AI 팀플 계획',sub:`${title} · 최종 마감 ${m.due?md(m.due):'없음'}`,note:plan.note,tasks:plan.tasks,room:r,from:m.id,poll:!!r.rid||true});
+  }
+  /* AI 계획: 할 일 4~7개, 중간 마감(초안 D-7·검토 D-3), 역할 추천. 실패하면 기본 틀 */
+  async function planFor(title,desc,due,r){
+    const today=todayKey(), last=due&&due>=today?due:addDays(today,14), mem=roomMem(r).map(x=>x.name);
+    if(aiKey){
+      try{
+        const out=await gText({json:true,temperature:.3,maxTokens:1200,
+          system:'대학 팀 과제를 받아 팀플 계획을 짠다. JSON 하나로만: {"note":"과제 핵심 한두 줄(채점·제출 조건)","tasks":[{"t":"할 일(20자 이내)","due":"YYYY-MM-DD","role":"역할 이름"}]}. 할 일 4~7개, 날짜는 오늘('+today+') 이후 최종 마감('+last+') 이하, 초안은 마감 7일 전·검토는 3일 전 무렵, 마지막은 제출. 팀원 '+mem.length+'명. 설명에 없는 조건은 지어내지 않는다.',
+          parts:[{text:'과제: '+title+'\n설명: '+(desc||'(없음)')}]});
+        const o=JSON.parse(out);
+        if(Array.isArray(o.tasks)&&o.tasks.length) return {note:String(o.note||''),tasks:assign(o.tasks.map(x=>({t:String(x.t||'').slice(0,40),due:clampDue(x.due,today,last),role:String(x.role||'')})),r)};
+      }catch(e){ console.warn('AI 계획 실패',e); }
+    }
+    return {note:aiKey?'':'AI 키가 없어서 기본 계획표로 짰어요. 설정에서 AI 키를 넣으면 과제 설명을 읽고 맞춤 계획을 짜요.',tasks:assign(template(today,last),r)};
+  }
+  const clampDue=(d,a,b)=>!/^\d{4}-\d\d-\d\d$/.test(d||'')?b:d<a?a:d>b?b:d;
+  function template(today,last){
+    const span=Math.max(1,Math.round((new Date(last)-new Date(today))/864e5)), at=f=>addDays(today,Math.max(0,Math.min(span,Math.round(span*f))));
+    return [['주제·역할 정하기',at(.08),'팀장'],['자료조사',at(.35),'자료조사'],['초안 작성',span>9?addDays(last,-7):at(.6),'작성'],['발표 자료 만들기',span>5?addDays(last,-4):at(.75),'PPT'],['검토·피드백',span>4?addDays(last,-3):at(.85),'검토'],['최종 정리·제출',last,'팀장']]
+      .map(([t,due,role])=>({t,due,role}));
+  }
+  /* 역할 → 사람 (돌아가며) */
+  function assign(tasks,r){ const mem=roomMem(r); let i=0; return tasks.map(t=>({...t,who:t.who&&typeof t.who==='string'?(mem.find(x=>x.name===t.who)||null):(mem.length>1?mem[(i++)%mem.length]:null)})); }
+  /* 말에서 할 일·결정 찾기 (AI 키가 없을 때): '자료조사 내가 할게', '우진이 설문지 만들어줘', '주제는 ○○로 가자' */
+  function fromTalk(log,names){
+    const tasks=[], decisions=[];
+    const ASK=/(할게요?|하겠(어요|습니다)?|맡을게요?|맡아\s*줘|맡아\s*주세요|[해아어]\s*줘|[해아어]\s*주세요|담당할게요?)/;
+    const tidy=t=>{ t=t.trim().replace(/^(좋아요?|그럼|응|네|넵|오케이|ok|ㅇㅋ|아|음)[\s,!.]*/i,'')
+      .replace(/(^|\s)(내가|제가|나는|저는|나도|저도|난|전|나|저)(?=\s|$)/g,' ').replace(/\s+/g,' ').trim()
+      .replace(/(는|은|도|를|을|이랑|하고)$/,'').trim();
+      return /(만들|정리하|조사하|준비하|찾|쓰|하)$/.test(t)?t+'기':t; };   /* '설문지 만들' → '설문지 만들기' */
+    for(const x of log){
+      if(/(가자|하자|로\s*정하|로\s*결정|정했|결정했)/.test(x.s)&&!ASK.test(x.s)) decisions.push(x.s.replace(/\s*(로\s*)?(가자|하자).*$/,'').slice(0,40));
+      const m=ASK.exec(x.s); if(!m) continue;
+      const other=names.find(n=>n!==x.n&&x.s.includes(n));
+      let t=x.s.slice(0,m.index);
+      if(other) t=t.replace(new RegExp(other+'(이가|이|가|님|아|야|씨)?\\s*'),'');
+      t=tidy(t);
+      if(!t) continue;
+      const who=other||x.n, key=t.replace(/\s/g,'');
+      const same=tasks.find(y=>{ const k=y.t.replace(/\s/g,''); return k.includes(key)||key.includes(k); });   /* 부탁과 대답이 같은 일이면 하나로 */
+      if(same){ if(key.length>same.t.replace(/\s/g,'').length) same.t=t; same.who=who; continue; }
+      tasks.push({t:t.slice(0,30),who,due:''});
+    }
+    return {summary:log.slice(-3).map(x=>x.n+': '+x.s),decisions,tasks};
+  }
+  function preview(o){
+    ctx=o; $('#kkTitle').textContent=o.title; $('#kkSub').textContent=o.sub||'';
+    const n=$('#kkNote'); n.textContent=o.note||''; n.style.display=o.note?'block':'none';
+    $('#kkPoll').parentNode.style.display=o.poll&&o.room&&o.room.rid?'':'none';
+    const rows=$('#kkRows'); rows.replaceChildren(); const mem=roomMem(o.room);
+    const row=t=>{ const d=el('div','kr');
+      const ti=el('input','kt'); ti.value=t.t||''; ti.placeholder='할 일';
+      const di=el('input','kd'); di.type='date'; di.value=t.due||'';
+      const wi=el('select','kw'); wi.innerHTML='<option value="">담당 미정</option>'+mem.map(x=>`<option value="${esc(x.uid)}">${esc(x.name)}</option>`).join('');
+      const w=t.who&&(typeof t.who==='string'?mem.find(x=>x.name===t.who):t.who); if(w) wi.value=w.uid;
+      const x=el('button','kx'); x.textContent='×'; x.setAttribute('aria-label','빼기'); x.onclick=()=>d.remove();
+      d.append(ti,di,wi,x); rows.appendChild(d); };
+    (o.tasks||[]).forEach(row); if(!(o.tasks||[]).length) row({});
+    $('#kkAdd').onclick=()=>row({});
+    open('#shKick');
+  }
+  async function confirm(){
+    const o=ctx; if(!o||!o.room) return; const mem=roomMem(o.room);
+    const tasks=[...$('#kkRows').children].map(d=>{ const [ti,di,wi]=d.querySelectorAll('input,select'); const w=mem.find(x=>x.uid===wi.value);
+      return {t:ti.value.trim(),due:di.value||'',who:w||null,from:o.from}; }).filter(t=>t.t);
+    const extra=o.minutes?[{text:o.minutes}]:[];
+    const n=await addTasks(o.room,tasks,extra);
+    o.room._kicked=true; await saveRooms();
+    $('#shKick').classList.remove('on');
+    if(o.poll&&o.room.rid&&$('#kkPoll').checked) await POLL.create(o.room);
+    toast(`할 일 ${tasks.length}개를 팀플방에 넣었어요`+(tasks.some(t=>t.who)?' · 담당자에게도 보여요':''));
+    if(!o.room.code&&!o.minutes) setTimeout(()=>{ if(cur&&cur.id===o.room.id&&!cur.code) $('#btnShare').click(); },400);
+    return n;
+  }
+  return {suggest,card,start,preview,confirm,fromTalk,planFor,template};
+})();
+$('#kkOk').onclick=()=>KICK.confirm();
+$('#gKick').onclick=()=>{ const m=msgTarget; close('#shMsg'); if(m&&cur) KICK.start(m,cur); };
+
+/* 회의 시간 투표: 투표 카드(poll) 하나 + 사람마다 자기 표(vote) 하나 — 각자 자기 표만 고쳐서 서로 덮어쓰지 않는다 */
+const POLL=(()=>{
+  const DOW='일월화수목금토';
+  const label=s=>{ const d=new Date(s.replace(' ','T')); return `${d.getMonth()+1}/${d.getDate()}(${DOW[d.getDay()]}) ${s.slice(11)}`; };
+  async function create(r){
+    const slots=[]; for(let i=1;slots.length<5&&i<10;i++){ const k=addDays(todayKey(),i); const dw=new Date(k+'T00:00').getDay(); if(dw===0) continue; slots.push(k+' '+(dw===6?'14:00':'19:00')); }
+    await addTasks(r,[],[{id:'p'+Date.now().toString(36),type:'poll',text:'🗳 회의 시간 정하기 — 되는 시간을 모두 눌러 주세요',slots}]);
+  }
+  const votesOf=pid=>{ const by=new Map(); for(const v of msgs) if(v&&v.type==='vote'&&v.poll===pid) by.set(v.by,v); return [...by.values()]; };
+  function node(m){
+    const box=el('div','poll'), vs=votesOf(m.id), mine=vs.find(v=>me&&v.by===me.id);
+    const cnt=s=>vs.filter(v=>(v.slots||[]).includes(s)); const best=Math.max(0,...(m.slots||[]).map(s=>cnt(s).length));
+    for(const s of m.slots||[]){
+      const b=el('button','slot'+(mine&&(mine.slots||[]).includes(s)?' on':'')+(best&&cnt(s).length===best?' best':'')); b.type='button';
+      const who=cnt(s).map(v=>v.name).join(', ');
+      b.innerHTML=`<span>${esc(label(s))}</span><span class="nm">${esc(who)}</span><span class="c">${cnt(s).length}</span>`;
+      b.onclick=e=>{ e.stopPropagation(); toggle(m,s); };
+      box.appendChild(b);
+    }
+    if(m.fixed){ const f=el('div','mwho'); f.textContent='✅ '+label(m.fixed)+'로 정했어요'; box.appendChild(f); }
+    else if(best){ const f=el('button','btn fix'); f.textContent='가장 많은 시간으로 정하기'; f.onclick=e=>{ e.stopPropagation(); fix(m); }; box.appendChild(f); }
+    return box;
+  }
+  async function toggle(m,s){
+    if(!cur||!me||isRO(cur)) return;
+    const id='v'+LMSP.hash(m.id+' '+me.id), old=msgs.find(x=>x.id===id);
+    const cur_=new Set(old?old.slots:[]); cur_.has(s)?cur_.delete(s):cur_.add(s);
+    const v={id,type:'vote',poll:m.id,by:me.id,name:(roomMem(cur).find(x=>x.uid===me.id)||{}).name||RS.myName(),slots:[...cur_],text:'',ts:old?old.ts:Date.now()};
+    msgs=old?msgs.map(x=>x.id===id?v:x):msgs.concat(v); drawStream(true); await persist();
+  }
+  async function fix(m){
+    const vs=votesOf(m.id); let best=null, n=-1; for(const s of m.slots||[]){ const c=vs.filter(v=>(v.slots||[]).includes(s)).length; if(c>n){ n=c; best=s; } }
+    if(!best) return;
+    msgs=msgs.map(x=>x.id===m.id?{...x,fixed:best}:x);
+    msgs.push({id:'m'+Date.now().toString(36),type:'memo',text:`[회의] 팀 회의 ${label(best)} · ${n}명 가능`,file:null,ts:Date.now(),due:best.slice(0,10),dueStart:null,dueTime:best.slice(11),done:false});
+    drawStream(); await persist(); toast(label(best)+' 회의로 정했어요 · 모두의 할 일에 들어가요');
+  }
+  return {create,node};
+})();
+
+/* AI 리마인드: 방장 기기가 하루 한 번, 마감 D-1·D-DAY 인데 안 끝난 '담당 있는 할 일'을 방에 알린다.
+   알림 메모 ID 를 할 일+날짜로 정해서 여러 번 실행돼도 한 번만 남는다 */
+const REMIND=(()=>{
+  async function run(){
+    if(!SB||!me) return;
+    for(const r of rooms){
+      if(!r.rid||isRO(r)) continue;
+      const d=await S.get('room:'+r.code,true)||{}; if(!(d.mem||[]).some(x=>x.uid===me.id&&x.role==='owner')) continue;
+      const list=(d.messages||[]).filter(Boolean), today=todayKey(), add=[];
+      for(const m of list){
+        if(!m.who||m.done||!m.due) continue; const n=ddays(m.due); if(n<0||n>1) continue;
+        const id='rm'+LMSP.hash(m.id+' '+today); if(list.some(x=>x.id===id)) continue;
+        const t=mlabel(m).replace(/^\[[^\]]+\]\s*/,'');
+        add.push({id,type:'memo',text:`[알림] ${m.who.name}님, '${t}' 마감이 ${n?'내일':'오늘'}이에요. 막히는 거 있으면 방에 남겨 주세요 🙏`,file:null,ts:Date.now(),due:null,dueStart:null,dueTime:null,done:false,remindOf:m.id});
+      }
+      if(add.length){ if(cur&&cur.id===r.id&&!briefOn){ msgs=msgs.concat(add); await saveList(r,msgs); drawStream(true); } else await saveList(r,list.concat(add)); }
+    }
+  }
+  return {run};
+})();
+
+/* 동료 평가: 균등 몫 100점 기준으로 나와 팀원을 매긴다 (supabase/evals.sql) */
+const EVAL=(()=>{
+  let room=null;
+  async function open_(r){
+    room=r; const mem=roomMem(r), target=mem.length*100;
+    let mine=[]; try{ const {data}=await SB.from('room_evals').select('ratee,points').eq('room_id',r.rid); mine=data||[]; }catch(e){}
+    $('#evTarget').textContent=target;
+    $('#evRows').replaceChildren(...mem.map(x=>{ const d=el('div','er'), n=el('span'), i=el('input'), b=el('b');
+      n.textContent=x.name+(me&&x.uid===me.id?' (나)':''); i.type='range'; i.min=0; i.max=250; i.step=5; i.dataset.uid=x.uid;
+      const old=mine.find(y=>y.ratee===x.uid); i.value=old?old.points:100; b.textContent=i.value; i.oninput=()=>{ b.textContent=i.value; sum(); };
+      d.append(n,i,b); return d; }));
+    sum(); open('#shEval');
+  }
+  function sum(){ const t=[...$('#evRows').querySelectorAll('input')].reduce((a,i)=>a+ +i.value,0), want=+$('#evTarget').textContent;
+    $('#evSum').textContent=`합계 ${t}점 / ${want}점`+(t===want?' ✓':' — 제출하면 비율대로 맞춰져요'); }
+  async function submit(){
+    const rows=[...$('#evRows').querySelectorAll('input')].map(i=>({room_id:room.rid,ratee:i.dataset.uid,points:+i.value}));
+    const {error}=await SB.from('room_evals').upsert(rows,{onConflict:'room_id,rater,ratee'});
+    if(error){ console.warn(error); toast('평가를 저장하지 못했어요'); return; }
+    $('#shEval').classList.remove('on'); toast('평가를 제출했어요 · 내가 준 점수는 아무도 못 봐요');
+    if(cur&&cur.rid) REPORT.show(cur);
+  }
+  async function summary(r){ try{ const {data,error}=await SB.rpc('room_eval_summary',{p_room:r.rid}); if(error) throw error; return data||[]; }catch(e){ return []; } }
+  return {open:open_,submit,summary};
+})();
+$('#evOk').onclick=()=>EVAL.submit();
+$('#rpEval').onclick=()=>{ if(cur&&cur.rid){ $('#shReport').classList.remove('on'); EVAL.open(cur); } };
 
 const urlCache=new Map();
 async function fileURL(f){
@@ -3720,7 +4019,7 @@ function drawStream(keep){
   const s=clearStream();
   const add=n=>s.appendChild(n);
   /* 모아담기에서 그룹을 골랐으면 그 그룹의 메모만 보여준다 */
-  const view=grpF?msgs.filter(m=>grpF.ids.has(m.id)):msgs;
+  const view=(grpF?msgs.filter(m=>grpF.ids.has(m.id)):msgs).filter(m=>m.type!=='vote');   /* 투표 표시는 투표 카드 안에만 */
   /* 그룹 방 제목: 방이름-그룹이름 */
   if(grpF) $('#chatName').innerHTML=`${esc(cur?cur.name:'')}<span class="gsep">-</span>${esc(grpF.name)}<span class="gcnt">${view.length}</span>`;
   if(selMode) updSel();
@@ -3913,6 +4212,10 @@ function bubble(m){
   /* 태그는 말풍선에 보이지 않는다. 검색과 묶음 정리에만 쓰인다 */
   if(m.ai==='run'&&(!m.tags||!m.tags.length)) body.appendChild(el('div','aip'));
   if(m.due){const w=el('div'); w.innerHTML=dueHtml(m); body.appendChild(w.firstChild);}
+  /* 담당자 (AI 계획·회의 정리로 나눈 할 일) */
+  if(m.who&&m.who.name){ const w=el('span','mwho'); w.textContent='👤 '+(me&&m.who.uid===me.id?'나 ('+m.who.name+')':m.who.name); body.appendChild(w); }
+  /* 회의 시간 투표 */
+  if(m.type==='poll') body.appendChild(POLL.node(m));
   /* Canvas 에서 온 과제: 원래 과제 페이지로 (https 주소만) */
   if(m.lms&&/^https:\/\//i.test(m.lms.url||'')){ const a=el('a','lmslink'); a.href=m.lms.url; a.target='_blank'; a.rel='noopener'; a.textContent='Canvas에서 열기 ↗';
     a.onclick=e=>e.stopPropagation(); body.appendChild(a); }
@@ -4842,6 +5145,8 @@ function drawBrief(fresh){
      날짜가 지난 일정은 자동으로 빠진다 (오늘 일정은 오늘이 끝날 때까지 남는다). 방의 메모는 그대로 둔다 */
   /* 팀플방에 복사한 과제는, 내 과목방에 원본이 남아 있으면 홈에 한 번만 보여 준다 */
   const orig=new Set(briefData.all.flatMap(({r,list})=>r.code?[]:list.filter(m=>m&&m.lms&&m.lms.uid&&!m.done).map(m=>LMSP.keyOf(m.lms.host||'',m.lms.uid))));
+  /* 새 팀 과제 → '팀플방 만들고 계획 짜 둘까요?' (피클처럼 먼저 제안, 실행은 내가 누를 때) */
+  const tm=KICK.suggest(); if(tm) box.appendChild(KICK.card(tm));
   const pool=briefData.all.flatMap(({r,list})=>list
       .filter(m=>m.due&&!m.done&&!meetingLink(m.text)&&ddays(dueOf(m))>=0&&!(m.teamOf&&orig.has(m.teamOf))).map(m=>({r,list,m})))
     .sort((a,b)=>dueKey(a.m)<dueKey(b.m)?-1:(dueKey(a.m)>dueKey(b.m)?1:0));
@@ -4888,7 +5193,8 @@ function todoRow({r,list,m}){
   ck.setAttribute('aria-label','완료로 표시');
   ck.onclick=e=>completeHomeTask(e,ck,r,list,m);
   const tx=el('div','hm-tx');
-  tx.innerHTML=`<span class="t">${esc(mlabel(m))}</span><span class="s"><span class="rn">${esc(r.name)}</span>${m.dueTime?' · '+fmtT(m.dueTime):''}</span>`;
+  const whoTx=m.who&&m.who.name?(me&&m.who.uid===me.id?' · 내 담당':' · '+m.who.name+' 담당'):'';
+  tx.innerHTML=`<span class="t">${esc(mlabel(m))}</span><span class="s"><span class="rn">${esc(r.name)}</span>${m.dueTime?' · '+fmtT(m.dueTime):''}${esc(whoTx)}</span>`;
   const n=ddays(dueOf(m));
   const d=el('span','hm-dd'+(n<=0?' over':(n<=3?' soon':'')));
   d.textContent=ddText(n);
@@ -7017,7 +7323,8 @@ async function boot(){
     }else if(!(lsGet(OWNER)&&!navigator.onLine)){ showLogin(); return; }
   }
   await loadRooms(); openBrief();
-  if(SB&&me){ RS.start(); LMS.start(); }
+  if(SB&&me){ RS.start(); LMS.start(); setTimeout(()=>REMIND.run().catch(()=>{}),6000);
+    document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') setTimeout(()=>REMIND.run().catch(()=>{}),3000); }); }
 }
 boot();
 })();

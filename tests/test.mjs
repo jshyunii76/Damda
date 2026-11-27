@@ -31,6 +31,7 @@ await db.exec(readFileSync(dir + '/setup.sql', 'utf8'));
 await db.exec(readFileSync(dir + '/rooms.sql', 'utf8'));
 await db.exec(readFileSync(dir + '/rooms.sql', 'utf8'));   // 두 번 실행해도 되는지
 await db.exec(readFileSync(dir + '/meet.sql', 'utf8')); await db.exec(readFileSync(dir + '/meet.sql', 'utf8'));
+await db.exec(readFileSync(dir + '/evals.sql', 'utf8')); await db.exec(readFileSync(dir + '/evals.sql', 'utf8'));
 console.log('SQL 실행 OK (setup.sql + rooms.sql ×2 + meet.sql ×2)');
 
 const U = { A: '00000000-0000-0000-0000-00000000000a', B: '00000000-0000-0000-0000-00000000000b', C: '00000000-0000-0000-0000-00000000000c' };
@@ -132,6 +133,31 @@ r = await rtListen('C', 'meet:' + rid); check('회의실: 멤버 아닌 C 듣기
 r = await rtSend('A', 'meet:00000000-0000-0000-0000-000000000000'); check('회의실: 없는 방 채널 거절', !!r.err, r);
 r = await rtSend('A', 'meetx:' + rid); check('회의실: 다른 이름 채널 거절', !!r.err, r);
 await topic(null, '');
+
+// 동료 평가 (evals.sql) — 지금 방 멤버는 A·B. C 를 넣어 3명으로
+await as('C', `select * from public.join_room('ABCDEF','관우')`);
+await db.exec(`delete from private.join_fail`);
+r = await as('C', `select * from public.join_room('ABCDEF','관우')`); check('평가: C 참여', r.rows?.[0]?.room_id === rid, r);
+const ev = (who, ratee, pts) => as(who, `insert into public.room_evals (room_id, ratee, points) values ($1,$2,$3) on conflict (room_id, rater, ratee) do update set points = excluded.points`, [rid, ratee, pts]);
+// A: 자기 120, B 120, C 60 / B: A 110, 자기 110, C 80 / C: A 100, B 100, 자기 100(주장 과다)
+for (const [w, a, b, c] of [['A', 120, 120, 60], ['B', 110, 110, 80], ['C', 100, 100, 100]]) { await ev(w, U.A, a); await ev(w, U.B, b); r = await ev(w, U.C, c); }
+check('평가: 멤버가 점수 저장', !r.err, r);
+r = await as('B', `select count(*)::int n from public.room_evals`); check('평가: 내가 준 점수만 보임(3줄)', r.rows?.[0]?.n === 3, r);
+r = await as('B', `insert into public.room_evals (room_id, rater, ratee, points) values ($1,$2,$3,100)`, [rid, U.A, U.C]); check('평가: 남 이름으로 점수 넣기 거절', !!r.err, r);
+r = await as('B', `update public.room_evals set points = 0 where rater = $1`, [U.A]); check('평가: 남의 점수 고치기 불가(0줄)', !r.err && r.n === 0, r);
+r = await as('B', `insert into public.room_evals (room_id, ratee, points) values ($1,$2,100)`, [rid, '00000000-0000-0000-0000-000000000099']); check('평가: 멤버 아닌 사람 평가 거절', !!r.err, r);
+r = await as('B', `insert into public.room_evals (room_id, ratee, points) values ($1,$2,5000)`, [rid, U.A]); check('평가: 1000점 넘으면 거절', !!r.err, r);
+r = await as('A', `select ratee, claimed, perceived, raters from public.room_eval_summary($1)`, [rid]);
+const sm = Object.fromEntries((r.rows || []).map(x => [x.ratee, x]));
+check('평가 합계: 3명', r.rows?.length === 3, r);
+check('평가 합계: C 본인 주장 100, 팀원 평가 70 (= (60+80)/2)', sm[U.C]?.claimed === 100 && sm[U.C]?.perceived === 70 && sm[U.C]?.raters === 2, sm[U.C]);
+check('평가 합계: A 본인 120, 팀원 평가 105', sm[U.A]?.claimed === 120 && sm[U.A]?.perceived === 105, sm[U.A]);
+await db.exec(`delete from public.room_evals where rater = '${U.C}'`);
+r = await as('A', `select ratee, perceived, raters from public.room_eval_summary($1)`, [rid]);
+check('평가 합계: 평가자 1명뿐이면 팀원 평가 숨김(익명 보호)', r.rows?.find(x => x.ratee === U.A)?.perceived === null, r);
+r = await as('anon', `select * from public.room_eval_summary($1)`, [rid]); check('평가 합계: 로그인 안 하면 거절', !!r.err, r);
+r = await as('A', `select * from public.room_eval_summary($1)`, ['00000000-0000-0000-0000-000000000000']); check('평가 합계: 남의 방은 빈 결과', r.rows?.length === 0, r);
+await as('C', `delete from public.room_members where user_id = $1`, [U.C]);
 
 // T7 나가기
 r = await as('B', `delete from public.room_members where user_id=$1`, [U.A]); check('B가 A를 내보내기 불가', r.n === 0, r);

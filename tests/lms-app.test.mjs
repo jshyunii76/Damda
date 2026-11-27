@@ -16,6 +16,7 @@ let rooms=[],cur=null,msgs=[],briefOn=true,briefData=null, leaving=false;
 const dkey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'), todayKey=()=>dkey(new Date());
 const pending=m=>!!m.due&&!m.done, dueOf=m=>m.due, isRep=()=>false, ddays=d=>Math.round((new Date(d)-new Date(todayKey()))/864e5);
 const key=r=>r.code?'room:'+r.code:'msgs:'+r.id, isRO=r=>!!(r&&r.code&&r.joined&&r._perm==='view');
+const KICK={start:async()=>{T.kicked=(T.kicked||0)+1}};
 const RS={marks:[],mark(r){RS.marks.push(r.code)},keepFresh:(c,l)=>l,seen(){},start(){}};
 ` + cut('const mem={};', '/* ---------- 상태') + cut('const SYNC_ON=', 'let seqN=').replace('!!(SB_URL&&SB_KEY)', 'true')
   + 'let seqN=1;' + cut('function syncMark', 'function fileMark') + cut('function applyRows', 'async function pull()')
