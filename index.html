@@ -308,7 +308,7 @@ html.kb body{align-items:flex-start}
   padding:6px 8px calc(8px + env(safe-area-inset-bottom))}
 #scChat.sel #selbar{display:flex}
 #scChat.sel #compose,#scChat.sel #pinbar,#scChat.sel #btnCal,
-#scChat.sel #btnGroup,#scChat.sel #btnShare{display:none}
+#scChat.sel #btnGroup,#scChat.sel #btnShare,#scChat.sel #btnMeet{display:none!important}
 .sbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;border:0;background:transparent;
   font:inherit;font-size:11.5px;font-weight:600;color:var(--ink-2);padding:6px 0;border-radius:10px;cursor:pointer}
 .sbtn:hover{background:var(--mute)}
@@ -418,7 +418,7 @@ html.kb body{align-items:flex-start}
 
 /* ===== 어제·오늘 요약방 ===== */
 #scChat.brief #pinbar,#scChat.brief #btnBack,
-#scChat.brief #btnCal,#scChat.brief #btnShare,#scChat.brief #btnGroup{display:none}
+#scChat.brief #btnCal,#scChat.brief #btnShare,#scChat.brief #btnGroup,#scChat.brief #btnMeet{display:none!important}
 /* 홈(요약) 화면에서만: 모든 방 일정 · AI 설정 */
 #btnHomeCal,#btnAI,#hChat,#whenHint{display:none}
 #scChat:not(.brief) #hFold{display:none!important}
@@ -530,6 +530,36 @@ html.kb body{align-items:flex-start}
 #noteview,#calview,#grpview,#allfold,#setview{position:absolute;inset:0;background:var(--app);z-index:26;
   display:none;flex-direction:column}
 #noteview.on,#calview.on,#grpview.on,#allfold.on,#setview.on{display:flex}
+/* ---------- 팀 회의실 (3바퀴) ---------- */
+#meetview{position:absolute;inset:0;background:#1F2A2E;z-index:27;display:none;flex-direction:column;color:#fff}
+#meetview.on{display:flex}
+#meetview .bar{background:#263338;color:#fff}#meetview .bar .ic svg{stroke:#fff}
+#mtWho{display:flex;gap:6px;flex-wrap:wrap;padding:6px 12px;font-size:12.5px;min-height:20px}
+#mtWho span{background:rgba(255,255,255,.12);border-radius:20px;padding:3px 9px}
+#mtStage{flex:1;position:relative;min-height:0}
+#mtCv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;image-rendering:pixelated}
+#mtHint{position:absolute;left:0;right:0;bottom:6px;text-align:center;font-size:12px;opacity:.7;pointer-events:none}
+#mtBar{padding:8px 10px 12px;background:#263338;display:flex;flex-direction:column;gap:8px}
+#mtEmo{display:flex;gap:6px;justify-content:center}
+#mtEmo .mic{font-size:13px;color:#fff;font-weight:600}#mtEmo .mic.on{background:#2E9E6B}
+#mtEmo button{font-size:20px;background:rgba(255,255,255,.1);border:0;border-radius:10px;padding:5px 10px;cursor:pointer}
+#mtSay{display:flex;gap:6px}#mtSay input{flex:1;min-width:0;border:0;border-radius:10px;padding:10px;font:inherit;font-size:16px}
+#mtSay .btn{flex:0 0 auto;padding:10px 14px}
+#mtLog{background:rgba(255,255,255,.1);color:#fff}
+#mtDressBox{position:absolute;left:0;right:0;bottom:0;background:#fff;color:var(--ink);border-radius:16px 16px 0 0;padding:14px;display:none;flex-direction:column;align-items:center;gap:10px;z-index:2}
+#mtDressBox.on{display:flex}
+#mtCols,#mtAccs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+#mtCols button{width:30px;height:30px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px var(--line);cursor:pointer}
+#mtCols button.on{box-shadow:0 0 0 2px var(--ink)}
+#mtAccs button{border:1px solid var(--line);background:#fff;border-radius:10px;padding:6px 10px;font:inherit;cursor:pointer}
+#mtAccs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.lmslink{display:inline-block;margin-top:4px;font-size:12.5px;color:var(--accent);text-decoration:none;font-weight:600}
+.hm-pal{display:flex;justify-content:center;margin:-6px 0 -10px}.hm-pal canvas{width:320px;max-width:100%;height:150px;cursor:pointer}
+.palrow{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:6px 0}
+#avCols button{width:30px;height:30px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px var(--line);cursor:pointer}
+#avCols button.on{box-shadow:0 0 0 2px var(--ink)}
+#avAccs button{border:1px solid var(--line);background:#fff;border-radius:10px;padding:6px 10px;font:inherit;cursor:pointer}
+#avAccs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 .setlist{padding:8px 10px}
 /* 가운데에 뜨는 확인 창 */
 .sheet.pop{align-items:center;padding:16px}
@@ -614,7 +644,7 @@ html.kb body{align-items:flex-start}
 .gnote b{display:block;color:var(--ink);font-size:13px}
 /* 그룹만 보이는 방 */
 #scChat.grp #pinbar,#scChat.grp #hSearch,
-#scChat.grp #btnCal,#scChat.grp #btnShare{display:none}
+#scChat.grp #btnCal,#scChat.grp #btnShare,#scChat.grp #btnMeet{display:none!important}
 #scChat.grp #btnGroup{color:var(--accent);background:rgba(255,255,255,.6)}
 /* 폴더 채팅방은 윗줄을 조금 짙게 — 전체 채팅방과 한눈에 구분 */
 #scChat.grp #chatMain>.bar{background:var(--soft-2);border-bottom-color:#BCD6CA}
@@ -1002,6 +1032,9 @@ body.rzing *{user-select:none!important}
         <svg viewBox="0 0 24 24"><path d="M3 17.7V6.3a1.8 1.8 0 0 1 1.8-1.8h4.3l2.1 2.2h8A1.8 1.8 0 0 1 21 8.5v9.2a1.8 1.8 0 0 1-1.8 1.8H4.8A1.8 1.8 0 0 1 3 17.7z"/></svg>
       </button>
       <button class="selall" id="btnSelAll">전체 선택</button>
+      <button class="ic" id="btnMeet" aria-label="팀 회의실" style="display:none">
+        <svg viewBox="0 0 24 24"><circle cx="8" cy="9" r="3"/><circle cx="16.5" cy="9" r="3"/><path d="M3 19c.6-3 2.6-4.6 5-4.6s4.4 1.6 5 4.6M11.5 19c.6-3 2.6-4.6 5-4.6s4.4 1.6 5 4.6"/></svg>
+      </button>
       <button class="ic" id="btnShare" aria-label="공유 코드">
         <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.4 10.8l7.2-4.2M8.4 13.2l7.2 4.2"/></svg>
       </button>
@@ -1069,9 +1102,33 @@ body.rzing *{user-select:none!important}
       <h1>설정</h1>
     </div>
     <div class="setlist">
+      <button class="mrow" id="toLms">
+        <svg viewBox="0 0 24 24"><path d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4M9 15l2 2 4-4"/></svg>
+        <span>Canvas 연결</span></button>
       <button class="mrow danger" id="toAcctDel">
         <svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>
         <span>계정 삭제</span></button>
+    </div>
+  </section>
+
+  <section id="meetview" aria-label="팀 회의실">
+    <div class="bar">
+      <button class="ic" id="mtClose" aria-label="나가기"><svg viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg></button>
+      <h1 id="mtTitle">회의실</h1>
+      <button class="ic" id="mtTheme" aria-label="회의실 테마 바꾸기"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-1 1.6-2.1-.4-1.2.4-2.4 1.7-2.4H18a3 3 0 0 0 3-3C21 7 17 3 12 3z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10" cy="7" r="1.2"/><circle cx="14.5" cy="7" r="1.2"/></svg></button>
+      <button class="ic" id="mtDress" aria-label="캐릭터 꾸미기"><svg viewBox="0 0 24 24"><path d="M8 4l-4 3 2 4 2-1v10h8V10l2 1 2-4-4-3c-.5 1.7-2 2.8-4 2.8S8.5 5.7 8 4z"/></svg></button>
+    </div>
+    <div id="mtWho"></div>
+    <div id="mtStage"><canvas id="mtCv"></canvas><div id="mtHint">방향키·WASD 또는 바닥을 눌러 움직여요</div></div>
+    <div id="mtBar">
+      <div id="mtEmo"><button id="mtMic" class="mic" aria-pressed="false">🎤 음성 켜기</button><button data-e="👋">👋</button><button data-e="👍">👍</button><button data-e="😂">😂</button><button data-e="🎉">🎉</button><button data-e="🤔">🤔</button></div>
+      <form id="mtSay"><input id="mtTxt" maxlength="60" placeholder="말하기 (말풍선으로 떠요)" autocomplete="off"><button class="btn" type="submit">보내기</button></form>
+      <button class="btn ghost" id="mtLog">회의 출석 남기기</button>
+    </div>
+    <div id="mtDressBox">
+      <canvas id="mtPrev" width="120" height="120"></canvas>
+      <div id="mtCols"></div><div id="mtAccs"></div>
+      <button class="btn" id="mtDressOk">다 했어요</button>
     </div>
   </section>
 
@@ -1136,6 +1193,34 @@ body.rzing *{user-select:none!important}
     <div class="sws" id="newSw"></div>
     <div class="btns"><button class="btn ghost" data-close>취소</button>
       <button class="btn" id="doNew">만들기</button></div>
+  </div></div>
+
+  <div class="sheet" id="shPal"><div class="card" style="align-items:center;text-align:center">
+    <h2>내 캐릭터</h2>
+    <canvas id="avPrev" width="120" height="120"></canvas>
+    <div id="avCols" class="palrow"></div><div id="avAccs" class="palrow"></div>
+    <p>팀 회의실에서도 이 모습으로 보여요.</p>
+    <div class="btns"><button class="btn" id="avOk">다 했어요</button></div>
+  </div></div>
+
+  <div class="sheet" id="shLms"><div class="card">
+    <h2>Canvas 연결</h2>
+    <p id="lmsInfo"></p>
+    <div id="lmsOff">
+      <p>1. 아래 버튼으로 LMS 캘린더를 열고 로그인하세요<br>2. <b>캘린더 피드</b>를 누르고 링크를 길게 눌러 복사하세요<br>3. 담다로 돌아와 <b>복사한 주소 붙여넣기</b>를 누르세요</p>
+      <div id="lmsSchools"></div>
+      <button class="btn" id="lmsPaste" style="width:100%;margin:4px 0 10px">복사한 주소 붙여넣기</button>
+      <input id="lmsUrl" style="display:block;width:100%;box-sizing:border-box;padding:12px;border:1px solid var(--line);border-radius:10px;font-size:16px;margin:0 0 10px" placeholder="직접 붙여 넣으려면 여기에" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <p>이 주소를 아는 사람은 내 일정을 볼 수 있어요. 다른 사람에게 보내지 마세요.</p>
+      <div class="btns"><button class="btn ghost" data-close>취소</button>
+        <button class="btn" id="lmsLink">연결하기</button></div>
+    </div>
+    <div id="lmsOn">
+      <div id="lmsTeams"></div>
+      <div class="btns"><button class="btn ghost" id="lmsCut">연결 끊기</button>
+        <button class="btn" id="lmsNow">지금 받기</button></div>
+      <div class="btns"><button class="btn ghost" data-close>닫기</button></div>
+    </div>
   </div></div>
 
   <div class="sheet" id="shOut"><div class="card">
@@ -1240,7 +1325,7 @@ body.rzing *{user-select:none!important}
 
   <div class="sheet" id="shDel"><div class="card">
     <h2 id="delTitle">방 삭제</h2>
-    <p>이 방의 메모가 모두 지워지고 되돌릴 수 없습니다.</p>
+    <p id="delDesc">이 방의 메모가 모두 지워지고 되돌릴 수 없습니다.</p>
     <div class="btns"><button class="btn ghost" data-close>취소</button>
       <button class="btn danger" id="doDel">삭제</button></div>
   </div></div>
@@ -1248,6 +1333,7 @@ body.rzing *{user-select:none!important}
   <div class="sheet" id="shJoin"><div class="card">
     <h2>코드로 참여</h2>
     <input type="text" id="joinCode" placeholder="예) 7QK2MD" maxlength="6" autocapitalize="characters">
+    <input type="text" id="joinName" placeholder="이 방에서 쓸 이름" maxlength="20" style="margin-top:8px">
     <div class="btns"><button class="btn ghost" data-close>취소</button>
       <button class="btn" id="doJoin">참여하기</button></div>
   </div></div>
@@ -1502,7 +1588,7 @@ const syncAtKey=()=>'damda:syncAt:'+me.id;
 const lsGet=k=>{ try{ return localStorage.getItem(k); }catch(e){ return null; } };
 const lsSet=(k,v)=>{ try{ v==null?localStorage.removeItem(k):localStorage.setItem(k,v); }catch(e){} };
 const jget=(k,d)=>{ try{ return JSON.parse(lsGet(k))||d; }catch(e){ return d; } };
-const syncable=kk=>/^[ps]:/.test(kk);
+const syncable=kk=>/^[ps]:/.test(kk)&&!kk.startsWith('s:room:');   /* 공유방은 RS(공유방 동기화)가 따로 맞춘다 */
 const isFileId=k=>/^f[0-9a-z]+$/.test(k);
 let pend=jget(PEND,{}), fpend=jget(FPEND,{});   /* 키 → 'u…'(올림) / 'd…'(지움), 뒤 숫자는 바뀐 순서 */
 let own=jget(OWN,{});   /* 이 기기가 올린 기록의 서버 시각 — 받을 때 내가 올린 건 다시 받지 않는다 */
@@ -1591,6 +1677,7 @@ async function pushNow(){
     /* 사진·파일 */
     for(const id of Object.keys(fpend)){
       const mk=fpend[id], path=me.id+'/'+id;
+      if(mk[0]==='u'&&RS.roomOf(id)){ delete fpend[id]; lsSet(FPEND,JSON.stringify(fpend)); continue; }
       if(mk[0]==='u'){
         const rec=await idbRaw.get(id);
         if(rec&&rec.blob){
@@ -1607,7 +1694,7 @@ async function pushNow(){
   }catch(e){ console.warn('서버에 올리지 못함',e); schedPush(15000); }
   finally{ pushing=false; }
 }
-const unsent=()=>Object.keys(pend).length+Object.keys(fpend).length;
+const unsent=()=>Object.keys(pend).length+Object.keys(fpend).length+RS.pending();   /* 공유방에 못 올린 것도 센다 (#1) */
 
 /* 서버 기록 받기 (since 이후에 바뀐 것만) */
 /* 먼저 키와 시각만 받아서, 이 기기가 올린 것·아직 못 올린 것을 빼고 나머지만 내용까지 받는다 (데이터 절약) */
@@ -1635,6 +1722,7 @@ function applyRows(rows){
   let changed=false, last=null;
   for(const r of rows){
     if(!last||r.updated_at>last) last=r.updated_at;
+    if(r.k.startsWith('s:room:')) continue;   /* 예전 방식 공유방 — RS가 옮긴다 */
     if(pend[r.k]||r.skip) continue;   /* 이 기기에서 아직 못 올린 변경이 우선 · 내가 올린 그대로면 건너뜀 */
     setBase(r.k,r.updated_at,r.deleted?undefined:r.v);
     const nv=r.deleted?null:JSON.stringify(r.v);
@@ -1657,9 +1745,11 @@ function localKeys(){
   return ks;
 }
 async function wipeLocal(){
-  try{ for(const k of localKeys().concat(Object.keys(localStorage).filter(k=>k.startsWith('damda:syncAt:')))) localStorage.removeItem(k); }catch(e){}
+  try{ for(const k of localKeys().concat(Object.keys(localStorage).filter(k=>k.startsWith('damda:syncAt:')||k.startsWith('damda:rsince:')||k.startsWith('s:room:')))) localStorage.removeItem(k); }catch(e){}
+  RS.reset();
   for(const k in mem) delete mem[k];
   pend={}; fpend={}; own={}; base={}; lsSet(PEND,null); lsSet(FPEND,null); lsSet(OWN,null); lsSet(BASE,null); lsSet(OWNER,null);
+  lsSet('damda:lms',null);    /* Canvas 받은 시각 */
   lsSet(AI_KEY_STORE,null);   /* 이 기기에 넣어 둔 AI 키도 같이 지운다 */
   await idbRaw.clear(); urlCache.clear();
 }
@@ -1695,7 +1785,10 @@ async function adopt(user){
 }
 async function fileFetch(id){
   try{
-    const {data,error}=await SB.storage.from('files').download(me.id+'/'+id);
+    /* 공유방 사진이면 방 폴더에서, 아니면(또는 옮기기 전 사진이면) 내 폴더에서 */
+    const rid=RS.roomOf(id);
+    let {data,error}=rid?await SB.storage.from('files').download('r/'+rid+'/'+id):{data:null,error:1};
+    if(error||!data) ({data,error}=await SB.storage.from('files').download(me.id+'/'+id));
     if(error||!data) return null;
     const rec={blob:data,type:data.type}; await idbRaw.put(id,rec); return rec;
   }catch(e){ return null; }
@@ -1707,6 +1800,957 @@ const IDB={
   async get(k){ const r=await idbRaw.get(k); if(r||!SB||!me||!isFileId(k)) return r; return fileFetch(k); },
   async del(k){ const r=await idbRaw.del(k); fileMark(k,true); return r; }
 };
+
+/* =====================================================
+   공유방 동기화 (RS) — supabase/rooms.sql
+   방 메모는 서버 room_msgs 표에 '메모 1개 = 1줄'로 둔다. 여러 명이 동시에 써도 서로 덮어쓰지 않는다.
+   화면은 지금처럼 이 기기의 s:room:코드 사본을 읽고 쓰고, 여기서 사본과 서버를 맞춘다.
+   - rbase: 방마다 마지막으로 서버와 맞춘 메모 지문 → 바뀐 메모만 올리고, 이 기기에서 고치는 중인 메모는 덮지 않는다
+   - 작성자·시각·권한은 서버가 정한다 (앱이 보낸 값은 믿지 않음)
+   ===================================================== */
+const RS=(()=>{
+  const RBASE='damda:rbase', RPEND='damda:rpend', FROOM='damda:froom';
+  let rbase=jget(RBASE,{}), rpend=jget(RPEND,{}), froom=jget(FROOM,{});
+  let pushT=null, pullT=null, busy=false, chan=null;
+  const fresh={};        /* 방코드 → 서버에서 막 받아 아직 화면이 다시 읽지 않은 메모 ID (#5: 낡은 화면 목록 저장 시 지워지지 않게) */
+  const fileTry={};      /* 사진 원본을 못 구한 횟수 (#4) */
+  const save=()=>{ lsSet(RBASE,JSON.stringify(rbase)); lsSet(RPEND,JSON.stringify(rpend)); lsSet(FROOM,JSON.stringify(froom)); };
+  const on=()=>!!(SYNC_ON&&SB&&me&&!leaving);
+  const sinceKey=()=>'damda:rsince:'+me.id;
+  const cget=code=>{ try{ return JSON.parse(lsGet('s:room:'+code))||null; }catch(e){ return null; } };
+  const cset=(code,d)=>{ lsSet('s:room:'+code,JSON.stringify(d)); delete mem['s:room:'+code]; };
+  const B=(code,rid)=>(rbase[code]=rbase[code]||{rid,h:{}});
+  const myName=()=>{ const m=(me&&me.user_metadata)||{};
+    return String(m.name||m.full_name||m.nickname||m.preferred_username||((me&&me.email)||'').split('@')[0]||'나').trim().slice(0,20); };
+  const fileOf=m=>m&&m.file&&m.file.id&&isFileId(m.file.id)?m.file.id:null;
+
+  /* 방 사본이 바뀌었다고 표시하고 잠시 뒤 올린다 */
+  function mark(r){
+    if(!r||!r.code) return;
+    rpend[r.code]=++seqN;
+    if(r.rid) for(const m of (cget(r.code)||{}).messages||[]){ const f=fileOf(m); if(f) froom[f]=r.rid; }
+    save(); if(on()){ clearTimeout(pushT); pushT=setTimeout(push,700); }
+  }
+  const isPermErr=e=>!!(e&&(e.code==='42501'||/row-level security|permission/i.test(e.message||'')));
+  /* 정말 쓸 권한이 없어졌는지 서버에 다시 확인한다 (#2: 로그인이 풀려 거절된 걸 '보기만'으로 착각하지 않게)
+     true=쓸 수 있음, false=정말 못 씀(보기만·나가짐), null=모름(로그인 끊김·연결 문제) */
+  async function writable(r){
+    try{
+      const {data:{session}}=await SB.auth.getSession(); if(!session) return null;
+      const {data,error}=await SB.from('rooms').select('perm,owner').eq('id',r.rid);
+      if(error) return null;
+      if(!data.length) return false;
+      return data[0].perm!=='view'||data[0].owner===me.id;
+    }catch(e){ return null; }
+  }
+  async function pushRoom(code){
+    const r=rooms.find(x=>x.code===code), d=cget(code), seq=rpend[code];
+    if(!r||!d){ delete rpend[code]; return; }
+    if(!r.rid) return;                         /* 옮기기 전 방 — 옮긴 뒤 올린다 */
+    if(isRO(r)){ delete rpend[code]; return; }
+    const b=B(code,r.rid).h, list=(d.messages||[]).filter(m=>m&&m.id), ids=new Set(list.map(m=>m.id));
+    const rows=[], nh={};
+    for(const m of list){ const h=hs(m); if(b[m.id]!==h){ rows.push({room_id:r.rid,id:m.id,data:m,deleted:false}); nh[m.id]=h; } }
+    for(const id of Object.keys(b)) if(!ids.has(id)){ rows.push({room_id:r.rid,id,data:{id},deleted:true}); nh[id]=null; }
+    try{
+      /* 새 메모의 사진은 방 폴더에 먼저 올린다. 이 기기에 원본이 없으면 내 서버 폴더에서 받아 와서 올린다 (#4) */
+      for(const x of rows){
+        const f=!x.deleted&&b[x.id]===undefined&&fileOf(x.data); if(!f) continue;
+        froom[f]=r.rid; const rec=await IDB.get(f);
+        if(!(rec&&rec.blob)){
+          fileTry[f]=(fileTry[f]||0)+1;
+          if(fileTry[f]<5) throw new Error('사진 원본을 아직 못 받음 '+f);
+          console.warn('사진 원본을 찾지 못해 글만 올림',f); continue;
+        }
+        const {error}=await SB.storage.from('files').upload('r/'+r.rid+'/'+f,rec.blob,
+          {upsert:true,contentType:rec.type||rec.blob.type||'application/octet-stream'});
+        if(error) throw error;
+      }
+      for(let i=0;i<rows.length;i+=200){
+        const {error}=await SB.from('room_msgs').upsert(rows.slice(i,i+200),{onConflict:'room_id,id'});
+        if(error) throw error;
+      }
+    }catch(e){
+      if(isPermErr(e)&&await writable(r)===false){
+        /* 정말 권한이 없어짐(보기만으로 바뀜·방에서 나가짐) — 서버 상태로 되돌리되, 못 올린 내 글은 따로 보관한다 */
+        console.warn('공유방에 쓸 권한이 없음',code,e);
+        const d2=cget(code);
+        if(d2){
+          const lost=(d2.messages||[]).filter(m=>m&&m.id&&b[m.id]===undefined);
+          if(lost.length){ const k='damda:rstash:'+code; let old=[]; try{ old=JSON.parse(lsGet(k))||[]; }catch(_){}
+            lsSet(k,JSON.stringify(old.concat(lost))); }
+          d2.messages=(d2.messages||[]).filter(m=>m&&b[m.id]!==undefined); cset(code,d2);
+        }
+        rbase[code]={rid:r.rid,h:{}}; delete rpend[code]; save();
+        toast('이 방은 이제 보기만 할 수 있어요. 못 올린 글은 이 폰에 따로 보관했어요');
+        soon(); return;
+      }
+      throw e;                                 /* 그 밖의 오류(로그인 끊김·연결 문제 포함)는 잠시 뒤 다시 */
+    }
+    for(const id in nh){ if(nh[id]===null) delete b[id]; else b[id]=nh[id]; }
+    if(rpend[code]===seq) delete rpend[code];
+    save();
+  }
+  async function push(){
+    if(!on()) return;
+    if(busy){ clearTimeout(pushT); pushT=setTimeout(push,1500); return; }
+    busy=true; let retry=false;
+    try{
+      /* 방마다 따로 — 한 방이 계속 실패해도 다른 방은 올라간다 (#9) */
+      for(const code of Object.keys(rpend)){
+        try{ await pushRoom(code); }
+        catch(e){ console.warn('공유방을 올리지 못함',code,e); retry=true; }
+      }
+    }finally{ busy=false; }
+    if(retry){ clearTimeout(pushT); pushT=setTimeout(push,15000); }
+  }
+  /* 로그아웃 전에: 진행 중인 올리기를 기다렸다가 한 번 더 올린다 (#1) */
+  async function flush(){ while(busy) await sleep(200); await push(); }
+
+  /* 서버 줄들을 방 사본에 반영한다. 이 기기에서 고쳤는데 아직 못 올린 메모는 건드리지 않는다 */
+  function applyMsgs(r,list){
+    const code=r.code, d=cget(code)||{name:r.name,messages:[]}, b=B(code,r.rid).h;
+    const arr=(d.messages||[]).slice(), at=new Map(arr.map((m,i)=>[m&&m.id,i]));
+    let ch=false;
+    for(const x of list){
+      const i=at.get(x.id), loc=i===undefined?null:arr[i];
+      if(loc&&b[x.id]!==undefined&&hs(loc)!==b[x.id]) continue;          /* 이 기기에서 고치는 중 */
+      if(!loc&&b[x.id]!==undefined&&rpend[code]) continue;                /* 이 기기에서 지웠는데 아직 못 올림 */
+      if(x.deleted){
+        if(loc){ arr[i]=null; ch=true; }
+        delete b[x.id]; continue;
+      }
+      const h=hs(x.data); b[x.id]=h;
+      const f=fileOf(x.data); if(f) froom[f]=r.rid;
+      if(loc&&hs(loc)===h) continue;
+      if(loc) arr[i]=x.data; else { at.set(x.id,arr.length); arr.push(x.data); (fresh[code]=fresh[code]||new Map()).set(x.id,Date.now()); }
+      ch=true;
+    }
+    if(ch){ d.messages=arr.filter(Boolean).sort((a,c)=>(a.ts||0)-(c.ts||0)); cset(code,d); }
+    return ch;
+  }
+  async function pull(){
+    if(!on()) return false;
+    const mine=rooms.filter(r=>r.code&&r.rid);
+    if(!mine.length) return false;
+    let changed=false;
+    /* 방 정보(권한)와 멤버 이름 */
+    const [a,m]=await Promise.all([
+      SB.from('rooms').select('id,name,perm,owner'),
+      SB.from('room_members').select('room_id,user_id,display_name,role,joined_at').order('joined_at')]);
+    if(a.error) throw a.error; if(m.error) throw m.error;
+    for(const r of mine){
+      const info=a.data.find(x=>x.id===r.rid); if(!info) continue;   /* 서버에 없음(나가짐) */
+      const d=cget(r.code)||{name:r.name,messages:[]};
+      const mem2=m.data.filter(x=>x.room_id===r.rid).map(x=>({uid:x.user_id,name:x.display_name,role:x.role}));
+      if(d.perm!==info.perm||d.rid!==r.rid||JSON.stringify(d.mem||[])!==JSON.stringify(mem2)){
+        d.perm=info.perm; d.rid=r.rid; d.mem=mem2; cset(r.code,d); changed=true;
+      }
+      r._perm=info.perm; r._members=mem2.length;
+    }
+    /* 처음 받는 방은 통째로 */
+    for(const r of mine){
+      if(B(r.code,r.rid).full) continue;
+      const all=[];
+      for(let off=0;off<100000;off+=1000){
+        const {data,error}=await SB.from('room_msgs').select('id,data,deleted,updated_at').eq('room_id',r.rid)
+          .order('updated_at').order('id').range(off,off+999);
+        if(error) throw error; all.push(...data); if(data.length<1000) break;
+      }
+      if(applyMsgs(r,all)) changed=true;
+      rbase[r.code].full=true;
+    }
+    /* 나머지는 마지막으로 받은 뒤 바뀐 것만 (같은 순간에 들어온 것을 놓치지 않게 5초 겹쳐서) */
+    const since=lsGet(sinceKey()); let last=since; const rows=[];
+    for(let off=0;off<100000;off+=1000){
+      let q=SB.from('room_msgs').select('room_id,id,data,deleted,updated_at').order('updated_at').order('id').range(off,off+999);
+      if(since) q=q.gt('updated_at',new Date(Date.parse(since)-5000).toISOString());
+      const {data,error}=await q; if(error) throw error;
+      rows.push(...data); if(data.length<1000) break;
+    }
+    for(const r of mine){ const l=rows.filter(x=>x.room_id===r.rid); if(l.length&&applyMsgs(r,l)) changed=true; }
+    for(const x of rows) if(!last||x.updated_at>last) last=x.updated_at;
+    if(last) lsSet(sinceKey(),last);
+    save();
+    return changed;
+  }
+  async function sync(){
+    let ch=false;
+    try{ ch=await pull(); }catch(e){ console.warn('공유방을 받지 못함',e); }
+    push();
+    if(ch) await refreshView();
+    return ch;
+  }
+  const soon=()=>{ clearTimeout(pullT); pullT=setTimeout(()=>{ if(on()) sync(); },400); };
+
+  /* 예전 방식(각자 kv에 통째로 저장) 공유방을 새 구조로 옮긴다 — 한 번 옮긴 방은 rid가 생겨 다시 하지 않는다 */
+  async function migrate(){
+    let ch=false;
+    for(const r of rooms.slice()){
+      if(!r.code||r.rid) continue;
+      try{
+        if(r.joined){
+          /* 참여했던 방: 같은 코드로 다시 참여 (방장이 아직 안 옮겼으면 다음에 다시) */
+          const {data,error}=await SB.rpc('join_room',{p_code:r.code,p_display:myName()});
+          if(error) throw error;
+          if(data&&data[0]){ r.rid=data[0].room_id; ch=true; }
+          continue;
+        }
+        let d=cget(r.code);
+        if(!d||!(d.messages||[]).length){
+          const {data:kv}=await SB.from('kv').select('v').eq('k','s:room:'+r.code).maybeSingle();
+          if(kv&&kv.v) d=kv.v;
+        }
+        d=d||{name:r.name,messages:[]};
+        const old=r.code; let code=old, rid=null, adopted=false;
+        /* 내가 이미 이 코드로 옮겨 둔 방이 있으면(다른 기기·지난번에 중간까지) 새로 만들지 않고 그 방을 쓴다 (#3) */
+        const mine=async c=>{ const {data,error}=await SB.rpc('my_room_by_code',{p_code:c}); if(error) throw error; return data||null; };
+        rid=await mine(code); adopted=!!rid;
+        for(let t=0;t<5&&!rid;t++){
+          const {data,error}=await SB.rpc('create_room',{p_code:code,p_name:r.name,p_perm:d.perm==='view'?'view':'edit',p_display:myName()});
+          if(!error){ rid=data; break; }
+          if(error.code==='23505'){                /* 코드가 이미 있음 — 방금 다른 기기가 만들었으면 그 방을 쓰고, 남의 방이면 새 코드 */
+            rid=await mine(code); if(rid){ adopted=true; break; }
+            code=makeCode(); continue;
+          }
+          throw error;
+        }
+        if(!rid) continue;
+        delete d.members; d.rid=rid; d.perm=d.perm==='view'?'view':'edit';
+        cset(code,d); r.rid=rid; r.code=code;
+        rbase[code]={rid,h:{},full:!adopted}; rpend[code]=++seqN; ch=true;   /* 이미 있던 방이면 서버 기록도 받아 합친다 */
+        if(code!==old){ lsSet('s:room:'+old,null); toast(`'${r.name}' 방 코드가 ${code}로 바뀌었어요`); }
+        await SB.from('kv').update({deleted:true,v:null}).eq('k','s:room:'+old);
+      }catch(e){ console.warn('공유방 옮기기 실패',r.code,e); }
+    }
+    if(ch){ save(); await saveRooms(); }
+  }
+  async function start(){
+    if(!on()) return;
+    try{
+      chan=SB.channel('damda-rooms')
+        .on('postgres_changes',{event:'*',schema:'public',table:'room_msgs'},()=>soon())
+        .on('postgres_changes',{event:'*',schema:'public',table:'room_members'},()=>soon())
+        .on('postgres_changes',{event:'*',schema:'public',table:'rooms'},()=>soon())
+        .subscribe();
+    }catch(e){ console.warn('실시간 연결 실패',e); }
+    await migrate();
+    await sync();
+  }
+  return {
+    mark, push, flush, sync, start, myName,
+    pending:()=>Object.keys(rpend).length,
+    seen(code){ delete fresh[code]; },
+    /* 화면이 아직 못 본(방금 받은) 메모가 저장할 목록에 빠져 있으면 다시 넣는다 (#5) */
+    keepFresh(code,list,cache){
+      const f=fresh[code]; if(!f||!f.size) return list;
+      const have=new Set(list.map(m=>m&&m.id)), add=[];
+      /* 받은 지 5초가 지났으면 화면이 이미 다시 그렸다고 보고, 빠져 있으면 사용자가 지운 것으로 본다 */
+      const now=Date.now();
+      for(const [id,t] of [...f]) if(now-t>5000) f.delete(id);
+      for(const m of (cache||[])) if(m&&f.has(m.id)){ if(have.has(m.id)) f.delete(m.id); else add.push(m); }
+      return add.length?list.concat(add).sort((a,c)=>(a.ts||0)-(c.ts||0)):list;
+    },
+    roomOf:id=>froom[id]||null,
+    adopt(code,rid){ rbase[code]={rid,h:{},full:true}; save(); },
+    forget(code){ delete rbase[code]; delete rpend[code]; save(); },
+    reset(){ rbase={}; rpend={}; froom={}; for(const k in fresh) delete fresh[k]; lsSet(RBASE,null); lsSet(RPEND,null); lsSet(FROOM,null);
+      try{ if(chan) SB.removeChannel(chan); }catch(e){} chan=null; }
+  };
+})();
+
+/* ---------- Canvas 연결 (2바퀴): 캘린더 피드 → 과목방 + 마감 할 일 ---------- */
+/*LMS-PURE-START  화면·저장소를 쓰지 않는 부분 (tests/lms.test.mjs 가 그대로 떼어 시험한다)*/
+const LMSP=(()=>{
+  const hash=x=>{ let a=0xdeadbeef,b=0x41c6ce57;
+    for(let i=0;i<x.length;i++){ const c=x.charCodeAt(i); a=Math.imul(a^c,2654435761); b=Math.imul(b^c,1597334677); }
+    a=Math.imul(a^(a>>>16),2246822507)^Math.imul(b^(b>>>13),3266489909);
+    b=Math.imul(b^(b>>>16),2246822507)^Math.imul(a^(a>>>13),3266489909);
+    return (4294967296*(2097151&b)+(a>>>0)).toString(36); };
+  const unesc=x=>x.replace(/\\([\\,;nN])/g,(m,c)=>c==='n'||c==='N'?'\n':c);
+  const two=n=>String(n).padStart(2,'0');
+  /* 마감: 세계시(…Z)는 서울 시간으로, VALUE=DATE(뒤에 시간이 붙은 비표준 포함)는 날짜만 */
+  function when(par,v){
+    const m=/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})(Z)?)?$/.exec(v||''); if(!m) return null;
+    if(/VALUE=DATE(?![-A-Z])/.test(par)||!m[4]) return {due:`${m[1]}-${m[2]}-${m[3]}`,dueTime:null};
+    if(!m[7]) return {due:`${m[1]}-${m[2]}-${m[3]}`,dueTime:`${m[4]}:${m[5]}`};
+    const d=new Date(Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5])+9*3600000);
+    return {due:`${d.getUTCFullYear()}-${two(d.getUTCMonth()+1)}-${two(d.getUTCDate())}`,dueTime:`${two(d.getUTCHours())}:${two(d.getUTCMinutes())}`};
+  }
+  function parse(text){
+    if(!/^BEGIN:VCALENDAR/.test(text||'')||!/END:VCALENDAR\s*$/.test(text)) throw new Error('feed');   /* 중간에 잘린 것도 거절 */
+    const out=[], seen=new Set();
+    const lines=text.replace(/\r?\n[ \t]/g,'').split(/\r?\n/);
+    let o=null;
+    for(const l of lines){
+      if(l==='BEGIN:VEVENT'){ o={}; continue; }
+      if(l==='END:VEVENT'){ const e=o&&event(o); o=null; if(e&&!seen.has(e.uid)){ seen.add(e.uid); out.push(e); } continue; }
+      if(!o) continue;
+      const m=/^([A-Z-]+)((?:;[^:]*)?):([\s\S]*)$/.exec(l);
+      if(m&&!o[m[1]]) o[m[1]]={p:m[2],v:m[3]};
+    }
+    return out;
+  }
+  function tail(t){
+    if(!t.endsWith(']')) return null;
+    for(let i=t.length-1,d=0;i>0;i--){
+      if(t[i]===']') d++;
+      else if(t[i]==='['&&--d===0){ const h=t.slice(0,i).trim(); return h?[h,t.slice(i+1,-1)]:null; }
+    }
+    return null;
+  }
+  function event(o){
+    const uid=o.UID&&o.UID.v, w=o.DTSTART&&when(o.DTSTART.p,o.DTSTART.v);
+    if(!uid||!w) return null;
+    /* 시각 없이 날짜만 온 과제는 그날 23:59 마감 (한양대 LMS 원본 마감과 대조해 22개 모두 확인) */
+    if(!w.dueTime&&/assignment/i.test(uid)) w.dueTime='23:59';
+    let title=unesc((o.SUMMARY&&o.SUMMARY.v)||'').replace(/\s+/g,' ').trim(), course='';
+    const b=tail(title);                                      /* 맨 끝 대괄호 = 과목 (안에 대괄호가 또 있어도) */
+    if(b){ title=b[0]; course=b[1].replace(/^[0-9A-Za-z]+_/,'').trim(); }
+    const raw=(o.URL&&o.URL.v)||'', cid=(/include_contexts=(course_\d+)/.exec(raw)||[])[1]||'';
+    const url=/^https:\/\//i.test(raw)?raw:'';
+    const kind=/quiz|퀴즈|쪽지/i.test(title)?'퀴즈':/\bexam\b|시험|중간고사|기말고사|midterm|\bfinal\b/i.test(title)?'시험'
+      :/assignment/i.test(uid)?'과제':'일정';
+    const team=/팀|조별|그룹|프로젝트|\bteam\b|\bgroup\b|\bproject\b/i.test(title);
+    const desc=unesc((o.DESCRIPTION&&o.DESCRIPTION.v)||'').replace(/[ \t]+/g,' ').replace(/\n{3,}/g,'\n\n').trim().slice(0,1500);
+    return {uid,title,course:course||'Canvas',cid:cid||('n_'+(course||'Canvas')),url,kind,team,desc,...w};
+  }
+  const textOf=(e,sum)=>(e.title.startsWith(`[${e.kind}]`)?e.title:`[${e.kind}] ${e.title}`)+(sum?'\n💡 '+sum:'');
+  /* 일정 번호는 학교마다 따로 매기므로 학교 주소와 묶어서 구분한다 */
+  const keyOf=(host,uid)=>host+' '+uid;
+  const memoId=e=>'c'+hash(keyOf(e.host,e.uid));
+  const GONE=' (Canvas에서 사라짐)';
+  /* 한 방의 목록에 피드를 반영한다. evs: Map(uid→일정), o.host: 피드의 학교, o.mine(uid): 내가 이 피드에서 담은 것인지 */
+  function update(list,evs,today,o){
+    let changed=false; const moved=[];
+    const out=list.map(m=>{
+      const L=m&&m.lms; if(!L||!L.uid||(L.host&&L.host!==o.host)) return m;
+      const e=evs.get(L.uid), n={...m,lms:{...L}};
+      const base=(m.text||'').endsWith(GONE)?m.text.slice(0,-GONE.length):(m.text||'');
+      if(!e){
+        /* 지난 일정은 피드에서 원래 빠진다 — 내가 고친 마감이 아니라 Canvas 마감으로 판단 */
+        if(m.done||!L.due||L.due<today||L.gone||!o.mine(L.uid)) return m;
+        n.text=base+GONE; n.lms.gone=true; changed=true; return n;
+      }
+      if(!L.host){ n.lms.host=o.host; changed=true; }
+      if(L.gone){ n.text=base; delete n.lms.gone; changed=true; }
+      /* 글: 내가 고친 글은 그대로 둔다 */
+      const t=textOf(e,L.sum); if(t!==L.text){ if(base===L.text) n.text=t; n.lms.text=t; changed=true; }
+      /* 마감: Canvas에서 바뀌었을 때만 (내가 따로 고친 마감은 Canvas가 다시 바꾸기 전까지 그대로) */
+      if(e.due===L.due&&!L.dueTime&&e.dueTime==='23:59'){           /* 예전에 날짜만 담은 것에 시각 채우기 — 내가 고친 마감은 그대로 */
+        n.lms.dueTime=e.dueTime; if(m.due===L.due&&!m.dueTime) n.dueTime=e.dueTime; changed=true;
+      }else if(e.due!==L.due||e.dueTime!==L.dueTime){
+        moved.push({uid:L.uid,due:L.due,dueTime:L.dueTime||null,to:e});
+        n.due=e.due; n.dueTime=e.dueTime; n.dueStart=null; n.lms.due=e.due; n.lms.dueTime=e.dueTime; changed=true; }
+      if((e.url||'')!==(L.url||'')){ n.lms.url=e.url; changed=true; }
+      return n;
+    });
+    return {list:changed?out:list,changed,moved};
+  }
+  const make=(e,ts)=>({id:memoId(e),type:'memo',text:textOf(e),file:null,ts,due:e.due,dueStart:null,dueTime:e.dueTime,done:false,
+    lms:{uid:e.uid,host:e.host,cid:e.cid,url:e.url,kind:e.kind,team:e.team,text:textOf(e),due:e.due,dueTime:e.dueTime}});
+  /* 복사한 글에서 피드 주소만 골라낸다 (앞뒤에 다른 글이 붙어 있거나 webcal:// 이어도 된다) */
+  const findUrl=t=>{ const m=/(?:https|webcal):\/\/[^\s"'<>]+?\/feeds\/calendars\/user_[A-Za-z0-9]+\.ics/.exec(String(t||'')); return m?m[0].replace(/^webcal:/,'https:'):''; };
+  const okUrl=u=>{ try{ const x=new URL(String(u).trim()); return x.protocol==='https:'&&!x.search&&!x.hash&&/^\/feeds\/calendars\/user_[A-Za-z0-9]{10,100}\.ics$/.test(x.pathname); }catch(e){ return false; } };
+  /* AI 요약을 붙인다: 내가 글을 고치지 않았을 때만 글도 바꾼다 */
+  function withSum(m,e,sum){
+    const L=m.lms, n={...m,lms:{...L,sum,dh:hash(e.desc||'')}}, t=textOf(e,sum);
+    const base=(m.text||'').endsWith(GONE)?m.text.slice(0,-GONE.length):(m.text||'');
+    if(base===L.text) n.text=t+((m.text||'').endsWith(GONE)?GONE:'');
+    n.lms.text=t; return n;
+  }
+  const needSum=(m,e)=>!!(e&&e.desc&&m.lms.dh!==hash(e.desc));
+  return {parse,update,make,memoId,keyOf,hash,okUrl,findUrl,withSum,needSum};
+})();
+/*LMS-PURE-END*/
+const LMS=(()=>{
+  /* 연결 주소는 p:lms {url} 로 계정에 저장(다른 기기도 연결). 받은 시각·오류는 이 기기에만 둔다 —
+     받기에 실패할 때마다 p:lms 를 다시 올리면 다른 기기에서 끊은 연결이 되살아나기 때문이다.
+     담은 적 있는 일정(p:msgs:_lms)은 목록 키라서 두 기기가 동시에 써도 합쳐진다 */
+  const EVERY=3600000, RETRY=600000, LOCAL='damda:lms', SEEN='msgs:_lms';
+  let busy=false, drawN=0, ready=false, gen=0;
+  const load=async()=>{ const v=await S.get('lms'); return v&&v.url?v:null; };
+  const local=url=>{ const v=jget(LOCAL,{}); return v.k===LMSP.hash(url)?v:{}; };
+  const setLocal=(url,v)=>lsSet(LOCAL,JSON.stringify({...local(url),...v,k:LMSP.hash(url)}));
+  const MSG={url:'Canvas 캘린더 피드 주소가 아니에요',feed:'일정을 받지 못했어요. LMS에서 피드 주소를 다시 복사해 주세요',
+    big:'일정이 너무 많아 받지 못했어요',net:'학교 LMS에 연결하지 못했어요. 잠시 후 다시 해 주세요',login:'로그인하면 연결할 수 있어요'};
+  const why=e=>MSG[e&&e.message]?e.message:'net';
+  /* 기다리는 사이 로그아웃·계정 삭제·다른 계정 로그인·연결 끊기가 있었으면 아무것도 저장하지 않는다 */
+  const mine=uid=>!leaving&&!!me&&me.id===uid&&lsGet(OWNER)===uid;
+  const still=(uid,g)=>mine(uid)&&g===gen;
+  /* 쓰는 중이거나 다른 창이 열려 있으면 자동 받기는 기다린다 (고치던 글·열어 둔 화면이 사라지지 않게) */
+  const uiBusy=()=>!!document.querySelector('.sheet.on,#setview.on,#calview.on,#grpview.on,#allfold.on,#pinlist.on,#search.on,#noteview.on,#meetview.on')
+    ||selMode||!!noteEd||$('#scChat').classList.contains('hopen');
+  async function get(url){
+    const {data,error}=await SB.functions.invoke('canvas-feed',{body:{url}});
+    if(error){ let c='net'; try{ c=(await error.context.json()).error||'net'; }catch(e){} throw new Error(MSG[c]?c:'net'); }
+    return LMSP.parse(typeof data==='string'?data:await data.text());
+  }
+  /* 과목방은 늘 개인방. 어느 기기에서 만들어도 같은 ID가 되게 해서 방이 둘로 늘지 않는다 */
+  async function roomFor(e){
+    const rk=LMSP.keyOf(e.host,e.cid);
+    let r=rooms.find(x=>!x.code&&x.lms===rk)||rooms.find(x=>!x.code&&x.lms===e.cid);
+    if(!r) r=rooms.find(x=>!x.code&&!x.lms&&!x.lmsTeam&&x.name===e.course&&x.name!==INBOX);   /* 내가 먼저 만들어 둔 같은 이름의 방 */
+    if(!r){
+      let id='rlms'+LMSP.hash(rk); while(rooms.some(x=>x.id===id)) id+='x';
+      const used=new Set(rooms.map(x=>x.color)), pal=COLORS.slice(0,-1);
+      r={id,name:e.course,preview:'',at:null,code:null,pin:false,_due:0,color:pal.find(c=>!used.has(c))||pal[rooms.length%pal.length],ai:false};
+      rooms.unshift(r); normalize();
+    }
+    if(r.lms!==rk){ r.lms=rk; await saveRooms(); }
+    return r;
+  }
+  const shown=r=>cur&&cur.id===r.id&&!briefOn;
+  const listOf=async r=>shown(r)?msgs:await readList(r);
+  async function put(r,list){
+    const before=msgs; if(shown(r)) msgs=list;
+    const ok=await saveList(r,list)!==false;
+    if(!ok&&shown(r)) msgs=before;
+    return ok;
+  }
+  async function apply(evs,url,ok){
+    const host=new URL(url).host, today=todayKey(), K=u=>LMSP.keyOf(host,u);
+    for(const e of evs) e.host=host;
+    const map=new Map(evs.map(e=>[e.uid,e])), own=rooms.filter(r=>!r.code), have=new Set();
+    for(const r of own) for(const m of await listOf(r)) if(m&&m.lms&&m.lms.uid&&(m.lms.host||host)===host) have.add(K(m.lms.uid));
+    const was=await S.get(SEEN)||[], seen=new Set(was.map(x=>x&&x.id)), fresh=new Set();
+    const note=k=>{ if(!seen.has(k)){ seen.add(k); fresh.add(k); } };
+    /* 예전 버전의 기록 옮기기: 마감이 지나 담지 않았던 일정은 빼서, 마감이 미뤄지면 다시 담기게 한다 */
+    const old=await S.get('lms');
+    for(const u of (old&&old.seen)||[]){ const e=map.get(u); if(have.has(K(u))||!(e&&e.due<today)) note(K(u)); }
+    for(const k of have) note(k);
+    let added=0, changed=0, full=false; const moved=[];
+    for(const r of own){
+      const u=LMSP.update(await listOf(r),map,today,{host,mine:x=>seen.has(K(x))});
+      if(!u.changed) continue;
+      if(!ok()) return null;
+      if(await put(r,u.list)){ changed++; moved.push(...u.moved); } else full=true;
+    }
+    /* 팀플방에 복사해 둔 과제도 마감이 바뀌면 같이 (팀원이 따로 고치지 않았을 때만) */
+    for(const v of moved) for(const r of rooms){
+      if(r.lmsTeam!==K(v.uid)||isRO(r)) continue;
+      const list=await listOf(r); let hit=false;
+      const nl=list.map(m=>m&&m.teamOf===K(v.uid)&&m.due===v.due&&(m.dueTime||null)===v.dueTime?(hit=true,{...m,due:v.to.due,dueTime:v.to.dueTime}):m);
+      if(hit&&ok()) await put(r,nl);
+    }
+    /* 처음 보는 일정만 새로 넣는다 — 예전에 넣었는데 지금 없으면 내가 지운 것이므로 되살리지 않는다 */
+    const by=new Map();
+    for(const e of evs) if(!seen.has(K(e.uid))&&e.due>=today) by.set(e.cid,[...(by.get(e.cid)||[]),e]);
+    for(const es of by.values()){
+      if(!ok()) return null;
+      const r=await roomFor(es[0]), list=await listOf(r), ids=new Set(list.map(m=>m&&m.id)); let ts=Date.now();
+      const add=es.filter(e=>!ids.has(LMSP.memoId(e))).sort((x,y)=>x.due<y.due?-1:1);
+      if(add.length&&!await put(r,list.concat(add.map(e=>LMSP.make(e,ts++))))){ full=true; continue; }   /* 저장 못 한 것은 다음에 다시 */
+      added+=add.length; for(const e of es) note(K(e.uid));
+    }
+    if(!ok()) return null;
+    if(fresh.size){ const t=Date.now(); await S.set(SEEN,was.concat([...fresh].map(id=>({id,ts:t}))).slice(-3000)); }
+    if(old&&old.seen) await S.set('lms',{url});
+    return {added,changed,full};
+  }
+  async function redraw(){
+    await loadRooms();
+    if(briefOn){ briefData=await buildBrief(); drawBrief(false); drawRail(); return; }
+    const r=cur&&rooms.find(x=>x.id===cur.id);
+    if(!r){ await openBrief(); return; }
+    cur=r; msgs=await readList(cur); if(cur.code) RS.seen(cur.code);
+    drawStream(true); drawRail();
+  }
+  /* 받아 온 일정을 담는다: 다른 기기에서 바뀐 기록을 먼저 받고 → 사용자·연결을 다시 확인하고 → 적용 */
+  async function take(evs,url,uid,g,manual){
+    if(!manual){ for(let i=0;i<120&&uiBusy()&&still(uid,g);i++) await sleep(1000); if(uiBusy()) return null; }
+    if(!still(uid,g)) return null;
+    const ch=await pull();
+    if(!mine(uid)) return null;
+    if(ch) await redraw();
+    const st=await load();
+    if(!still(uid,g)||!st||st.url!==url) return null;      /* 받는 사이 연결을 끊음(이 기기든 다른 기기든) */
+    const r=await apply(evs,url,()=>still(uid,g)); if(!r) return null;
+    setLocal(url,{at:Date.now(),err:null});
+    if(r.added||r.changed) await redraw();
+    toastResult(r,manual);
+    summarize(evs,url,uid,g).catch(e=>console.warn('과제 요약 실패',e&&e.message));
+    return r;
+  }
+  /* 과제 설명에서 놓치기 쉬운 조건만 한 줄로 (예: '1차 제출자는 안 내도 됨'). AI 키가 있을 때만 — 설명이 구글 Gemini 로 간다 */
+  async function summarize(evs,url,uid,g){
+    if(!aiKey) return;
+    const host=new URL(url).host, map=new Map(evs.map(e=>[e.uid,{...e,host}])), todo=[];
+    for(const r of rooms) if(!r.code) for(const m of await listOf(r)){
+      const L=m&&m.lms, e=L&&L.uid&&(L.host||host)===host&&!m.done&&m.due>=todayKey()&&map.get(L.uid);
+      if(e&&LMSP.needSum(m,e)&&!todo.some(x=>x.uid===e.uid)) todo.push(e);
+    }
+    let n=0;
+    for(let i=0;i<todo.length;i+=20){
+      const part=todo.slice(i,i+20);
+      const out=await gText({system:SUM_SYS,json:true,maxTokens:1200,temperature:0.1,
+        parts:[{text:part.map((e,k)=>`#${k+1} 제목: ${e.title}\n설명: ${e.desc}`).join('\n\n')}]});
+      let arr=[]; try{ arr=JSON.parse(out); }catch(e){}
+      if(!Array.isArray(arr)) arr=[];
+      const sums=new Map(part.map((e,k)=>[e.uid,String(arr[k]||'').replace(/\s+/g,' ').trim().slice(0,60)]));
+      if(!still(uid,g)) return;
+      for(const r of rooms){
+        if(r.code) continue;
+        const list=await listOf(r); let hit=false;
+        const nl=list.map(m=>{ const L=m&&m.lms; if(!L||!sums.has(L.uid)||(L.host||host)!==host) return m; hit=true; n++; return LMSP.withSum(m,map.get(L.uid),sums.get(L.uid)); });
+        if(hit&&still(uid,g)) await put(r,nl);
+      }
+    }
+    if(n&&still(uid,g)) await redraw();
+  }
+  const SUM_SYS='대학 과제 설명을 읽고, 학생이 놓치기 쉬운 것만 한국어 한 줄(40자 이내)로 적는다: 제출 조건·예외(예: "1차 제출자는 안 내도 됨"), 제출 방법·형식, 분량, 팀/개인 여부, 감점 조건. '
+    +'제목만 봐도 아는 내용이나 일반적인 인사말이면 빈 문자열. 설명에 없는 것은 지어내지 않는다. '
+    +'입력의 #번호 순서대로 문자열만 담은 JSON 배열로 답한다. 예: ["1차 제출자는 안 내도 됨",""]';
+  function toastResult(r,manual){
+    if(r.full) toast('저장 공간이 부족해 일부 일정을 담지 못했어요');
+    else if(r.added) toast(`Canvas 일정 ${r.added}개를 담았어요`);
+    else if(manual) toast('새로 담을 일정이 없어요');
+  }
+  async function receive(manual){
+    if(!ready||!SB||!me||leaving) return null;
+    if(busy){ if(manual) toast('지금 받는 중이에요'); return null; }
+    busy=true; const uid=me.id, g=gen; let url=null;
+    try{
+      const st=await load(); if(!st) return null;
+      const lo=local(st.url), now=Date.now();
+      if(!manual&&(navigator.onLine===false||now-(lo.at||0)<EVERY||now-(lo.try||0)<RETRY)) return null;
+      url=st.url; setLocal(url,{try:now});
+      const evs=await get(url);
+      return await take(evs,url,uid,g,manual);
+    }catch(e){
+      console.warn('Canvas 받기 실패',e&&e.message);
+      if(url&&still(uid,g)) setLocal(url,{err:why(e)});
+      if(manual) toast(MSG[why(e)]);
+      return null;
+    }finally{ busy=false; if(mine(uid)) draw(); }
+  }
+  /* 버튼으로 바로 열어 줄 학교 LMS 캘린더 (다른 학교는 여기에 한 줄 추가) */
+  const SCHOOLS=[['한양대','https://learning.hanyang.ac.kr/calendar']];
+  function schools(){
+    $('#lmsSchools').replaceChildren(...SCHOOLS.map(([n,u])=>{
+      const a=el('a','btn ghost'); a.href=u; a.target='_blank'; a.rel='noopener'; a.textContent=n+' LMS 캘린더 열기';
+      a.style.cssText='display:block;width:100%;box-sizing:border-box;margin:4px 0;text-align:center;text-decoration:none'; return a; }));
+  }
+  async function paste(){
+    let t=null; try{ t=await navigator.clipboard.readText(); }catch(e){}
+    if(t===null){ $('#lmsUrl').focus(); toast('붙여넣기가 막혀 있어요. 아래 칸을 길게 눌러 붙여 넣어 주세요'); return; }
+    const u=LMSP.findUrl(t);
+    if(!u){ toast('복사한 것 중에 캘린더 피드 주소가 없어요'); return; }
+    await link(u);
+  }
+  async function link(url){
+    url=String(url||'').trim(); url=LMSP.findUrl(url)||url;
+    if(!ready||!SB||!me||leaving){ toast(MSG.login); return; }
+    if(!LMSP.okUrl(url)){ toast(MSG.url); return; }
+    const uid=me.id, g=++gen;                       /* 진행 중이던 받기는 여기서 무효가 된다 */
+    while(busy) await sleep(100);
+    if(!still(uid,g)) return;
+    busy=true; let saved=false;
+    try{
+      const evs=await get(url);                     /* 받아지는 주소일 때만 저장한다 */
+      if(!still(uid,g)) return;
+      const old=await S.get('lms');
+      await S.set('lms',{url,...(old&&old.seen?{seen:old.seen}:{})}); saved=true;
+      $('#lmsUrl').value='';
+      await take(evs,url,uid,g,true);
+    }catch(e){
+      console.warn('Canvas 연결 실패',e&&e.message);
+      if(saved&&still(uid,g)) setLocal(url,{err:why(e)});
+      toast(MSG[why(e)]);
+    }finally{ busy=false; if(mine(uid)) draw(); }
+  }
+  async function cut(){
+    gen++;
+    const old=await S.get('lms');
+    if(old&&old.url&&old.seen){                     /* 예전 버전의 '담은 적 있는 일정'은 남긴다 (다시 연결해도 지운 것이 안 살아나게) */
+      const was=await S.get(SEEN)||[], ids=new Set(was.map(x=>x.id)), host=new URL(old.url).host;
+      await S.set(SEEN,was.concat(old.seen.map(u=>({id:LMSP.keyOf(host,u),ts:Date.now()})).filter(x=>!ids.has(x.id))));
+    }
+    await S.del('lms'); lsSet(LOCAL,null);
+    $('#lmsUrl').value=''; toast('연결을 끊었어요. 담긴 일정은 그대로 있어요'); draw();
+  }
+  /* 팀 과제 → 사용자가 누를 때만 팀플방을 만든다. 제목과 마감만 옮긴다(내 추가 메모·태그·완료는 안 옮김) */
+  async function teamRoom(m,src){
+    const k=LMSP.keyOf(m.lms.host||'',m.lms.uid);
+    let r=rooms.find(x=>x.lmsTeam===k);
+    if(!r){
+      r={id:'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name:(src.name+' 팀플').slice(0,40),preview:'',at:null,code:null,pin:false,_due:0,color:src.color,ai:false,lmsTeam:k};
+      rooms.unshift(r); normalize(); await saveRooms();
+      await saveList(r,[{id:'m'+Date.now().toString(36),type:'memo',text:m.lms.text||m.text,file:null,ts:Date.now(),due:m.due,dueStart:null,dueTime:m.dueTime||null,done:false,teamOf:k}]);
+    }
+    $('#shLms').classList.remove('on'); $('#setview').classList.remove('on');
+    await openRoom(r.id);
+    if(!r.code) $('#btnShare').click();
+  }
+  async function draw(){
+    const my=++drawN, st=await load(), on=!!st, lo=on?local(st.url):{}, btns=[]; let nRoom=0, nDue=0;
+    if(on) for(const r of rooms){
+      if(r.code) continue;
+      let n=0;
+      for(const m of await readList(r)){
+        if(!(m&&m.lms&&m.lms.uid&&!m.done&&m.due>=todayKey())) continue;
+        n++;
+        if(!m.lms.team) continue;
+        const b=el('button','btn ghost'); b.style.cssText='width:100%;margin:4px 0;text-align:left';
+        b.textContent=(rooms.some(x=>x.lmsTeam===LMSP.keyOf(m.lms.host||'',m.lms.uid))?'팀플방 열기 · ':'팀플방 만들기 · ')+m.text;
+        b.onclick=()=>teamRoom(m,r); btns.push(b);
+      }
+      if(n){ nRoom++; nDue+=n; }
+    }
+    if(my!==drawN) return;                         /* 동시에 두 번 그려도 마지막 것만 쓴다 */
+    $('#lmsOff').style.display=on?'none':''; $('#lmsOn').style.display=on?'':'none';
+    const got=lo.at?new Date(lo.at).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'})+'에 받음':'아직 받지 않음';
+    $('#lmsInfo').textContent=!(SB&&me)?MSG.login:!on?'학교 LMS의 과제·시험 마감을 과목방에 자동으로 담아요.'
+      :(lo.err?MSG[lo.err]+' · ':`연결됨 · 과목방 ${nRoom}개 · 남은 마감 ${nDue}개 · `)+got
+        +(aiKey?' · 과제 설명은 AI가 한 줄로 요약해요':' · AI 키를 넣으면 과제 설명 요약도 붙어요');
+    schools(); $('#lmsTeams').replaceChildren(...btns);
+  }
+  /* 방 목록을 다 읽은 뒤에만 시작한다 — 그 전에 받으면 빈 방 목록을 저장해 버린다 */
+  function start(){
+    if(ready) return; ready=true;
+    document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') receive(false); });
+    receive(false);
+  }
+  return {start,pull:receive,link,paste,cut,draw,teamRoom};
+})();
+$('#toLms').onclick=async()=>{ await LMS.draw(); open('#shLms'); };
+const lmsAct=(id,f)=>{ $(id).onclick=async()=>{ const b=$(id), t=b.textContent; b.disabled=true; b.textContent='받는 중…'; try{ await f(); }finally{ b.disabled=false; b.textContent=t; } }; };
+lmsAct('#lmsLink',()=>LMS.link($('#lmsUrl').value)); lmsAct('#lmsPaste',()=>LMS.paste()); lmsAct('#lmsNow',()=>LMS.pull(true));
+$('#lmsCut').onclick=()=>LMS.cut();
+
+/* ---------- 팀 회의실 (3바퀴): 공유방 멤버가 캐릭터로 모이는 2D 방 ----------
+   위치처럼 자주 바뀌는 값은 Broadcast, 누가 들어와 있는지는 Presence (Supabase 권장 방식).
+   서버에 저장하는 것은 없다. '회의 출석 남기기'만 방에 메모 한 줄을 남긴다 */
+const AV_COLORS=['#2E6A63','#E07A5F','#3D5A80','#E9B44C','#81B29A','#B5838D','#6D597A','#4EA5D9'];
+const AV_ACCS=[['none','없음'],['sprout','새싹'],['cap','모자'],['glasses','안경'],['ribbon','리본'],['phones','헤드폰']];
+/* 담다 캐릭터: 로고의 말풍선(D)을 닮은 동글한 몸 + 얼굴 + 꾸미기.
+   o.face: smile(기본) · laugh · wow · think · wave — 이모지를 보내면 잠깐 그 표정이 된다. 말하는 동안은 입이 움직인다 */
+const EMO_FACE={'👋':'wave','👍':'smile','😂':'laugh','🎉':'laugh','🤔':'think','😮':'wow'};
+function shadeHex(c,k){ const n=parseInt(c.slice(1),16); const f=v=>Math.max(0,Math.min(255,Math.round(v*k))); return '#'+[n>>16,(n>>8)&255,n&255].map(f).map(v=>v.toString(16).padStart(2,'0')).join(''); }
+function drawAvatar(g,x,y,av,o={}){
+  const c=AV_COLORS.includes(av&&av.c)?av.c:AV_COLORS[0], acc=(av&&av.a)||'none', t=o.t||0, dir=o.dir||1;
+  const face=o.face||'smile', talk=!!o.talk, mv=!!o.moving;
+  const step=mv?Math.sin(t*16):0, bob=mv?Math.abs(step)*-2.2:Math.sin(t*2.2)*.7, by=y-17+bob;
+  g.save();
+  g.fillStyle='rgba(0,0,0,.22)'; g.beginPath(); g.ellipse(x,y,11-Math.abs(bob)*.6,4,0,0,Math.PI*2); g.fill();
+  /* 발 (걸을 때 번갈아) */
+  g.fillStyle=shadeHex(c,.6);
+  g.beginPath(); g.ellipse(x-5+step*2.5,y-2-(step>0?step*2:0),4,2.6,0,0,Math.PI*2); g.ellipse(x+5-step*2.5,y-2-(step<0?-step*2:0),4,2.6,0,0,Math.PI*2); g.fill();
+  /* 몸 (말풍선 꼬리 포함) */
+  const sq=mv?1+Math.abs(step)*.04:1, w=26*sq,h=24/sq,l=x-w/2,tp=by-h/2,r=9;
+  const grd=g.createLinearGradient(0,tp,0,tp+h); grd.addColorStop(0,shadeHex(c,1.15)); grd.addColorStop(1,c);
+  g.fillStyle=grd; g.strokeStyle=shadeHex(c,.55); g.lineWidth=1.5;
+  g.beginPath();
+  g.moveTo(l+r,tp); g.lineTo(l+w-r,tp); g.quadraticCurveTo(l+w,tp,l+w,tp+r); g.lineTo(l+w,tp+h-r); g.quadraticCurveTo(l+w,tp+h,l+w-r,tp+h);
+  g.lineTo(x+(dir>0?-3:7),tp+h); g.lineTo(x+(dir>0?-9:9),tp+h+6); g.lineTo(x+(dir>0?-7:3),tp+h);
+  g.lineTo(l+r,tp+h); g.quadraticCurveTo(l,tp+h,l,tp+h-r); g.lineTo(l,tp+r); g.quadraticCurveTo(l,tp,l+r,tp);
+  g.fill(); g.stroke();
+  g.fillStyle='rgba(255,255,255,.3)'; g.beginPath(); g.ellipse(x-5*dir,tp+6,6,3,-.4*dir,0,Math.PI*2); g.fill();
+  /* 손 흔들기 */
+  if(face==='wave'){ const a=Math.sin(t*14)*.5; g.save(); g.translate(x+dir*13,by-2); g.rotate(dir*(-.9+a)); g.fillStyle=c; g.strokeStyle=shadeHex(c,.55);
+    g.beginPath(); g.ellipse(0,-6,3.2,6,0,0,Math.PI*2); g.fill(); g.stroke(); g.restore(); }
+  /* 얼굴 */
+  const ex=x+dir*2.5, ey=by-1, blink=face!=='laugh'&&(Math.floor(t*10+(o.seed||0))%42)===0;
+  g.fillStyle='#1B2024'; g.strokeStyle='#1B2024'; g.lineWidth=1.5; g.lineCap='round';
+  if(face==='laugh'){ for(const k of [-4,4]){ g.beginPath(); g.moveTo(ex+k-2.4,ey+.8); g.lineTo(ex+k,ey-1.6); g.lineTo(ex+k+2.4,ey+.8); g.stroke(); } }
+  else if(blink){ g.fillRect(ex-6,ey,4,1.5); g.fillRect(ex+2,ey,4,1.5); }
+  else{ const big=face==='wow'?3:2.2, look=face==='think'?-1.2:0;
+    g.beginPath(); g.arc(ex-4,ey+look,big,0,Math.PI*2); g.arc(ex+4,ey+look,big,0,Math.PI*2); g.fill();
+    g.fillStyle='#fff'; g.beginPath(); g.arc(ex-3.2+(face==='think'?.6:0),ey-.8+look,.85,0,Math.PI*2); g.arc(ex+4.8+(face==='think'?.6:0),ey-.8+look,.85,0,Math.PI*2); g.fill(); g.fillStyle='#1B2024'; }
+  if(face==='think'){ g.beginPath(); g.moveTo(ex+1.5,ey-5.5); g.lineTo(ex+6.5,ey-6.5); g.stroke(); }
+  g.fillStyle='rgba(255,130,130,.55)'; g.beginPath(); g.arc(ex-8,ey+4,2.1,0,Math.PI*2); g.arc(ex+8,ey+4,2.1,0,Math.PI*2); g.fill();
+  /* 입 */
+  const open=talk?(Math.sin(t*22)>0):face==='laugh'||face==='wow';
+  g.fillStyle='#7A2E2E';
+  if(face==='think'){ g.beginPath(); g.moveTo(ex-2,ey+4); g.lineTo(ex+2.5,ey+3.4); g.stroke(); }
+  else if(face==='wow'){ g.beginPath(); g.ellipse(ex,ey+4.4,1.8,2.2,0,0,Math.PI*2); g.fill(); }
+  else if(open){ g.beginPath(); g.arc(ex,ey+3,2.8,0,Math.PI); g.closePath(); g.fill(); }
+  else{ g.beginPath(); g.arc(ex,ey+2.6,2.2,.15*Math.PI,.85*Math.PI); g.stroke(); }
+  /* 꾸미기 */
+  g.lineWidth=1.5; g.lineCap='butt';
+  if(acc==='sprout'){ const sw=Math.sin(t*3)*.15; g.save(); g.translate(x,tp); g.rotate(sw); g.strokeStyle='#3F8F4A'; g.beginPath(); g.moveTo(0,0); g.lineTo(0,-6); g.stroke();
+    g.fillStyle='#5DBB63'; g.beginPath(); g.ellipse(-4,-7,4,2.2,-.5,0,Math.PI*2); g.ellipse(4,-8,4,2.2,.5,0,Math.PI*2); g.fill(); g.restore(); }
+  if(acc==='cap'){ g.fillStyle='#F4F1DE'; g.beginPath(); g.arc(x,tp+3,11,Math.PI,0); g.fill(); g.fillStyle='#E07A5F'; g.fillRect(x+(dir>0?2:-14),tp+1,12,3); g.fillStyle='#E07A5F'; g.beginPath(); g.arc(x,tp-7.5,1.8,0,Math.PI*2); g.fill(); }
+  if(acc==='glasses'){ g.strokeStyle='#1B2024'; g.beginPath(); g.arc(ex-4,ey,3.8,0,Math.PI*2); g.moveTo(ex+7.8,ey); g.arc(ex+4,ey,3.8,0,Math.PI*2); g.moveTo(ex-.2,ey); g.lineTo(ex+.2,ey); g.stroke(); }
+  if(acc==='ribbon'){ g.fillStyle='#F28482'; g.beginPath(); g.moveTo(x+6,tp+1); g.lineTo(x+1,tp-5); g.lineTo(x+1,tp+5); g.closePath(); g.moveTo(x+6,tp+1); g.lineTo(x+11,tp-5); g.lineTo(x+11,tp+5); g.closePath(); g.fill(); g.fillStyle='#E5585A'; g.beginPath(); g.arc(x+6,tp+1,1.8,0,Math.PI*2); g.fill(); }
+  if(acc==='phones'){ g.strokeStyle='#33363A'; g.lineWidth=2.5; g.beginPath(); g.arc(x,by,14,Math.PI*1.1,Math.PI*1.9); g.stroke(); g.fillStyle='#33363A'; g.fillRect(x-16,by-4,5,9); g.fillRect(x+11,by-4,5,9); }
+  /* 이름표 */
+  if(o.name){ g.font='bold 9px sans-serif'; const tw=g.measureText(o.name).width+8;
+    g.fillStyle=o.me?'rgba(46,106,99,.92)':'rgba(0,0,0,.55)'; roundRect(g,x-tw/2,y+4,tw,12,6); g.fill();
+    g.fillStyle='#fff'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(o.name,x,y+10.5); }
+  /* 말풍선 */
+  if(o.say){ g.font='10px sans-serif'; const lines=wrapTxt(g,o.say,110), lh=12, bw=Math.max(...lines.map(l=>g.measureText(l).width))+12, bh=lines.length*lh+8, bx=x-bw/2, byy=tp-14-bh-(acc==='none'?0:6);
+    g.fillStyle='#fff'; g.strokeStyle='rgba(0,0,0,.12)'; g.lineWidth=1; roundRect(g,bx,byy,bw,bh,7); g.fill(); g.stroke(); g.beginPath(); g.moveTo(x-4,byy+bh-.5); g.lineTo(x,byy+bh+5); g.lineTo(x+4,byy+bh-.5); g.fill();
+    g.fillStyle='#1B2024'; g.textAlign='center'; g.textBaseline='top'; lines.forEach((l,i)=>g.fillText(l,x,byy+4+i*lh)); }
+  if(o.emo){ g.font='18px sans-serif'; g.textAlign='center'; g.textBaseline='bottom'; g.globalAlpha=Math.max(0,1-o.emoT); g.fillText(o.emo,x+14*dir,tp-4-o.emoT*18); g.globalAlpha=1; }
+  g.restore();
+}
+/* 꾸미기 화면 (회의실·홈 같이 씀): pre = '#mt' 또는 '#av' */
+function dressUI(pre,get,set){
+  const draw=()=>{ const av=get(), cv=$(pre+'Prev'), g=cv.getContext('2d'); g.setTransform(1,0,0,1,0,0); g.clearRect(0,0,cv.width,cv.height);
+    g.setTransform(2.4,0,0,2.4,0,0); drawAvatar(g,25,40,av,{t:performance.now()/1000,dir:1,face:'smile'});
+    $(pre+'Cols').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.c===av.c)); $(pre+'Accs').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.a===av.a)); };
+  $(pre+'Cols').replaceChildren(...AV_COLORS.map(c=>{ const b=el('button'); b.style.background=c; b.dataset.c=c; b.setAttribute('aria-label','색 '+c); b.onclick=()=>{ set({...get(),c}); draw(); }; return b; }));
+  $(pre+'Accs').replaceChildren(...AV_ACCS.map(([a,n])=>{ const b=el('button'); b.textContent=n; b.dataset.a=a; b.onclick=()=>{ set({...get(),a}); draw(); }; return b; }));
+  draw();
+}
+const myAvatar=async()=>{ let av=await S.get('avatar'); if(!av){ av={c:AV_COLORS[Math.floor(Math.random()*AV_COLORS.length)],a:'sprout'}; } return av; };
+function roundRect(g,x,y,w,h,r){ g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath(); }
+function wrapTxt(g,s,max){ const out=[]; let cur=''; for(const ch of String(s)){ if(g.measureText(cur+ch).width>max){ out.push(cur); cur=ch; if(out.length===2){ cur='…'; break; } } else cur+=ch; } out.push(cur); return out.slice(0,3); }
+
+/* 회의실 테마: 배치는 같고(부딪히는 곳 동일) 색과 소품만 바뀐다. 테마는 내 화면에만 적용 */
+const MEET_THEMES={
+  office:{n:'사무실',floor:['#D9B98C','#D2B080'],wall:'#A7C4BC',wall2:'#8FB0A7',board:'#fff',boardInk:'#1B2024',table:['#8C5E3C','#A87148'],chair:'#3D5A80',sofa:['#E07A5F','#F2A28B'],shelf:'#6D4C3D',bg:'#1F2A2E'},
+  cafe:{n:'카페',floor:['#C4956A','#B98A5F'],wall:'#F1E3D3',wall2:'#D9C2A7',board:'#2F3B35',boardInk:'#F4F1DE',table:['#5B3A29','#7A5240'],chair:'#D98E04',sofa:['#7A9E7E','#A3C4A6'],shelf:'#8C5E3C',bg:'#2A211C'},
+  library:{n:'도서관',floor:['#5E7D63','#58765D'],wall:'#7B5E57',wall2:'#5E463F',board:'#F7F1E3',boardInk:'#3B2F2F',table:['#6D4C3D','#8A6450'],chair:'#9A3B3B',sofa:['#3D5A80','#6C8EBF'],shelf:'#4A3428',bg:'#1E1A18'},
+  rooftop:{n:'옥상',floor:['#A47551','#986A47'],wall:'#9AD0EC',wall2:'#7BBBE0',board:'#FFF8E7',boardInk:'#1B2024',table:['#E9E4D8','#FFFFFF'],chair:'#E07A5F',sofa:['#F2CC8F','#F7DDB0'],shelf:'#6B8F71',bg:'#16324A'}};
+const MEET=(()=>{
+  const T=32, W=20, H=13, SPEED=130, BLOCK=[[0,0,20,2],[7,5,6,3],[0.6,9,3.4,2.4],[17.4,2.2,2,1.6],[0.4,2.2,1.4,1.4]];
+  let theme='office';
+  /* 가까이 가면 음성 (WebRTC). 신호는 회의실 채널(방 멤버만)로 주고받고, 소리는 브라우저끼리 직접 간다.
+     STUN 만 써서 일부 학교·회사·모바일 망에서는 연결이 안 될 수 있다 (TURN 서버 필요) */
+  const ICE=[{urls:'stun:stun.l.google.com:19302'}];
+  let mic=null, meLevel=null, ac=null, pcs=new Map(), vAt=0;
+  const meta=()=>({n:myName(),av,v:!!mic});
+  function meter(stream){
+    try{ ac=ac||new (window.AudioContext||window.webkitAudioContext)(); const src=ac.createMediaStreamSource(stream), an=ac.createAnalyser(); an.fftSize=256; src.connect(an);
+      const a=new Uint8Array(an.fftSize); return ()=>{ an.getByteTimeDomainData(a); let s=0; for(const v of a){ const x=(v-128)/128; s+=x*x; } return Math.sqrt(s/a.length); }; }
+    catch(e){ return ()=>0; }
+  }
+  function micBtn(){ const b=$('#mtMic'); b.classList.toggle('on',!!mic); b.setAttribute('aria-pressed',!!mic); b.textContent=mic?'🎤 음성 끄기':'🎤 음성 켜기'; }
+  async function voice(){
+    if(mic){ voiceOff(); toast('음성을 껐어요'); return; }
+    try{ mic=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}}); }
+    catch(e){ toast('마이크를 쓸 수 없어요. 브라우저에서 마이크를 허용해 주세요'); return; }
+    try{ ac=ac||new (window.AudioContext||window.webkitAudioContext)(); ac.resume&&ac.resume(); }catch(e){}
+    meLevel=meter(mic); micBtn(); if(ch) try{ await ch.track(meta()); }catch(e){}
+    toast('가까이 있는 팀원과 말할 수 있어요');
+  }
+  function voiceOff(){
+    for(const k of [...pcs.keys()]) hang(k);
+    if(mic) mic.getTracks().forEach(t=>t.stop()); mic=null; meLevel=null; micBtn();
+    if(ch) try{ ch.track(meta()); }catch(e){}
+  }
+  function newPc(k){
+    const pc=new RTCPeerConnection({iceServers:ICE}), x={pc,audio:null,level:null,q:[]};
+    pc.onicecandidate=e=>{ if(e.candidate) send({t:'rtc',to:k,kind:'ice',c:e.candidate.toJSON?e.candidate.toJSON():e.candidate}); };
+    pc.ontrack=e=>{ const a=new Audio(); a.autoplay=true; a.playsInline=true; a.srcObject=e.streams[0]; a.play().catch(()=>{}); x.audio=a; x.level=meter(e.streams[0]); };
+    pc.onconnectionstatechange=()=>{ if(pc.connectionState==='failed') hang(k,true); };
+    if(mic) mic.getTracks().forEach(t=>pc.addTrack(t,mic));
+    pcs.set(k,x); return x;
+  }
+  async function call(k){
+    const x=newPc(k);
+    try{ await x.pc.setLocalDescription(await x.pc.createOffer()); send({t:'rtc',to:k,kind:'offer',sdp:x.pc.localDescription.toJSON?x.pc.localDescription.toJSON():x.pc.localDescription}); }
+    catch(e){ hang(k,true); }
+  }
+  function hang(k,quiet){
+    const x=pcs.get(k); if(!x) return; pcs.delete(k);
+    try{ x.pc.close(); }catch(e){} if(x.audio){ x.audio.pause(); x.audio.srcObject=null; }
+    if(!quiet) send({t:'rtc',to:k,kind:'bye'});
+  }
+  async function onRtc(m){
+    const k=m.u;
+    try{
+      if(m.kind==='bye'){ hang(k,true); return; }
+      if(m.kind==='offer'){
+        if(!mic){ send({t:'rtc',to:k,kind:'bye'}); return; }
+        hang(k,true); const x=newPc(k);
+        await x.pc.setRemoteDescription(m.sdp); for(const c of x.q.splice(0)) await x.pc.addIceCandidate(c);
+        await x.pc.setLocalDescription(await x.pc.createAnswer());
+        send({t:'rtc',to:k,kind:'answer',sdp:x.pc.localDescription.toJSON?x.pc.localDescription.toJSON():x.pc.localDescription}); return;
+      }
+      const x=pcs.get(k); if(!x) return;
+      if(m.kind==='answer'){ await x.pc.setRemoteDescription(m.sdp); for(const c of x.q.splice(0)) await x.pc.addIceCandidate(c); }
+      if(m.kind==='ice'){ if(x.pc.remoteDescription) await x.pc.addIceCandidate(m.c); else x.q.push(m.c); }
+    }catch(e){ console.warn('음성 연결 실패',e&&e.message); hang(k,true); }
+  }
+  /* 가까워지면 잇고(4칸), 멀어지면 끊는다(6칸). 둘 중 ID가 작은 쪽이 먼저 건다 (동시에 걸어 꼬이지 않게) */
+  function manageVoice(now){
+    if(now-vAt<400) return; vAt=now;
+    const ON=4*T, OFF=6*T;
+    for(const [k,p] of peers){
+      if(k.includes('#')) continue;
+      const d=Math.hypot(p.x-me_.x,p.y-me_.y), has=pcs.has(k);
+      if(!mic||!p.v||d>OFF){ if(has) hang(k,!mic||!p.v); continue; }
+      if(!has&&d<ON&&me.id<k) call(k);
+      const x=pcs.get(k); if(x&&x.audio) x.audio.volume=Math.max(0,Math.min(1,1-(d-ON*.5)/(OFF-ON*.5)));
+    }
+    for(const k of [...pcs.keys()]) if(!peers.has(k)) hang(k,true);
+  }
+  let ch=null, room=null, me_=null, peers=new Map(), raf=0, tick=0, last=0, keys=new Set(), target=null, sentAt=0, sentPos='', board=[], av=null, t0=0;
+  const cv=()=>$('#mtCv');
+  const blocked=(x,y)=>x<12||y<2*T+6||x>W*T-12||y>H*T-6||BLOCK.some(([bx,bym,bw,bh])=>x>bx*T-8&&x<(bx+bw)*T+8&&y>bym*T&&y<(bym+bh)*T+8);
+  function myName(){ const d=room&&memCache, m=d&&d.find(x=>x.uid===me.id); return ((m&&m.name)||RS.myName()).slice(0,10); }
+  let memCache=null;
+  async function open(r){
+    if(!r||!r.rid){ toast('공유방에서만 회의실을 열 수 있어요'); return; }
+    if(!SB||!me||!navigator.onLine){ toast('인터넷에 연결하고 로그인해야 회의실에 들어갈 수 있어요'); return; }
+    leave(); room=r;
+    const d=await S.get('room:'+r.code,true)||{}; memCache=d.mem||[];
+    av=await myAvatar();
+    const sp=[...me.id].reduce((a,c)=>a+c.charCodeAt(0),0)%7;   /* 사람마다 문 앞 다른 자리 */
+    me_={x:(7+sp)*T,y:10.6*T+(sp%2)*18,dir:sp%2?-1:1,moving:false,say:null,sayT:0,emo:null,emoT:9,seed:3};
+    board=(d.messages||[]).filter(m=>m&&m.due&&!m.done&&m.due>=todayKey()).sort((a,b)=>a.due<b.due?-1:1).slice(0,2).map(m=>md(m.due)+' '+mlabel(m));
+    try{ theme=localStorage.getItem('damda:meetTheme:'+r.rid)||'office'; }catch(e){} if(!MEET_THEMES[theme]) theme='office';
+    $('#mtTitle').textContent=r.name+' · '+MEET_THEMES[theme].n; $('#meetview').classList.add('on'); $('#mtDressBox').classList.remove('on');
+    try{ await SB.realtime.setAuth(); }catch(e){}            /* 방 멤버만 들어오는 채널 (supabase/meet.sql) */
+    ch=SB.channel('meet:'+r.rid,{config:{private:true,broadcast:{self:false},presence:{key:me.id}}});
+    ch.on('broadcast',{event:'m'},({payload})=>onMsg(payload))
+      .on('presence',{event:'sync'},()=>sync())
+      .subscribe(async st=>{ if(st==='SUBSCRIBED'&&ch){ await ch.track(meta()); sendPos(true); }
+        else if(st==='CHANNEL_ERROR'&&ch){ toast('회의실에 들어가지 못했어요. 이 방 멤버인지 확인해 주세요'); } });
+    t0=performance.now(); last=t0; raf=requestAnimationFrame(loop); who();
+    /* 움직임·음성 연결은 그리기와 따로 돈다 — 화면이 가려져 그리기가 멈춰도 계속 */
+    tick=setInterval(()=>{ const now=performance.now(); if(!$('#meetview').classList.contains('on')){ leave(); return; } step(Math.min(.05,(now-last)/1000)); last=now; manageVoice(now); },33);
+  }
+  function leave(){
+    voiceOff();
+    cancelAnimationFrame(raf); raf=0; clearInterval(tick); tick=0;
+    if(ch){ try{ ch.untrack&&ch.untrack(); SB.removeChannel(ch); }catch(e){} }
+    ch=null; peers=new Map(); keys.clear(); target=null;
+  }
+  function sync(){
+    if(!ch) return;
+    const st=ch.presenceState(), here=new Set(Object.keys(st));
+    for(const k of [...peers.keys()]) if(!here.has(k)) peers.delete(k);
+    for(const k of here){ if(k===me.id) continue; const meta=(st[k]||[])[0]||{};
+      const p=peers.get(k)||{x:10*T,y:11*T,tx:10*T,ty:11*T,dir:1,moving:false,say:null,sayT:0,emo:null,emoT:9,seed:k.length};
+      p.n=String(meta.n||'?').slice(0,10); p.av=meta.av; p.v=!!meta.v; peers.set(k,p);
+      if(!peers.has(k+'#seen')){ peers.set(k+'#seen',1); sendPos(true); }   /* 새로 온 사람에게 내 위치를 알린다 */
+    }
+    who();
+  }
+  function who(){ $('#mtWho').replaceChildren(...[[myName()+' (나)'],...[...peers].filter(([k])=>!k.includes('#')).map(([,p])=>[p.n])].map(([n])=>{ const s=el('span'); s.textContent=n; return s; })); }
+  function onMsg(m){
+    if(!m||!m.u||m.u===me.id) return;
+    if(m.t==='rtc'){ if(m.to===me.id) onRtc(m); return; }
+    const p=peers.get(m.u); if(!p) return;
+    if(m.t==='pos'&&isFinite(m.x)&&isFinite(m.y)){ p.tx=Math.max(0,Math.min(W*T,m.x)); p.ty=Math.max(0,Math.min(H*T,m.y)); p.dir=m.d>0?1:-1; if(m.j){ p.x=p.tx; p.y=p.ty; } }
+    if(m.t==='say'&&typeof m.s==='string'){ p.say=m.s.slice(0,60); p.sayT=5; }
+    if(m.t==='emo'&&typeof m.e==='string'&&m.e.length<=4){ p.emo=m.e; p.emoT=0; }
+  }
+  const send=msg=>{ if(ch) try{ ch.send({type:'broadcast',event:'m',payload:{...msg,u:me.id}}); }catch(e){} };
+  function sendPos(force){
+    const k=Math.round(me_.x)+','+Math.round(me_.y), now=performance.now();
+    if(!force&&(k===sentPos||now-sentAt<100)) return;
+    sentPos=k; sentAt=now; send({t:'pos',x:Math.round(me_.x),y:Math.round(me_.y),d:me_.dir,j:force?1:0});
+  }
+  function step(dt){
+    let vx=0, vy=0;
+    if(keys.has('l')) vx--; if(keys.has('r')) vx++; if(keys.has('u')) vy--; if(keys.has('d')) vy++;
+    if(!vx&&!vy&&target){ const dx=target.x-me_.x, dy=target.y-me_.y, d=Math.hypot(dx,dy); if(d<3) target=null; else { vx=dx/d; vy=dy/d; } }
+    const n=Math.hypot(vx,vy); me_.moving=n>0;
+    if(n){ vx/=n; vy/=n; const nx=me_.x+vx*SPEED*dt, ny=me_.y+vy*SPEED*dt;
+      if(!blocked(nx,me_.y)) me_.x=nx; else if(target) target=null;
+      if(!blocked(me_.x,ny)) me_.y=ny; else if(target) target=null;
+      if(vx) me_.dir=vx>0?1:-1; sendPos(false); }
+    for(const [k,p] of peers){ if(k.includes('#')) continue; const dx=p.tx-p.x, dy=p.ty-p.y; p.moving=Math.hypot(dx,dy)>1.5; p.x+=dx*Math.min(1,dt*10); p.y+=dy*Math.min(1,dt*10); p.sayT-=dt; p.emoT+=dt; }
+    me_.sayT-=dt; me_.emoT+=dt;
+  }
+  function drawRoom(g,t){
+    const th=MEET_THEMES[theme];
+    /* 바닥 */
+    for(let y=2;y<H;y++) for(let x=0;x<W;x++){ g.fillStyle=th.floor[(x+y)%2]; g.fillRect(x*T,y*T,T,T);
+      if(theme==='rooftop'){ g.fillStyle='rgba(0,0,0,.08)'; g.fillRect(x*T,y*T+T/2-1,T,2); } else { g.fillStyle='rgba(0,0,0,.05)'; g.fillRect(x*T,y*T+T-2,T,2); } }
+    if(theme==='library'){ g.fillStyle='rgba(255,255,255,.05)'; for(let y=2;y<H;y+=2) g.fillRect(0,y*T,W*T,2); }
+    /* 벽 */
+    g.fillStyle=th.wall; g.fillRect(0,0,W*T,2*T); g.fillStyle=th.wall2; g.fillRect(0,2*T-8,W*T,8);
+    if(theme==='rooftop'){
+      g.fillStyle='#fff'; for(const [cx,cy,r] of [[2.4,.7,.35],[3,.6,.45],[3.6,.75,.3],[16.5,.8,.4],[17.2,.65,.5]]){ g.beginPath(); g.arc(cx*T,cy*T,r*T,0,Math.PI*2); g.fill(); }
+      g.fillStyle='#8E9AAF'; for(let x=0;x<W;x+=.5) g.fillRect(x*T,1.55*T,3,.45*T); g.fillRect(0,1.55*T,W*T,3);
+      g.strokeStyle='#5A6570'; g.lineWidth=1; g.beginPath(); g.moveTo(0,1.9*T); for(let x=0;x<=W;x+=1) g.quadraticCurveTo((x+.5)*T,2.25*T,(x+1)*T,1.9*T); g.stroke();
+      for(let x=.5;x<W;x+=1){ g.fillStyle=Math.sin(t*3+x)>0?'#FFE08A':'#FFC94A'; g.beginPath(); g.arc(x*T,2.05*T,3,0,Math.PI*2); g.fill(); }
+    }else if(theme==='library'){
+      for(let bx=.3;bx<W-.3;bx+=2.4){ if(bx>5&&bx<14.6) continue; g.fillStyle=th.shelf; g.fillRect(bx*T,.2*T,2.2*T,1.6*T);
+        for(let k=0;k<9;k++){ g.fillStyle=['#C1666B','#4F6D7A','#E9B44C','#6A994E','#A68A64'][(k+Math.round(bx))%5]; g.fillRect(bx*T+4+k*7,.3*T+(k%3)*2,5,.65*T); g.fillRect(bx*T+4+k*7,1.05*T,5,.6*T); } }
+    }else{
+      for(const wx of [1.5,15.5]){ g.fillStyle=theme==='cafe'?'#FCE9C9':'#DDF1F7'; g.fillRect(wx*T,.4*T,2.6*T,1.1*T); g.strokeStyle='#fff'; g.lineWidth=3; g.strokeRect(wx*T,.4*T,2.6*T,1.1*T); g.beginPath(); g.moveTo((wx+1.3)*T,.4*T); g.lineTo((wx+1.3)*T,1.5*T); g.stroke();
+        if(theme==='cafe'){ g.fillStyle='#C1666B'; for(let k=0;k<6;k++){ g.beginPath(); g.moveTo((wx+k*.44)*T,.4*T); g.lineTo((wx+k*.44+.22)*T,.62*T); g.lineTo((wx+k*.44+.44)*T,.4*T); g.fill(); } } }
+    }
+    /* 게시판: 이 방의 다가오는 마감 */
+    g.fillStyle=th.board; roundRect(g,5.5*T,.25*T,9*T,1.6*T,6); g.fill(); g.strokeStyle=theme==='cafe'?'#8C5E3C':'#5A6570'; g.lineWidth=theme==='cafe'?5:2; g.stroke();
+    g.fillStyle=theme==='cafe'?'#F2CC8F':'#2E6A63'; g.font='bold 12px sans-serif'; g.textAlign='left'; g.textBaseline='top'; g.fillText(theme==='cafe'?'☕ 오늘의 마감':'📌 우리 팀 마감',5.8*T,.32*T);
+    g.fillStyle=th.boardInk; g.font='11px sans-serif';
+    (board.length?board:['아직 마감이 없어요']).slice(0,2).forEach((l,i)=>g.fillText(fit(g,l,8.4*T),5.8*T,(.32+.5+i*.42)*T));
+    /* 테이블 + 의자 */
+    g.fillStyle='rgba(0,0,0,.15)'; roundRect(g,7*T+4,5*T+8,6*T,3*T,14); g.fill();
+    g.fillStyle=th.table[0]; roundRect(g,7*T,5*T,6*T,3*T,theme==='cafe'?40:14); g.fill(); g.fillStyle=th.table[1]; roundRect(g,7*T+4,5*T+4,6*T-8,3*T-10,theme==='cafe'?36:12); g.fill();
+    if(theme==='cafe'){ for(const [cx,cy] of [[8.6,6.2],[11.2,6.6]]){ g.fillStyle='#fff'; g.beginPath(); g.arc(cx*T,cy*T,7,0,Math.PI*2); g.fill(); g.fillStyle='#6F4E37'; g.beginPath(); g.arc(cx*T,cy*T,4.5,0,Math.PI*2); g.fill();
+        g.strokeStyle=`rgba(255,255,255,${.4+Math.sin(t*2)*.2})`; g.lineWidth=1.2; g.beginPath(); g.moveTo(cx*T-2,cy*T-9); g.quadraticCurveTo(cx*T+2,cy*T-13,cx*T-1,cy*T-17); g.stroke(); } }
+    else if(theme==='library'){ g.fillStyle='#4F6D7A'; g.fillRect(8.2*T,5.7*T,22,16); g.fillStyle='#C1666B'; g.fillRect(10.4*T,6.4*T,20,14); g.fillStyle='#F4D35E'; g.fillRect(11.8*T,5.6*T,6,18); }
+    else if(theme==='rooftop'){ g.fillStyle='#F28482'; g.beginPath(); g.arc(8.6*T,6.4*T,7,0,Math.PI*2); g.fill(); g.fillStyle='#F4D35E'; g.beginPath(); g.moveTo(10.8*T,6*T); g.lineTo(11.6*T,6*T); g.lineTo(11.2*T,6.9*T); g.fill(); }
+    else{ g.fillStyle='#fff'; g.fillRect(8.2*T,5.8*T,18,13); g.fillRect(10.6*T,6.3*T,16,12); g.fillStyle='#F4D35E'; g.fillRect(11.6*T,5.7*T,12,12); }
+    for(const [cx,cy] of [[7.8,4.5],[9.5,4.5],[11.2,4.5],[7.8,8.3],[9.5,8.3],[11.2,8.3],[12.6,4.5],[12.6,8.3]]){ g.fillStyle=th.chair; roundRect(g,cx*T,cy*T,22,14,theme==='cafe'?7:5); g.fill(); }
+    /* 소파(옥상은 벤치) */
+    g.fillStyle=th.sofa[0]; roundRect(g,.6*T,9*T,3.4*T,2.4*T,theme==='rooftop'?4:10); g.fill(); g.fillStyle=th.sofa[1]; roundRect(g,.9*T,9.9*T,2.8*T,1.2*T,theme==='rooftop'?3:8); g.fill();
+    /* 오른쪽 위 소품: 책장 / 커피 머신 / 책 수레 / 화분 */
+    g.fillStyle=th.shelf; g.fillRect(17.4*T,2.2*T,2*T,1.6*T);
+    if(theme==='cafe'){ g.fillStyle='#C9CCD1'; g.fillRect(17.7*T,2.4*T,1.4*T,1*T); g.fillStyle='#33363A'; g.fillRect(18.1*T,2.9*T,.6*T,.35*T); }
+    else if(theme==='rooftop'){ plant(g,17.9*T,3.2*T,t+2); plant(g,18.9*T,3.2*T,t+3); }
+    else { g.fillStyle='#F2CC8F'; g.fillRect(17.6*T,2.4*T,.5*T,1.2*T); g.fillStyle='#81B29A'; g.fillRect(18.2*T,2.4*T,.4*T,1.2*T); g.fillStyle='#3D5A80'; g.fillRect(18.7*T,2.4*T,.5*T,1.2*T); }
+    plant(g,1.1*T,2.9*T,t); plant(g,18.7*T,11.9*T,t+1);
+    g.fillStyle=th.shelf; g.fillRect(9*T,H*T-6,2*T,6);
+  }
+  function plant(g,x,y,t){ g.fillStyle='#C0703A'; g.fillRect(x-9,y,18,14); g.fillStyle='#5DBB63'; for(let i=0;i<5;i++){ g.beginPath(); g.ellipse(x+Math.cos(i*1.3+Math.sin(t)*.05)*7,y-6+Math.sin(i*2)*4,7,4,i,0,Math.PI*2); g.fill(); } }
+  const fit=(g,s,w)=>{ let x=String(s); while(x.length>1&&g.measureText(x).width>w) x=x.slice(0,-2)+'…'; return x; };
+  function loop(now){
+    if(!$('#meetview').classList.contains('on')){ leave(); return; }
+    const t=(now-t0)/1000;
+    const c=cv(), pr=window.devicePixelRatio||1, cw=c.clientWidth, chh=c.clientHeight;
+    if(c.width!==Math.round(cw*pr)||c.height!==Math.round(chh*pr)){ c.width=Math.round(cw*pr); c.height=Math.round(chh*pr); }
+    const g=c.getContext('2d'), sc=Math.min(cw/(W*T),chh/(H*T)), ox=(cw-W*T*sc)/2, oy=(chh-H*T*sc)/2;
+    g.setTransform(pr,0,0,pr,0,0); g.fillStyle=MEET_THEMES[theme].bg; g.fillRect(0,0,cw,chh); $('#meetview').style.background=MEET_THEMES[theme].bg;
+    g.setTransform(pr*sc,0,0,pr*sc,pr*ox,pr*oy); C.sc=sc; C.ox=ox; C.oy=oy;
+    drawRoom(g,t);
+    const look=p=>({dir:p.dir,moving:p.moving,say:p.sayT>0?p.say:null,talk:p.sayT>3.6,emo:p.emoT<1.2?p.emo:null,emoT:p.emoT/1.2,face:p.emoT<2.2?(EMO_FACE[p.emo]||'smile'):'smile',seed:p.seed});
+    const all=[...[...peers].filter(([k])=>!k.includes('#')).map(([k,p])=>({p:{...p,k},o:{name:p.n,...look(p)}})),
+      {p:{...me_,av},o:{name:myName(),me:1,...look({...me_,seed:3})}}].sort((a,b)=>a.p.y-b.p.y);
+    for(const {p,o} of all){
+      g.save(); g.translate(p.x,p.y); g.scale(1.35,1.35);
+      /* 말하는 중이면 발밑에 초록 고리, 음성을 켠 사람은 이름 옆 🎤 */
+      const lv=o.me?(meLevel?meLevel():0):(pcs.get(p.k)&&pcs.get(p.k).level?pcs.get(p.k).level():0);
+      if(lv>.03){ g.strokeStyle=`rgba(46,200,120,${Math.min(1,lv*12)})`; g.lineWidth=2.5; g.beginPath(); g.ellipse(0,0,15,6,0,0,Math.PI*2); g.stroke(); }
+      drawAvatar(g,0,0,p.av,{...o,t,name:o.name+((o.me?mic:p.v)?' 🎤':'')});
+      g.restore();
+    }
+    raf=requestAnimationFrame(loop);
+  }
+  const C={sc:1,ox:0,oy:0};
+  function say(s){ s=String(s||'').trim().slice(0,60); if(!s) return; me_.say=s; me_.sayT=5; send({t:'say',s}); }
+  function emo(e){ me_.emo=e; me_.emoT=0; send({t:'emo',e}); }
+  async function logMeeting(){
+    if(!room||!cur||cur.id!==room.id){ toast('방으로 돌아가서 다시 해 주세요'); return; }
+    if(isRO(cur)){ toast('보기만 할 수 있는 방이에요'); return; }
+    const names=[myName(),...[...peers].filter(([k])=>!k.includes('#')).map(([,p])=>p.n)];
+    const d=new Date(), tm=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+    msgs.push({id:'m'+Date.now().toString(36),type:'memo',text:`[회의] ${md(todayKey())} ${tm} 회의실 · 참석 ${names.length}명: ${names.join(', ')}`,file:null,ts:Date.now(),due:null,dueStart:null,dueTime:null,done:false});
+    await persist(); drawStream(); toast('회의 출석을 방에 남겼어요');
+  }
+  /* 꾸미기 */
+  function dress(){ $('#mtDressBox').classList.add('on'); dressUI('#mt',()=>av,v=>{ av=v; }); }
+  async function dressDone(){ $('#mtDressBox').classList.remove('on'); await S.set('avatar',av); if(ch) try{ await ch.track(meta()); }catch(e){} }
+  function nextTheme(){ if(!room) return; const ks=Object.keys(MEET_THEMES); theme=ks[(ks.indexOf(theme)+1)%ks.length];
+    try{ localStorage.setItem('damda:meetTheme:'+room.rid,theme); }catch(e){} $('#mtTitle').textContent=room.name+' · '+MEET_THEMES[theme].n; toast(MEET_THEMES[theme].n+' 테마로 바꿨어요'); }
+  /* 입력 */
+  const KEYMAP={ArrowLeft:'l',a:'l',A:'l',ArrowRight:'r',d:'r',D:'r',ArrowUp:'u',w:'u',W:'u',ArrowDown:'d',s:'d',S:'d'};
+  document.addEventListener('keydown',e=>{ if(!$('#meetview').classList.contains('on')||e.target.tagName==='INPUT') return; const k=KEYMAP[e.key]; if(k){ keys.add(k); target=null; e.preventDefault(); } });
+  document.addEventListener('keyup',e=>{ const k=KEYMAP[e.key]; if(k) keys.delete(k); });
+  addEventListener('blur',()=>keys.clear());
+  function tap(e){ const r=cv().getBoundingClientRect(); const x=(e.clientX-r.left-C.ox)/C.sc, y=(e.clientY-r.top-C.oy)/C.sc; if(x>=0&&y>=0&&x<=W*T&&y<=H*T) target={x,y}; }
+  return {open,leave,say,emo,logMeeting,dress,dressDone,nextTheme,voice,tap,get state(){ return {me:me_,voice:{on:!!mic,pcs:[...pcs].map(([k,x])=>({k,st:x.pc.connectionState,audio:!!x.audio,vol:x.audio?Math.round(x.audio.volume*100)/100:null,lv:x.level?Math.round(x.level()*1000)/1000:0}))},peers:[...peers].filter(([k])=>!k.includes('#')).map(([k,p])=>({k,n:p.n,x:Math.round(p.x),y:Math.round(p.y),say:p.sayT>0?p.say:null})),board}; }};
+})();
+$('#btnMeet').onclick=()=>MEET.open(cur);
+$('#mtClose').onclick=()=>{ $('#meetview').classList.remove('on'); MEET.leave(); };
+$('#mtCv').addEventListener('pointerdown',e=>MEET.tap(e));
+$('#mtSay').onsubmit=e=>{ e.preventDefault(); MEET.say($('#mtTxt').value); $('#mtTxt').value=''; };
+document.querySelectorAll('#mtEmo button').forEach(b=>b.onclick=()=>MEET.emo(b.dataset.e));
+$('#mtLog').onclick=()=>MEET.logMeeting();
+$('#mtDress').onclick=()=>MEET.dress();
+$('#mtDressOk').onclick=()=>MEET.dressDone();
+$('#mtTheme').onclick=()=>MEET.nextTheme();
+$('#mtMic').onclick=()=>MEET.voice();
+$('#avOk').onclick=async()=>{ await S.set('avatar',palAv); $('#shPal').classList.remove('on'); toast('캐릭터를 바꿨어요'); };
 
 const urlCache=new Map();
 async function fileURL(f){
@@ -2080,7 +3124,7 @@ const saveRooms=()=>S.set('rooms',rooms);
 async function readList(r){
   const d=await S.get(key(r),!!r.code);
   /* 공유한 방은 참여 인원도 같이 읽어 둔다 */
-  if(r.code){ r._members=(d&&d.members)||1; r._perm=(d&&d.perm)||'edit'; }
+  if(r.code){ r._members=(d&&d.mem&&d.mem.length)||(d&&d.members)||1; r._perm=(d&&d.perm)||'edit'; }
   return (r.code?(d&&d.messages):d)||[];
 }
 
@@ -2102,9 +3146,11 @@ async function saveList(r,list){
   let ok;
   if(r.code){
     const d=await S.get('room:'+r.code,true)||{};
-    d.name=r.name; d.messages=list; d.members=d.members||1;
-    r._members=d.members;
+    if(r.rid) list=RS.keepFresh(r.code,list,d.messages);
+    d.name=r.name; d.messages=list;
+    if(!r.rid){ d.members=d.members||1; r._members=d.members; }   /* 옮기기 전 예전 방식 방 */
     ok=await S.set('room:'+r.code,d,true);
+    RS.mark(r);
   }else ok=await S.set('msgs:'+r.id,list);
   const last=list[list.length-1];
   r.preview=last?((last.file&&!last.text)?(last.file.name||'파일'):(last.text||'').split('\n')[0]):'';
@@ -2502,7 +3548,15 @@ $('#doRen').onclick=async()=>{
   close('#shRename'); toast('이름을 바꿨어요');
 };
 $('#renName').addEventListener('keydown',e=>{if(e.key==='Enter')$('#doRen').click();});
-function askDelete(r){ delTarget=r; $('#delTitle').textContent=r.name+' 삭제'; open('#shDel'); }
+function askDelete(r){ delTarget=r;
+  /* 서버 공유방은 지우는 게 아니라 나 혼자 나간다 — 남은 사람에게 기록이 그대로 남는다 */
+  const lv=!!r.rid, alone=lv&&(r._members||1)<=1;
+  $('#delTitle').textContent=r.name+(lv?' 나가기':' 삭제');
+  $('#delDesc').textContent=alone?'이 방에 남은 사람이 나뿐이라, 나가면 방과 기록이 모두 지워지고 되돌릴 수 없습니다.'
+    :lv?'이 폰에서 방이 사라져요. 함께 쓰는 사람에게는 기록이 그대로 남아요. 다시 들어오려면 코드가 필요해요.'
+    :'이 방의 메모가 모두 지워지고 되돌릴 수 없습니다.';
+  $('#doDel').textContent=lv?'나가기':'삭제';
+  open('#shDel'); }
 $('#doDel').onclick=async()=>{
   if(!delTarget) return;
   const kk=key(delTarget);
@@ -2511,7 +3565,12 @@ $('#doDel').onclick=async()=>{
   /* 함께 보는 사람이 남아 있으면 파일은 지우지 않는다 */
   if(!shared) for(const m of list){ if(m.file) await IDB.del(m.file.id); await IDB.del('v:'+m.id);
     await IDB.del(VEC+m.id); await IDB.del(VEC+'n:'+m.id); }
-  if(shared){
+  if(delTarget.rid&&SB&&me){
+    /* 서버 공유방: 내 멤버 줄만 지운다. 마지막 사람이면 서버가 방을 지운다 */
+    const {error}=await SB.from('room_members').delete().eq('room_id',delTarget.rid).eq('user_id',me.id);
+    if(error){ toast('나가지 못했어요. 인터넷 연결을 확인하세요'); return; }
+    await S.del(kk,true); RS.forget(delTarget.code);
+  }else if(shared){
     /* 나만 나가는 경우 — 방 데이터는 남기고 인원만 줄인다 */
     const d=await S.get('room:'+delTarget.code,true)||{};
     d.members=Math.max(1,(d.members||1)-1);
@@ -2523,13 +3582,13 @@ $('#doDel').onclick=async()=>{
   rooms=rooms.filter(x=>x.id!==delTarget.id);
   const wasCur=cur&&cur.id===delTarget.id;
   await saveRooms(); await countDue(); drawRooms(); close('#shDel');
-  toast('삭제했어요'); delTarget=null;
+  toast(delTarget.rid?'방에서 나왔어요':'삭제했어요'); delTarget=null;
   if(wasCur) openBrief();
 };
 
 /* ---------- 채팅방 ---------- */
 function closeOverlays(){
-  ['#calview','#noteview','#search','#pinlist','#grpview','#allfold','#setview'].forEach(s=>$(s).classList.remove('on'));
+  ['#calview','#noteview','#search','#pinlist','#grpview','#allfold','#setview','#meetview'].forEach(s=>$(s).classList.remove('on'));
 }
 
 async function openRoom(id,jump){
@@ -2538,6 +3597,7 @@ async function openRoom(id,jump){
   briefOn=false; grpF=null; lastGrp=null; $('#scChat').classList.remove('brief','grp'); updBack();
   $('#chatName').textContent=cur.name;
   $('#btnShare').classList.toggle('hl',!!cur.code);
+  $('#btnMeet').style.display=cur.rid?'':'none';
   $('#scChat').classList.remove('hide'); drawRail();
   msgs=[]; folded={}; clearAtt(); pinOpen=true;
   $('#pinbar').innerHTML=''; vecCache.clear(); nVec.clear();
@@ -2546,7 +3606,7 @@ async function openRoom(id,jump){
   try{ (await S.get('fold:'+cur.id)||[]).forEach(k=>{ folded[k]=true; }); }catch(e){}
   try{ pinOpen=!(await S.get('pinfold:'+cur.id)); }catch(e){}
   S.del('open:'+cur.id);   /* 예전 '펼친 날짜' 기록은 버린다 */
-  msgs=await readList(cur);
+  msgs=await readList(cur); if(cur.code) RS.seen(cur.code);
   $('#scChat').classList.toggle('ro',roNow());
   $('#txt').placeholder='메시지 입력';
   hClose(); $('#whenHint').classList.remove('on');
@@ -2773,6 +3833,9 @@ function bubble(m){
   /* 태그는 말풍선에 보이지 않는다. 검색과 묶음 정리에만 쓰인다 */
   if(m.ai==='run'&&(!m.tags||!m.tags.length)) body.appendChild(el('div','aip'));
   if(m.due){const w=el('div'); w.innerHTML=dueHtml(m); body.appendChild(w.firstChild);}
+  /* Canvas 에서 온 과제: 원래 과제 페이지로 (https 주소만) */
+  if(m.lms&&/^https:\/\//i.test(m.lms.url||'')){ const a=el('a','lmslink'); a.href=m.lms.url; a.target='_blank'; a.rel='noopener'; a.textContent='Canvas에서 열기 ↗';
+    a.onclick=e=>e.stopPropagation(); body.appendChild(a); }
   if(mo) body.appendChild(mo);   /* '전체보기'는 날짜 아래, 맨 끝 */
 
   b.appendChild(body);
@@ -3532,7 +4595,8 @@ function fitEdit(){
 }
 $('#editTxt').addEventListener('input',fitEdit);
 async function saveEdit(){
-  const m=editTarget; if(!m) return;
+  const t0=editTarget; if(!t0) return;
+  const m=msgs.find(x=>x&&x.id===t0.id)||t0;      /* 그 사이 화면이 다시 그려졌으면 지금 메모를 고친다 */
   const v=$('#editTxt').value.trim();
   if(!v&&!m.file){ toast('내용을 입력하세요. 지우려면 삭제를 눌러주세요'); return; }
   close('#shEdit'); editTarget=null;
@@ -3671,18 +4735,35 @@ function celebrateTask(rect){
   document.body.appendChild(pop);
   setTimeout(()=>pop.remove(),1300);
 }
+/* 홈의 내 캐릭터: 오늘 남은 할 일을 말풍선으로 알려 준다. 누르면 꾸미기 */
+let palAv=null, palRaf=0;
+async function homePal(cv){
+  palAv=await myAvatar(); cancelAnimationFrame(palRaf);
+  const n=briefData?briefData.all.flatMap(({list})=>list).filter(m=>m&&m.due&&!m.done&&dueOf(m)===todayKey()).length:0;
+  const line=n?`오늘 마감 ${n}개! 같이 해요`:'오늘 마감은 없어요 🙌', t0=performance.now();
+  cv.onclick=()=>openPal();
+  const tick=now=>{ if(!cv.isConnected||!briefOn) return; const g=cv.getContext('2d'), t=(now-t0)/1000;
+    g.setTransform(1,0,0,1,0,0); g.clearRect(0,0,cv.width,cv.height); g.setTransform(2,0,0,2,0,0);
+    drawAvatar(g,80,68,palAv,{t,dir:1,say:t<6||(t%14)<4?line:null,face:t<1.5?'wave':'smile',talk:t<1.2});
+    palRaf=requestAnimationFrame(tick); };
+  palRaf=requestAnimationFrame(tick);
+}
+function openPal(){ open('#shPal'); dressUI('#av',()=>palAv,v=>{ palAv=v; }); }
 function drawBrief(fresh){
   if(!briefOn||!briefData) return;
   const s=$('#stream'), keep=s.scrollTop;
   clearStream();
   /* 홈 = 날짜 · 할 일 목록 */
   const box=el('div','hm'); s.appendChild(box);
+  const pal=el('div','hm-pal'); const pcv=el('canvas'); pcv.width=320; pcv.height=150; pcv.setAttribute('aria-label','내 캐릭터 꾸미기'); pal.appendChild(pcv); box.appendChild(pal); homePal(pcv);
   const dt=el('div','hm-date'); dt.textContent=briefData.t.slice(0,4)+'년 '+mdw(briefData.t); box.appendChild(dt);
 
   /* 날짜가 들어간 메모 중 아직 안 한 것. 완료하면 여기서는 빠지고 방에는 완료 표시로 남는다.
      날짜가 지난 일정은 자동으로 빠진다 (오늘 일정은 오늘이 끝날 때까지 남는다). 방의 메모는 그대로 둔다 */
+  /* 팀플방에 복사한 과제는, 내 과목방에 원본이 남아 있으면 홈에 한 번만 보여 준다 */
+  const orig=new Set(briefData.all.flatMap(({r,list})=>r.code?[]:list.filter(m=>m&&m.lms&&m.lms.uid&&!m.done).map(m=>LMSP.keyOf(m.lms.host||'',m.lms.uid))));
   const pool=briefData.all.flatMap(({r,list})=>list
-      .filter(m=>m.due&&!m.done&&!meetingLink(m.text)&&ddays(dueOf(m))>=0).map(m=>({r,list,m})))
+      .filter(m=>m.due&&!m.done&&!meetingLink(m.text)&&ddays(dueOf(m))>=0&&!(m.teamOf&&orig.has(m.teamOf))).map(m=>({r,list,m})))
     .sort((a,b)=>dueKey(a.m)<dueKey(b.m)?-1:(dueKey(a.m)>dueKey(b.m)?1:0));
   const h=el('div','hm-big'); h.innerHTML=`할 일 <b>${pool.length}</b>`; box.appendChild(h);
   const ul=el('div','hm-list'); box.appendChild(ul);
@@ -3750,7 +4831,9 @@ async function completeHomeTask(e,ck,r,list,m){
       if(!nextRep(m,todayKey())){ m.done=true; m.doneAt=Date.now(); }
       else message=md(k)+' 회차를 끝냈어요';
     }else{ m.done=true; m.doneAt=Date.now(); }
-    const ok=await saveList(r,list);
+    /* 그 사이 들어온 메모를 지우지 않게, 지금 목록에서 이 메모만 바꾼다 */
+    const now=await readList(r), at=now.findIndex(x=>x&&x.id===m.id);
+    const ok=await saveList(r,at<0?list:now.map((x,i)=>i===at?{...x,done:m.done,doneAt:m.doneAt,doneDays:m.doneDays}:x));
     if(ok===false) throw new Error('save failed');
     celebrateTask(rect);
     drawBrief(false); toast(message);
@@ -5647,24 +6730,51 @@ function makeCode(){
 }
 $('#btnShare').onclick=async()=>{
   if(!cur) return;
+  if(!cur.code&&SYNC_ON){
+    /* 서버에 방을 만든다 — 다른 사람이 코드로 들어오려면 로그인과 인터넷이 필요하다 */
+    if(!(SB&&me)){ toast('공유하려면 로그인하세요'); return; }
+    if(!navigator.onLine){ toast('인터넷에 연결하면 공유할 수 있어요'); return; }
+    let code=null, rid=null, err=null;
+    for(let t=0;t<5&&!rid;t++){
+      code=makeCode();
+      const {data,error}=await SB.rpc('create_room',{p_code:code,p_name:cur.name,p_perm:'edit',p_display:RS.myName()});
+      if(!error) rid=data; else if(error.code!=='23505'){ err=error; break; }
+    }
+    if(!rid){ console.warn(err); toast('공유하지 못했어요. 잠시 후 다시 해 주세요'); return; }
+    cur.code=code; cur.rid=rid; cur._members=1; cur._perm='edit';
+    await S.set('room:'+code,{name:cur.name,messages:msgs,perm:'edit',rid,
+      mem:[{uid:me.id,name:RS.myName(),role:'owner'}]},true);
+    RS.adopt(code,rid);
+    await S.del('msgs:'+cur.id);
+    RS.mark(cur);
+    await saveRooms(); drawRooms(); $('#btnShare').classList.add('hl');
+  }
   if(!cur.code){
     cur.code=makeCode(); cur._members=1; cur._perm='edit';
     await S.set('room:'+cur.code,{name:cur.name,messages:msgs,members:1,perm:'edit'},true);
     await S.del('msgs:'+cur.id);
     await saveRooms(); drawRooms(); $('#btnShare').classList.add('hl');
   }
-  $('#shareCode').textContent=cur.code;
+  $('#shareCode').textContent=cur.code; $('#btnMeet').style.display=cur.rid?'':'none';
   /* 권한: 방을 공유한 사람만 고를 수 있다. 참여한 사람에게는 자기 권한만 보여 준다 */
   const d=await S.get('room:'+cur.code,true)||{};
   cur._perm=d.perm||'edit';
   $('#permBox').style.display=cur.joined?'none':'';
   $('#permMine').textContent=cur.joined?(cur._perm==='view'?'이 방은 보기만 할 수 있게 공유됐어요.':'이 방은 함께 수정할 수 있게 공유됐어요.'):'';
-  drawPerm();
-  $('#shareWho').textContent=(cur._members>1)
-    ? `지금 ${cur._members}명이 이 방을 함께 보고 있어요.`
-    : '';
+  drawPerm(); drawWho(d);
   open('#shShare');
+  /* 열어 둔 사이 멤버가 바뀌었을 수 있으니 받아서 다시 그린다 */
+  if(cur.rid) RS.sync().then(async()=>{ if($('#shShare').classList.contains('on')&&cur&&cur.code) drawWho(await S.get('room:'+cur.code,true)||{}); });
 };
+function drawWho(d){
+  const mem=(d&&d.mem)||[];
+  if(mem.length){
+    cur._members=mem.length;
+    $('#shareWho').textContent=mem.length>1
+      ? `함께 쓰는 사람 ${mem.length}명 · `+mem.map(x=>(x.name||'이름 없음')+(x.role==='owner'?'(방장)':'')).join(', ')
+      : '아직 이 코드로 들어온 사람이 없어요.';
+  }else $('#shareWho').textContent=(cur._members>1)?`지금 ${cur._members}명이 이 방을 함께 보고 있어요.`:'';
+}
 const PERM_DESC={edit:'받은 사람도 메모를 쓰고, 고치고, 지울 수 있어요.',
   view:'받은 사람은 메모를 읽기만 할 수 있어요. 쓰기·수정·삭제·완료 표시는 막혀요.'};
 function drawPerm(){
@@ -5675,6 +6785,11 @@ function drawPerm(){
 document.querySelectorAll('#permSeg button').forEach(b=>b.onclick=async()=>{
   if(!cur||!cur.code||cur.joined) return;
   const p=b.dataset.p; if(p===cur._perm) return;
+  if(cur.rid){
+    if(!(SB&&me)){ toast('로그인하세요'); return; }
+    const {error}=await SB.from('rooms').update({perm:p}).eq('id',cur.rid);
+    if(error){ toast('바꾸지 못했어요. 인터넷 연결을 확인하세요'); return; }
+  }
   const d=await S.get('room:'+cur.code,true)||{};
   d.perm=p; await S.set('room:'+cur.code,d,true);
   cur._perm=p; drawPerm();
@@ -5684,11 +6799,29 @@ $('#doCopy').onclick=async()=>{
   try{await navigator.clipboard.writeText(cur.code); toast('코드를 복사했어요');}
   catch(e){toast('코드: '+cur.code);}
 };
-function openJoin(){ $('#joinCode').value=''; open('#shJoin'); setTimeout(()=>$('#joinCode').focus(),80); }
+function openJoin(){ $('#joinCode').value=''; $('#joinName').value=SB&&me?RS.myName():'';
+  $('#joinName').style.display=SYNC_ON?'':'none';
+  open('#shJoin'); setTimeout(()=>$('#joinCode').focus(),80); }
 $('#doJoin').onclick=async()=>{
   const c=$('#joinCode').value.trim().toUpperCase();
   if(c.length!==6){toast('6자리 코드를 입력하세요'); return;}
   if(rooms.some(r=>r.code===c)){toast('이미 참여한 방이에요'); close('#shJoin'); return;}
+  if(SYNC_ON){
+    if(!(SB&&me)){ toast('참여하려면 로그인하세요'); return; }
+    const nm=($('#joinName').value.trim()||RS.myName()).slice(0,20);
+    const {data,error}=await SB.rpc('join_room',{p_code:c,p_display:nm});
+    if(error){ toast(/too many/.test(error.message||'')?'여러 번 틀렸어요. 10분 뒤에 다시 해 주세요':'참여하지 못했어요. 인터넷 연결을 확인하세요'); return; }
+    const x=data&&data[0];
+    if(!x){ toast('그 코드의 방을 찾지 못했어요'); return; }
+    if(rooms.some(r=>r.rid===x.room_id)){ toast('이미 참여한 방이에요'); close('#shJoin'); return; }
+    await S.set('room:'+c,{name:x.name,messages:[],perm:x.perm,rid:x.room_id,mem:[]},true);
+    rooms.unshift({id:'r'+Date.now(),name:x.name,preview:'',at:null,code:c,rid:x.room_id,pin:false,_due:0,
+      _members:2,joined:true,_perm:x.perm});
+    normalize(); await saveRooms(); drawRooms(); close('#shJoin');
+    toast(x.perm==='view'?'방에 참여했어요 · 보기만 할 수 있어요':'방에 참여했어요 · 기록을 받는 중…');
+    await RS.sync(); await countDue(); drawRooms();
+    return;
+  }
   const d=await S.get('room:'+c,true);
   if(!d){toast('그 코드의 방을 찾지 못했어요'); return;}
   d.members=(d.members||1)+1;
@@ -5732,8 +6865,9 @@ function openOut(){ const pv=me&&me.app_metadata&&me.app_metadata.provider;
 $('#doOut').onclick=async()=>{
   const b=$('#doOut'); b.disabled=true;
   while(pushing) await sleep(200);
-  await pushNow();
+  await pushNow(); await RS.flush();
   if(unsent()){ b.disabled=false; toast('아직 서버에 못 올린 기록이 있어요. 인터넷 연결을 확인해 주세요'); return; }
+  leaving=true; clearTimeout(pushT);             /* 지우는 사이 늦게 온 응답이 다시 저장하지 않게 */
   try{ await SB.auth.signOut(); }catch(e){}
   await wipeLocal(); location.replace(location.pathname);
 };
@@ -5766,13 +6900,16 @@ async function refreshView(){
   if(briefOn){ if(!$('#scChat').classList.contains('hopen')) openBrief(); return; }
   const r=cur&&rooms.find(x=>x.id===cur.id);
   if(!r){ openBrief(); return; }
-  cur=r; msgs=await readList(cur); drawStream(); drawRail();
+  cur=r; msgs=await readList(cur); if(cur.code) RS.seen(cur.code);
+  $('#scChat').classList.toggle('ro',roNow());   /* 방장이 권한을 바꾸면 열린 화면에도 바로 반영 */
+  drawStream(); drawRail();
 }
 async function syncNow(){
   if(!SB||!me||leaving) return;
   let ch=false; try{ ch=await pull(); }catch(e){ console.warn('서버에서 받지 못함',e); }
   schedPush(100);
   if(ch) await refreshView();
+  RS.sync();
 }
 async function boot(){
   if(SYNC_ON&&await loadJS(SB_JS,6000)&&window.supabase){
@@ -5800,6 +6937,7 @@ async function boot(){
     }else if(!(lsGet(OWNER)&&!navigator.onLine)){ showLogin(); return; }
   }
   await loadRooms(); openBrief();
+  if(SB&&me){ RS.start(); LMS.start(); }
 }
 boot();
 })();
