@@ -558,9 +558,9 @@ html.kb body{align-items:flex-start}
 #rpTable{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0}#rpTable th,#rpTable td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:center}#rpTable th:first-child,#rpTable td:first-child{text-align:left}
 .rpbar{height:8px;border-radius:4px;background:var(--accent);opacity:.85}.rpbars{display:flex;flex-direction:column;gap:6px;margin:8px 0}.rpbars div.l{display:flex;align-items:center;gap:8px;font-size:12.5px}.rpbars span{width:64px;flex:0 0 64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #rpAi{font-size:13px;line-height:1.55;white-space:pre-wrap;background:var(--mute);border-radius:10px;padding:10px;margin:6px 0;display:none}
-#kkRows .kr{display:flex;gap:6px;align-items:center;margin:6px 0}
+#kkRows .kr{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0;padding-bottom:8px;border-bottom:1px solid var(--line)}
 #kkRows input,#kkRows select{border:1px solid var(--line);border-radius:8px;padding:7px;font:inherit;font-size:14px;min-width:0}
-#kkRows .kt{flex:1}#kkRows .kd{width:132px}#kkRows .kw{width:92px}#kkRows .kx{border:0;background:none;font-size:18px;color:var(--ink-3);cursor:pointer}
+#kkRows .kt{flex:1 1 100%}#kkRows .kd{flex:1 1 130px}#kkRows .kw{flex:1 1 90px}#kkRows .kx{border:0;background:none;font-size:18px;color:var(--ink-3);cursor:pointer}
 #kkNote{font-size:13px;white-space:pre-wrap;background:var(--mute);border-radius:10px;padding:8px 10px;margin:4px 0 8px;display:none}
 .kkpoll{display:flex;gap:6px;align-items:center;font-size:13px;margin:4px 0 8px}
 .mwho{display:inline-block;margin-top:4px;font-size:12px;background:var(--soft);color:var(--accent);border-radius:20px;padding:2px 8px;font-weight:600}
@@ -1134,7 +1134,7 @@ body.rzing *{user-select:none!important}
       <button class="ic" id="mtDress" aria-label="캐릭터 꾸미기"><svg viewBox="0 0 24 24"><path d="M8 4l-4 3 2 4 2-1v10h8V10l2 1 2-4-4-3c-.5 1.7-2 2.8-4 2.8S8.5 5.7 8 4z"/></svg></button>
     </div>
     <div id="mtWho"></div>
-    <div id="mtStage"><canvas id="mtCv"></canvas><div id="mtHint">방향키·WASD 또는 바닥을 눌러 움직여요</div></div>
+    <div id="mtStage"><canvas id="mtCv"></canvas><div id="mtHint">방향키·WASD 또는 바닥을 눌러 움직여요 · AI 담다가 이 화면의 말풍선 대화를 받아 적어요</div></div>
     <div id="mtBar">
       <div id="mtEmo"><button id="mtMic" class="mic" aria-pressed="false">🎤 음성 켜기</button><button data-e="👋">👋</button><button data-e="👍">👍</button><button data-e="😂">😂</button><button data-e="🎉">🎉</button><button data-e="🤔">🤔</button></div>
       <form id="mtSay"><input id="mtTxt" maxlength="60" placeholder="말하기 (말풍선으로 떠요)" autocomplete="off"><button class="btn" type="submit">보내기</button></form>
@@ -2633,7 +2633,7 @@ const MEET=(()=>{
   async function open(r){
     if(!r||!r.rid){ toast('공유방에서만 회의실을 열 수 있어요'); return; }
     if(!SB||!me||!navigator.onLine){ toast('인터넷에 연결하고 로그인해야 회의실에 들어갈 수 있어요'); return; }
-    leave(); room=r;
+    leave(); room=r; log=[]; aiSay=null; aiT=0;   /* 받아 적은 대화는 이 방 회의에서만 */
     const d=await S.get('room:'+r.code,true)||{}; memCache=d.mem||[];
     av=await myAvatar();
     const sp=[...me.id].reduce((a,c)=>a+c.charCodeAt(0),0)%7;   /* 사람마다 문 앞 다른 자리 */
@@ -2786,6 +2786,9 @@ const MEET=(()=>{
   async function summarize(){
     if(!room||!cur||cur.id!==room.id){ toast('방으로 돌아가서 다시 해 주세요'); return; }
     if(!log.length){ toast('아직 받아 적은 대화가 없어요. 말풍선으로 회의해 보세요'); return; }
+    if(isRO(cur)){ toast('보기만 할 수 있는 방이에요'); return; }
+    const talk=log.splice(0);   /* 정리하는 동안 들어온 말은 다음 정리로 */
+    if(aiKey) toast('회의 대화를 구글 Gemini로 보내 정리하는 중…');
     const names=[myName(),...[...peers].filter(([k])=>!k.includes('#')).map(([,p])=>p.n)];
     aiSay='정리하는 중…'; aiT=30;
     let plan=null;
@@ -2793,18 +2796,19 @@ const MEET=(()=>{
       try{
         const out=await gText({json:true,temperature:.2,maxTokens:1200,
           system:'대학 팀플 회의 대화를 정리한다. JSON 하나로만 답한다: {"summary":["한 줄",...최대3],"decisions":["결정",...],"tasks":[{"t":"할 일(20자 이내)","who":"참석자 이름 또는 빈 문자열","due":"YYYY-MM-DD 또는 빈 문자열"}]}. 오늘은 '+todayKey()+'. 참석자: '+names.join(', ')+'. 대화에 없는 내용은 지어내지 않는다.',
-          parts:[{text:log.map(x=>x.n+': '+x.s).join('\n')}]});
+          parts:[{text:talk.map(x=>x.n+': '+x.s).join('\n')}]});
         plan=JSON.parse(out);
       }catch(e){ console.warn('회의 정리 실패',e); }
     }
-    if(!plan||!Array.isArray(plan.tasks)) plan=KICK.fromTalk(log,names);   /* AI 키가 없거나 실패하면 '할게·맡을게' 말로 찾기 */
+    if(!plan||!Array.isArray(plan.tasks)) plan=KICK.fromTalk(talk,names);
+    const arr=v=>Array.isArray(v)?v.map(x=>String(x)).filter(Boolean):(v?[String(v)]:[]);   /* AI 가 배열 대신 글로 답해도 */
+    plan={summary:arr(plan.summary),decisions:arr(plan.decisions),tasks:plan.tasks};   /* AI 키가 없거나 실패하면 '할게·맡을게' 말로 찾기 */
     aiSay='정리했어요! 확인해 주세요'; aiT=6;
     const head=`[회의] ${md(todayKey())} ${String(new Date().getHours()).padStart(2,'0')}:${String(new Date().getMinutes()).padStart(2,'0')} 회의실 · 참석 ${names.length}명: ${names.join(', ')}`;
     const minutes=[head,...(plan.summary||[]).map(x=>'· '+x),...((plan.decisions||[]).length?['결정: '+plan.decisions.join(' / ')]:[])].join('\n');
     $('#meetview').classList.remove('on');
     KICK.preview({title:'회의에서 나온 할 일',sub:'회의록과 함께 방에 남겨요. 담당자와 마감을 확인해 주세요.',note:minutes,
       tasks:(plan.tasks||[]).map(x=>({t:String(x.t||'').slice(0,40),due:/^\d{4}-\d\d-\d\d$/.test(x.due||'')?x.due:'',who:String(x.who||'')})),room:cur,minutes,poll:false});
-    log=[];
   }
   function nextTheme(){ if(!room) return; const ks=Object.keys(MEET_THEMES); theme=ks[(ks.indexOf(theme)+1)%ks.length];
     try{ localStorage.setItem('damda:meetTheme:'+room.rid,theme); }catch(e){} $('#mtTitle').textContent=room.name+' · '+MEET_THEMES[theme].n; toast(MEET_THEMES[theme].n+' 테마로 바꿨어요'); }
@@ -2823,7 +2827,7 @@ $('#mtSay').onsubmit=e=>{ e.preventDefault(); MEET.say($('#mtTxt').value); $('#m
 document.querySelectorAll('#mtEmo button').forEach(b=>b.onclick=()=>MEET.emo(b.dataset.e));
 $('#mtLog').onclick=()=>MEET.logMeeting();
 $('#mtSum').onclick=()=>MEET.summarize();
-$('#mtPoll').onclick=()=>{ if(cur&&cur.rid){ POLL.create(cur); toast('방에 시간 투표를 올렸어요'); } };
+$('#mtPoll').onclick=async()=>{ if(cur&&cur.rid&&await POLL.create(cur)!==false) toast('방에 시간 투표를 올렸어요'); };
 $('#mtDress').onclick=()=>MEET.dress();
 $('#mtDressOk').onclick=()=>MEET.dressDone();
 $('#mtTheme').onclick=()=>MEET.nextTheme();
@@ -2833,9 +2837,9 @@ $('#avOk').onclick=async()=>{ await S.set('avatar',palAv); $('#shPal').classList
 /* ---------- 팀플 기여 리포트 (4바퀴): 누가 무엇을 했는지 방 기록에서 자동으로 ---------- */
 const REPORT=(()=>{
   let last=null;
-  async function build(r){
+  async function build(r,tried){
     const d=await S.get('room:'+r.code,true)||{}, list=(d.messages||[]).filter(Boolean), mem=d.mem||[];
-    if(list.some(m=>!m._by)&&RS.refill(r.code)){ toast('작성자 기록을 받는 중…'); await RS.sync(); return build(r); }
+    if(!tried&&list.some(m=>!m._by)&&RS.refill(r.code)){ toast('작성자 기록을 받는 중…'); await RS.sync(); return build(r,true); }   /* 한 번만 (지운 계정·못 올린 메모는 끝내 작성자가 없다) */
     const blank=(uid,name)=>({uid,name,posts:0,files:0,done:0,meet:0,last:0,tasks:0,tdone:0});
     const rows=new Map(mem.map(x=>[x.uid,blank(x.uid,x.name||'이름 없음')]));
     const row=uid=>rows.get(uid)||(rows.set(uid,blank(uid,'나간 사람')),rows.get(uid));
@@ -2848,7 +2852,7 @@ const REPORT=(()=>{
       const at=/^\[회의\][^\n]*참석 \d+명: ([^\n]+)/.exec(m.text||'');
       if(at) for(const nm of at[1].split(',').map(x=>x.trim())) for(const x of rows.values()) if(x.name===nm) x.meet++;
     }
-    const meets=list.filter(m=>/^\[회의\]/.test(m.text||'')).length;
+    const meets=list.filter(m=>/^\[회의\][^\n]*참석 \d+명/.test(m.text||'')).length;   /* 투표로 정한 '예정' 회의는 안 셈 */
     return {name:r.name,rows:[...rows.values()].filter(x=>mem.some(y=>y.uid===x.uid)||x.posts||x.done||x.tasks),total:list.filter(m=>m.type!=='vote'&&m.type!=='poll'&&!/^\[(회의|알림)\]/.test(m.text||'')).length,meets,list};
   }
   const day=ts=>ts?md(dkey(new Date(ts))):'-';
@@ -2874,7 +2878,7 @@ const REPORT=(()=>{
   async function ai(){
     if(!last) return; if(!aiKey){ toast('설정에서 AI 키를 넣으면 진행 요약을 만들 수 있어요'); return; }
     const box=$('#rpAi'); box.style.display='block'; box.textContent='요약하는 중… (방 기록이 구글 Gemini로 보내져요)';
-    const lines=last.list.slice(-120).map(m=>`${memName({_mem:[...last.rows]},m._by)||'?'}: ${mlabel(m).slice(0,80)}${m.due?' (마감 '+m.due+')':''}${m.done?' [완료]':''}`).join('\n');
+    const lines=last.list.filter(m=>m.type!=='vote'&&m.type!=='poll').slice(-120).map(m=>`${memName({_mem:[...last.rows]},m._by)||'?'}: ${mlabel(m).slice(0,80)}${m.due?' (마감 '+m.due+')':''}${m.done?' [완료]':''}`).join('\n');
     try{
       const out=await gText({system:'대학 팀플 방의 기록을 보고 한국어로 짧게 정리한다. 형식: "진행: …" 한 줄, "결정된 것: …" 한 줄, "남은 일: …" 한 줄(담당자가 보이면 이름), "주의: …" 한 줄(없으면 생략). 기록에 없는 내용은 지어내지 않는다.',
         parts:[{text:lines}],maxTokens:500,temperature:.2});
@@ -2899,8 +2903,9 @@ async function addTasks(r,tasks,extra){
     add.push({id:'m'+(ts++).toString(36)+Math.random().toString(36).slice(2,4),type:'memo',text:'[할 일] '+t.t,file:null,ts,due:t.due||null,dueStart:null,dueTime:t.due?'23:59':null,done:false,
       ...(t.who&&t.who.uid?{who:{uid:t.who.uid,name:t.who.name}}:{}),...(t.from?{kickOf:t.from}:{})});
   }
-  if(cur&&cur.id===r.id&&!briefOn){ msgs=msgs.concat(add); await saveList(r,msgs); drawStream(); }
-  else await saveList(r,list.concat(add));
+  if(isRO(r)) return 0;
+  const nl=list.concat(add); await saveList(r,nl);
+  if(cur&&cur.id===r.id&&!briefOn){ msgs=nl; drawStream(); }
   return add.length;
 }
 const KICK=(()=>{
@@ -2912,7 +2917,8 @@ const KICK=(()=>{
     for(const {r,list} of briefData.all){ if(r.code) continue;
       for(const m of list){ if(!(m&&m.lms&&m.lms.team&&m.lms.uid&&!m.done&&m.due>=todayKey())) continue;
         const k=LMSP.keyOf(m.lms.host||'',m.lms.uid); if(no[k]) continue;
-        const tr=rooms.find(x=>x.lmsTeam===k); if(tr&&tr._kicked) continue;
+        const tr=rooms.find(x=>x.lmsTeam===k); if(tr&&(tr.kicked||tr._kicked)) continue;
+        if(briefData.all.some(({r:x,list:l})=>x.code&&l.some(y=>y&&y.teamOf===k))) continue;   /* 친구 팀플방에 이미 참여함 */
         return {r,m,k,tr}; } }
     return null;
   }
@@ -2935,9 +2941,10 @@ const KICK=(()=>{
       if(!r){ await LMS.teamRoom(m,src,true); r=rooms.find(x=>x.lmsTeam===k); }
     }
     if(!r) return;
+    if(isRO(r)){ toast('보기만 할 수 있는 방이에요'); return; }
     if(!(cur&&cur.id===r.id)) await openRoom(r.id);
     const title=(m.lms&&m.lms.text||m.text||'').split('\n')[0].replace(/^\[[^\]]+\]\s*/,'');
-    toast('AI 담다가 과제를 읽는 중…');
+    toast(aiKey?'AI 담다가 과제를 읽는 중… (과제 설명이 구글 Gemini로 보내져요)':'기본 계획표로 짜는 중…');
     const plan=await planFor(title,(m.lms&&m.lms.desc)||m.desc||'',m.due,r);
     preview({title:'AI 팀플 계획',sub:`${title} · 최종 마감 ${m.due?md(m.due):'없음'}`,note:plan.note,tasks:plan.tasks,room:r,from:m.id,poll:!!r.rid||true});
   }
@@ -2958,8 +2965,10 @@ const KICK=(()=>{
   const clampDue=(d,a,b)=>!/^\d{4}-\d\d-\d\d$/.test(d||'')?b:d<a?a:d>b?b:d;
   function template(today,last){
     const span=Math.max(1,Math.round((new Date(last)-new Date(today))/864e5)), at=f=>addDays(today,Math.max(0,Math.min(span,Math.round(span*f))));
-    return [['주제·역할 정하기',at(.08),'팀장'],['자료조사',at(.35),'자료조사'],['초안 작성',span>9?addDays(last,-7):at(.6),'작성'],['발표 자료 만들기',span>5?addDays(last,-4):at(.75),'PPT'],['검토·피드백',span>4?addDays(last,-3):at(.85),'검토'],['최종 정리·제출',last,'팀장']]
-      .map(([t,due,role])=>({t,due,role}));
+    const later=(x,y)=>x>y?x:y, steps=[['주제·역할 정하기',at(.08),'팀장'],['자료조사',at(.3),'자료조사'],['초안 작성',later(at(.5),addDays(last,-7)),'작성'],
+      ['발표 자료 만들기',later(at(.65),addDays(last,-4)),'PPT'],['검토·피드백',later(at(.8),addDays(last,-3)),'검토'],['최종 정리·제출',last,'팀장']];
+    let prev=today;
+    return steps.map(([t,due,role])=>{ due=later(due,prev); if(due>last) due=last; prev=due; return {t,due,role}; });
   }
   /* 역할 → 사람 (돌아가며) */
   function assign(tasks,r){ const mem=roomMem(r); let i=0; return tasks.map(t=>({...t,who:t.who&&typeof t.who==='string'?(mem.find(x=>x.name===t.who)||null):(mem.length>1?mem[(i++)%mem.length]:null)})); }
@@ -2974,9 +2983,9 @@ const KICK=(()=>{
     for(const x of log){
       if(/(가자|하자|로\s*정하|로\s*결정|정했|결정했)/.test(x.s)&&!ASK.test(x.s)) decisions.push(x.s.replace(/\s*(로\s*)?(가자|하자).*$/,'').slice(0,40));
       const m=ASK.exec(x.s); if(!m) continue;
-      const other=names.find(n=>n!==x.n&&x.s.includes(n));
+      const other=names.find(n=>n!==x.n&&n.length>=2&&x.s.includes(n));
       let t=x.s.slice(0,m.index);
-      if(other) t=t.replace(new RegExp(other+'(이가|이|가|님|아|야|씨)?\\s*'),'');
+      if(other) t=t.replace(new RegExp(other.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(이가|이|가|님|아|야|씨)?\\s*'),'');
       t=tidy(t);
       if(!t) continue;
       const who=other||x.n, key=t.replace(/\s/g,'');
@@ -3008,7 +3017,7 @@ const KICK=(()=>{
       return {t:ti.value.trim(),due:di.value||'',who:w||null,from:o.from}; }).filter(t=>t.t);
     const extra=o.minutes?[{text:o.minutes}]:[];
     const n=await addTasks(o.room,tasks,extra);
-    o.room._kicked=true; await saveRooms();
+    const rr=rooms.find(x=>x.id===o.room.id)||o.room; rr.kicked=true; await saveRooms();
     $('#shKick').classList.remove('on');
     if(o.poll&&o.room.rid&&$('#kkPoll').checked) await POLL.create(o.room);
     toast(`할 일 ${tasks.length}개를 팀플방에 넣었어요`+(tasks.some(t=>t.who)?' · 담당자에게도 보여요':''));
@@ -3025,22 +3034,27 @@ const POLL=(()=>{
   const DOW='일월화수목금토';
   const label=s=>{ const d=new Date(s.replace(' ','T')); return `${d.getMonth()+1}/${d.getDate()}(${DOW[d.getDay()]}) ${s.slice(11)}`; };
   async function create(r){
+    if(!r||isRO(r)){ toast('보기만 할 수 있는 방이에요'); return false; }
     const slots=[]; for(let i=1;slots.length<5&&i<10;i++){ const k=addDays(todayKey(),i); const dw=new Date(k+'T00:00').getDay(); if(dw===0) continue; slots.push(k+' '+(dw===6?'14:00':'19:00')); }
     await addTasks(r,[],[{id:'p'+Date.now().toString(36),type:'poll',text:'🗳 회의 시간 정하기 — 되는 시간을 모두 눌러 주세요',slots}]);
   }
-  const votesOf=pid=>{ const by=new Map(); for(const v of msgs) if(v&&v.type==='vote'&&v.poll===pid) by.set(v.by,v); return [...by.values()]; };
+  const SLOT=/^\d{4}-\d\d-\d\d \d\d:\d\d$/;
+  const slotsOf=m=>Array.isArray(m.slots)?m.slots.filter(x=>typeof x==='string'&&SLOT.test(x)).slice(0,10):[];
+  /* 표는 사람마다 하나. 남 이름으로 넣은 표(서버 작성자 ≠ by)는 세지 않는다 */
+  const votesOf=pid=>{ const by=new Map(); for(const v of msgs){ if(!(v&&v.type==='vote'&&v.poll===pid&&typeof v.by==='string')) continue;
+    if(v._by&&(v._by!==v.by||(v._ed&&v._ed!==v.by))) continue; by.set(v.by,{...v,slots:Array.isArray(v.slots)?v.slots:[]}); } return [...by.values()]; };
   function node(m){
     const box=el('div','poll'), vs=votesOf(m.id), mine=vs.find(v=>me&&v.by===me.id);
-    const cnt=s=>vs.filter(v=>(v.slots||[]).includes(s)); const best=Math.max(0,...(m.slots||[]).map(s=>cnt(s).length));
-    for(const s of m.slots||[]){
+    const cnt=s=>vs.filter(v=>(v.slots||[]).includes(s)); const best=Math.max(0,...slotsOf(m).map(s=>cnt(s).length));
+    for(const s of slotsOf(m)){
       const b=el('button','slot'+(mine&&(mine.slots||[]).includes(s)?' on':'')+(best&&cnt(s).length===best?' best':'')); b.type='button';
-      const who=cnt(s).map(v=>v.name).join(', ');
+      const who=cnt(s).map(v=>memName(cur,v.by)).join(', ');
       b.innerHTML=`<span>${esc(label(s))}</span><span class="nm">${esc(who)}</span><span class="c">${cnt(s).length}</span>`;
       b.onclick=e=>{ e.stopPropagation(); toggle(m,s); };
       box.appendChild(b);
     }
-    if(m.fixed){ const f=el('div','mwho'); f.textContent='✅ '+label(m.fixed)+'로 정했어요'; box.appendChild(f); }
-    else if(best){ const f=el('button','btn fix'); f.textContent='가장 많은 시간으로 정하기'; f.onclick=e=>{ e.stopPropagation(); fix(m); }; box.appendChild(f); }
+    if(m.fixed&&SLOT.test(m.fixed)){ const f=el('div','mwho'); f.textContent='✅ '+label(m.fixed)+'로 정했어요'; box.appendChild(f); }
+    else if(best&&!(cur&&isRO(cur))){ const f=el('button','btn fix'); f.textContent='가장 많은 시간으로 정하기'; f.onclick=e=>{ e.stopPropagation(); fix(m); }; box.appendChild(f); }
     return box;
   }
   async function toggle(m,s){
@@ -3051,10 +3065,13 @@ const POLL=(()=>{
     msgs=old?msgs.map(x=>x.id===id?v:x):msgs.concat(v); drawStream(true); await persist();
   }
   async function fix(m){
-    const vs=votesOf(m.id); let best=null, n=-1; for(const s of m.slots||[]){ const c=vs.filter(v=>(v.slots||[]).includes(s)).length; if(c>n){ n=c; best=s; } }
+    if(!cur||isRO(cur)){ toast('보기만 할 수 있는 방이에요'); return; }
+    if(m.fixed) return;
+    const vs=votesOf(m.id); let best=null, n=-1; for(const s of slotsOf(m)){ const c=vs.filter(v=>(v.slots||[]).includes(s)).length; if(c>n){ n=c; best=s; } }
     if(!best) return;
+    const mid='mf'+LMSP.hash(m.id);   /* 두 사람이 동시에 눌러도 회의 메모는 하나 */
     msgs=msgs.map(x=>x.id===m.id?{...x,fixed:best}:x);
-    msgs.push({id:'m'+Date.now().toString(36),type:'memo',text:`[회의] 팀 회의 ${label(best)} · ${n}명 가능`,file:null,ts:Date.now(),due:best.slice(0,10),dueStart:null,dueTime:best.slice(11),done:false});
+    if(!msgs.some(x=>x.id===mid)) msgs.push({id:mid,type:'memo',text:`[회의] 팀 회의 ${label(best)} · ${n}명 가능`,file:null,ts:Date.now(),due:best.slice(0,10),dueStart:null,dueTime:best.slice(11),done:false});
     drawStream(); await persist(); toast(label(best)+' 회의로 정했어요 · 모두의 할 일에 들어가요');
   }
   return {create,node};
@@ -3063,19 +3080,22 @@ const POLL=(()=>{
 /* AI 리마인드: 방장 기기가 하루 한 번, 마감 D-1·D-DAY 인데 안 끝난 '담당 있는 할 일'을 방에 알린다.
    알림 메모 ID 를 할 일+날짜로 정해서 여러 번 실행돼도 한 번만 남는다 */
 const REMIND=(()=>{
+  const RK='damda:remind';
   async function run(){
     if(!SB||!me) return;
+    let sent={}; try{ sent=JSON.parse(localStorage.getItem(RK)||'{}'); }catch(e){}
     for(const r of rooms){
       if(!r.rid||isRO(r)) continue;
       const d=await S.get('room:'+r.code,true)||{}; if(!(d.mem||[]).some(x=>x.uid===me.id&&x.role==='owner')) continue;
       const list=(d.messages||[]).filter(Boolean), today=todayKey(), add=[];
       for(const m of list){
         if(!m.who||m.done||!m.due) continue; const n=ddays(m.due); if(n<0||n>1) continue;
-        const id='rm'+LMSP.hash(m.id+' '+today); if(list.some(x=>x.id===id)) continue;
+        const id='rm'+LMSP.hash(m.id+' '+today); if(sent[id]||list.some(x=>x.id===id)) continue;   /* 누가 지웠으면 되살리지 않는다 */
         const t=mlabel(m).replace(/^\[[^\]]+\]\s*/,'');
         add.push({id,type:'memo',text:`[알림] ${m.who.name}님, '${t}' 마감이 ${n?'내일':'오늘'}이에요. 막히는 거 있으면 방에 남겨 주세요 🙏`,file:null,ts:Date.now(),due:null,dueStart:null,dueTime:null,done:false,remindOf:m.id});
       }
-      if(add.length){ if(cur&&cur.id===r.id&&!briefOn){ msgs=msgs.concat(add); await saveList(r,msgs); drawStream(true); } else await saveList(r,list.concat(add)); }
+      if(add.length){ const nl=list.concat(add); await saveList(r,nl); if(cur&&cur.id===r.id&&!briefOn){ msgs=nl; drawStream(true); }
+        for(const a of add) sent[a.id]=today; try{ localStorage.setItem(RK,JSON.stringify(Object.fromEntries(Object.entries(sent).filter(([,d])=>d>=addDays(today,-3))))); }catch(e){} }
     }
   }
   return {run};
@@ -3481,7 +3501,7 @@ async function saveList(r,list){
     ok=await S.set('room:'+r.code,d,true);
     RS.mark(r);
   }else ok=await S.set('msgs:'+r.id,list);
-  const last=list[list.length-1];
+  const shown_=list.filter(x=>x&&x.type!=='vote'), last=shown_[shown_.length-1];
   r.preview=last?((last.file&&!last.text)?(last.file.name||'파일'):(last.text||'').split('\n')[0]):'';
   r.at=last?last.ts:null;
   await saveRooms(); await countDue(); drawRooms();
@@ -4721,7 +4741,7 @@ function updSel(){
   if(roNow()) ['#sDone','#sPin','#sDel'].forEach(x=>{ $(x).disabled=true; });
   $('#sDoneLb').textContent=n&&L.every(x=>x.done)?'완료 취소':'완료';
   $('#sPinLb').textContent=n&&L.every(x=>x.pin)?'고정 해제':'고정';
-  const view=grpF?msgs.filter(x=>grpF.ids.has(x.id)):msgs;
+  const view=(grpF?msgs.filter(x=>grpF.ids.has(x.id)):msgs).filter(x=>x.type!=='vote');
   $('#btnSelAll').textContent=n&&n===view.length?'선택 해제':'전체 선택';
 }
 $('#gSel').onclick=()=>{ const m=msgTarget; close('#shMsg'); enterSel(m); };
@@ -4830,7 +4850,7 @@ async function shareMsgs(list){
 $('#gShare').onclick=()=>{ const m=msgTarget; close('#shMsg'); if(m) shareMsgs([m]); };
 $('#sShare').onclick=async()=>{ const L=selList(); if(!L.length) return; await shareMsgs(L); };
 $('#btnSelAll').onclick=()=>{
-  const view=grpF?msgs.filter(x=>grpF.ids.has(x.id)):msgs;
+  const view=(grpF?msgs.filter(x=>grpF.ids.has(x.id)):msgs).filter(x=>x.type!=='vote');   /* 숨긴 투표 표는 고르지 않는다 */
   if(sel.size===view.length) sel.clear(); else view.forEach(x=>sel.add(x.id));
   view.forEach(x=>{ const b=document.getElementById('b'+x.id); if(b) b.classList.toggle('picked',sel.has(x.id)); });
   updSel();
@@ -4881,6 +4901,7 @@ function askMsg(m){
   $('#gDueLb').textContent=m.due?'날짜 바꾸기':'날짜 지정';
   /* 사진·파일만 있는 메모는 수정 대신 추가 메모를 쓴다 */
   $('#gEdit').style.display=m.text?'':'none';
+  $('#gKick').style.display=m.text&&!roNow()&&m.type!=='poll'?'':'none';
   $('#gCopy').style.display=m.text?'':'none';
   const cf=fileCopyKind(m);
   $('#gCopyF').style.display=cf?'':'none';
