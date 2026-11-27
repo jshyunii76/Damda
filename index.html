@@ -538,6 +538,7 @@ html.kb body{align-items:flex-start}
 #mtWho span{background:rgba(255,255,255,.12);border-radius:20px;padding:3px 9px}
 #mtStage{flex:1;position:relative;min-height:0}
 #mtCv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;image-rendering:pixelated}
+#mtZoom{position:absolute;right:8px;top:8px;z-index:2;border:0;border-radius:999px;padding:6px 11px;font:inherit;font-size:12px;font-weight:600;background:rgba(0,0,0,.55);color:#fff;cursor:pointer;display:none}
 #mtHint{position:absolute;left:0;right:0;bottom:6px;text-align:center;font-size:12px;opacity:.7;pointer-events:none}
 #mtBar{padding:8px 10px 12px;background:#263338;display:flex;flex-direction:column;gap:8px}
 #mtEmo{display:flex;gap:6px;justify-content:center}
@@ -1138,7 +1139,7 @@ body.rzing *{user-select:none!important}
       <button class="ic" id="mtDress" aria-label="캐릭터 꾸미기"><svg viewBox="0 0 24 24"><path d="M8 4l-4 3 2 4 2-1v10h8V10l2 1 2-4-4-3c-.5 1.7-2 2.8-4 2.8S8.5 5.7 8 4z"/></svg></button>
     </div>
     <div id="mtWho"></div>
-    <div id="mtStage"><canvas id="mtCv"></canvas><div id="mtHint">방향키·WASD 또는 바닥을 눌러 움직여요 · AI 담다가 이 화면의 말풍선 대화를 받아 적어요</div></div>
+    <div id="mtStage"><canvas id="mtCv"></canvas><button id="mtZoom" aria-label="회의실 전체 보기">전체 보기</button><div id="mtHint">방향키·WASD 또는 바닥을 눌러 움직여요 · AI 담다가 이 화면의 말풍선 대화를 받아 적어요</div></div>
     <div id="mtBar">
       <div id="mtEmo"><button id="mtMic" class="mic" aria-pressed="false">🎤 음성 켜기</button><button data-e="👋">👋</button><button data-e="👍">👍</button><button data-e="😂">😂</button><button data-e="🎉">🎉</button><button data-e="🤔">🤔</button></div>
       <form id="mtSay"><input id="mtTxt" maxlength="60" placeholder="말하기 (말풍선으로 떠요)" autocomplete="off"><button class="btn" type="submit">보내기</button></form>
@@ -1204,8 +1205,9 @@ body.rzing *{user-select:none!important}
     <h2>AI 정리</h2>
     <p>AI 정리를 켜면 메모와 사진이 Google Gemini로 보내져요. 무료 키를 쓰면 Google이 보낸 내용을 서비스 개선에 쓸 수 있어요.</p>
     <div class="aistat" id="aiStat"></div>
+    <a class="btn ghost" id="aiGet" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;margin:0 0 8px">무료 키 받으러 가기 (구글 로그인 → Create API key → 복사)</a>
     <div class="keyrow">
-      <input type="text" id="aiKey" placeholder="AIza... (Gemini API 키)" autocomplete="off">
+      <input type="text" id="aiKey" placeholder="복사한 키를 붙여 넣으면 바로 켜져요" autocomplete="off">
       <button class="btn" id="aiSave" style="flex:0 0 auto;padding:11px 16px">저장</button>
     </div>
     <button class="mrow" id="aiTest">
@@ -1373,15 +1375,15 @@ body.rzing *{user-select:none!important}
 
   <div class="sheet" id="shJoin"><div class="card">
     <h2>코드로 참여</h2>
-    <input type="text" id="joinCode" placeholder="예) 7QK2MD" maxlength="6" autocapitalize="characters">
+    <input type="text" id="joinCode" placeholder="초대 링크나 6자리 코드 붙여넣기" autocapitalize="characters" autocomplete="off">
     <input type="text" id="joinName" placeholder="이 방에서 쓸 이름" maxlength="20" style="margin-top:8px">
     <div class="btns"><button class="btn ghost" data-close>취소</button>
       <button class="btn" id="doJoin">참여하기</button></div>
   </div></div>
 
   <div class="sheet" id="shShare"><div class="card">
-    <h2>공유 코드</h2>
-    <p>이 코드를 받은 사람은 같은 방에 들어올 수 있어요.</p>
+    <h2>팀원 초대</h2>
+    <p>링크나 코드를 받은 사람은 같은 방에 들어올 수 있어요.</p>
     <div class="code" id="shareCode">------</div>
     <div id="permBox">
       <div class="seg" id="permSeg" role="radiogroup" aria-label="받는 사람 권한">
@@ -1392,8 +1394,10 @@ body.rzing *{user-select:none!important}
     </div>
     <p class="pdesc" id="permMine"></p>
     <p id="shareWho"></p>
+    <button class="btn" id="doInvite" style="width:100%;margin:4px 0">초대 링크 보내기</button>
+    <p class="pdesc">카톡 단톡방에 링크를 보내면, 누르는 것만으로 이 방에 들어와요.</p>
     <div class="btns"><button class="btn ghost" data-close>닫기</button>
-      <button class="btn" id="doCopy">코드 복사</button></div>
+      <button class="btn ghost" id="doCopy">코드만 복사</button></div>
   </div></div>
 
   <div id="rmenu" role="menu" aria-label="방 메뉴"></div>
@@ -2466,7 +2470,8 @@ const LMS=(()=>{
 })();
 $('#toLms').onclick=async()=>{ await LMS.draw(); open('#shLms'); };
 const lmsAct=(id,f)=>{ $(id).onclick=async()=>{ const b=$(id), t=b.textContent; b.disabled=true; b.textContent='받는 중…'; try{ await f(); }finally{ b.disabled=false; b.textContent=t; } }; };
-lmsAct('#lmsLink',()=>LMS.link($('#lmsUrl').value)); lmsAct('#lmsPaste',()=>LMS.paste()); lmsAct('#lmsNow',()=>LMS.pull(true));
+lmsAct('#lmsLink',()=>LMS.link($('#lmsUrl').value));
+$('#lmsUrl').addEventListener('input',()=>{ if(LMSP.findUrl($('#lmsUrl').value)&&LMSP.okUrl(LMSP.findUrl($('#lmsUrl').value))&&!$('#lmsLink').disabled) $('#lmsLink').click(); }); lmsAct('#lmsPaste',()=>LMS.paste()); lmsAct('#lmsNow',()=>LMS.pull(true));
 $('#lmsCut').onclick=()=>LMS.cut();
 
 /* ---------- 팀 회의실 (3바퀴): 공유방 멤버가 캐릭터로 모이는 2D 방 ----------
@@ -2808,12 +2813,21 @@ const MEET=(()=>{
   }
   function plant(g,x,y,t){ g.fillStyle='#C0703A'; g.fillRect(x-9,y,18,14); g.fillStyle='#5DBB63'; for(let i=0;i<5;i++){ g.beginPath(); g.ellipse(x+Math.cos(i*1.3+Math.sin(t)*.05)*7,y-6+Math.sin(i*2)*4,7,4,i,0,Math.PI*2); g.fill(); } }
   const fit=(g,s,w)=>{ let x=String(s); while(x.length>1&&g.measureText(x).width>w) x=x.slice(0,-2)+'…'; return x; };
+  let zoomAll=false; const cam={x:null,y:null};
+  function toggleZoom(){ zoomAll=!zoomAll; cam.x=cam.y=null; }
   function loop(now){
     if(!$('#meetview').classList.contains('on')){ leave(); return; }
     const t=(now-t0)/1000;
     const c=cv(), pr=window.devicePixelRatio||1, cw=c.clientWidth, chh=c.clientHeight;
     if(c.width!==Math.round(cw*pr)||c.height!==Math.round(chh*pr)){ c.width=Math.round(cw*pr); c.height=Math.round(chh*pr); }
-    const g=c.getContext('2d'), sc=Math.min(cw/(W*T),chh/(H*T)), ox=(cw-W*T*sc)/2, oy=(chh-H*T*sc)/2;
+    const g=c.getContext('2d'), fitSc=Math.min(cw/(W*T),chh/(H*T));
+    /* 폰처럼 좁으면 방 전체가 너무 작아진다 → 세로를 꽉 채우게(가로 9칸쯤) 키우고, 카메라가 나(앉았으면 내 책상)를 따라간다 */
+    const near=fitSc<.9&&!zoomAll; $('#mtZoom').style.display=fitSc<.9?'block':'none'; $('#mtZoom').textContent=zoomAll?'가까이 보기':'전체 보기';
+    const sc=near?Math.max(fitSc,Math.min(cw/(9*T),chh/(H*T))):fitSc;
+    let ox=(cw-W*T*sc)/2, oy=(chh-H*T*sc)/2;
+    if(near){ const fx=me_.x, fy=me_.y-30; cam.x=cam.x==null?fx:cam.x+(fx-cam.x)*.12; cam.y=cam.y==null?fy:cam.y+(fy-cam.y)*.12;
+      const cl=(v,lo,hi)=>lo>hi?(lo+hi)/2:Math.max(lo,Math.min(hi,v));
+      ox=cl(cw/2-cam.x*sc,cw-W*T*sc,0); oy=cl(chh/2-cam.y*sc,chh-H*T*sc,0); }
     g.setTransform(pr,0,0,pr,0,0); g.fillStyle=MEET_THEMES[theme].bg; g.fillRect(0,0,cw,chh); $('#meetview').style.background=MEET_THEMES[theme].bg;
     g.setTransform(pr*sc,0,0,pr*sc,pr*ox,pr*oy); C.sc=sc; C.ox=ox; C.oy=oy;
     drawRoom(g,t); drawSeatsOnMap(g,t); const sat=seatedSet();
@@ -2891,7 +2905,10 @@ const MEET=(()=>{
     await saveSeats(l=>l.map(m=>m&&m.id===id?{...m,link:url}:m)); toast(url?'문서 링크를 달았어요':'링크를 뺐어요');
   }
   async function delSeat(id){ if(ownerOf(id)){ toast('누가 앉아 있는 자리는 지울 수 없어요'); return; } await saveSeats(l=>l.filter(m=>!(m&&m.id===id))); }
-  function openSeats(focus){ seatFocus=focus||null; $('#mtSeatBox').classList.add('on'); $('#mtDressBox').classList.remove('on'); loadSeats().then(drawSeats); }
+  function openSeats(focus){ seatFocus=focus||null; $('#mtSeatBox').classList.add('on'); $('#mtDressBox').classList.remove('on');
+    loadSeats().then(async()=>{ drawSeats(); const ta=$('#mtSeatNew');
+      if(!seats.length&&!ta.value.trim()&&room){ const t=(await readList(room)).filter(m=>m&&!m.done&&/^\[할 일\]/.test(m.text||'')).map(m=>mlabel(m).replace(/^\[할 일\]\s*/,''));
+        if(t.length){ ta.value=t.join('\n'); toast('팀 할 일로 목차를 채워 뒀어요. 고칠 게 없으면 \'자리 만들기\'만 누르세요'); } } }); }
   function drawSeats(){
     const box=$('#mtSeatList'); box.replaceChildren();
     if(!seats.length){ const e=el('p','pdesc'); e.textContent='아직 자리가 없어요. 아래에 목차를 붙여 넣거나 할 일에서 가져오세요.'; box.appendChild(e); }
@@ -2997,11 +3014,12 @@ const MEET=(()=>{
   function tap(e){ const r=cv().getBoundingClientRect(); const x=(e.clientX-r.left-C.ox)/C.sc, y=(e.clientY-r.top-C.oy)/C.sc;
     const st=seatAt(x,y); if(st){ openSeats(st.id); return; }   /* 책상을 누르면 그 자리 */
     if(x>=0&&y>=0&&x<=W*T&&y<=H*T) target={x,y}; }
-  return {open,leave,say,emo,logMeeting,summarize,dress,dressDone,nextTheme,voice,tap,openSeats,addSeats,fromTasks,sit,stand,wait,unwait,setLink,seatsState:()=>({seats:seats.map(x=>({id:x.id,t:x.title,link:x.link,owner:(ownerOf(x.id)||{}).n||null,queue:queueOf(x.id).map(q=>q.n)})),mySeat,myWait}),get state(){ return {me:me_,voice:{on:!!mic,pcs:[...pcs].map(([k,x])=>({k,st:x.pc.connectionState,audio:!!x.audio,vol:x.audio?Math.round(x.audio.volume*100)/100:null,lv:x.level?Math.round(x.level()*1000)/1000:0}))},peers:[...peers].filter(([k])=>!k.includes('#')).map(([k,p])=>({k,n:p.n,x:Math.round(p.x),y:Math.round(p.y),say:p.sayT>0?p.say:null})),board}; }};
+  return {toggleZoom,open,leave,say,emo,logMeeting,summarize,dress,dressDone,nextTheme,voice,tap,openSeats,addSeats,fromTasks,sit,stand,wait,unwait,setLink,seatsState:()=>({seats:seats.map(x=>({id:x.id,t:x.title,link:x.link,owner:(ownerOf(x.id)||{}).n||null,queue:queueOf(x.id).map(q=>q.n)})),mySeat,myWait}),get state(){ return {me:me_,voice:{on:!!mic,pcs:[...pcs].map(([k,x])=>({k,st:x.pc.connectionState,audio:!!x.audio,vol:x.audio?Math.round(x.audio.volume*100)/100:null,lv:x.level?Math.round(x.level()*1000)/1000:0}))},peers:[...peers].filter(([k])=>!k.includes('#')).map(([k,p])=>({k,n:p.n,x:Math.round(p.x),y:Math.round(p.y),say:p.sayT>0?p.say:null})),board}; }};
 })();
 $('#btnMeet').onclick=()=>MEET.open(cur);
 $('#mtClose').onclick=()=>{ $('#meetview').classList.remove('on'); MEET.leave(); };
 $('#mtCv').addEventListener('pointerdown',e=>MEET.tap(e));
+$('#mtZoom').onclick=()=>MEET.toggleZoom();
 $('#mtSay').onsubmit=e=>{ e.preventDefault(); MEET.say($('#mtTxt').value); $('#mtTxt').value=''; };
 document.querySelectorAll('#mtEmo button').forEach(b=>b.onclick=()=>MEET.emo(b.dataset.e));
 $('#mtLog').onclick=()=>MEET.logMeeting();
@@ -3502,6 +3520,9 @@ $('#aiSave').onclick=()=>{
   try{ aiKey?localStorage.setItem(AI_KEY_STORE,aiKey):localStorage.removeItem(AI_KEY_STORE); }catch(e){}
   aiStat(); updAIBtn(); toast(aiKey?'AI 정리를 켰어요':'AI 정리를 껐어요');
 };
+/* 키처럼 생긴 걸 붙여 넣으면 저장 → 연결 확인까지 한 번에 */
+$('#aiKey').addEventListener('input',()=>{ const v=$('#aiKey').value, m=v.match(/AIza[0-9A-Za-z_\-]{30,}/);
+  if(m&&m[0]!==aiKey){ $('#aiKey').value=m[0]; $('#aiSave').click(); $('#aiTest').click(); } });
 $('#aiTest').onclick=async()=>{
   if(!aiKey){ toast('먼저 키를 저장해주세요'); return; }
   const lb=$('#aiTestLb'); lb.textContent='확인 중…';
@@ -7307,13 +7328,23 @@ $('#doCopy').onclick=async()=>{
 function openJoin(){ $('#joinCode').value=''; $('#joinName').value=SB&&me?RS.myName():'';
   $('#joinName').style.display=SYNC_ON?'':'none';
   open('#shJoin'); setTimeout(()=>$('#joinCode').focus(),80); }
-$('#doJoin').onclick=async()=>{
-  const c=$('#joinCode').value.trim().toUpperCase();
+const inviteUrl=c=>location.origin+location.pathname+'?join='+c;
+/* 링크 전체를 붙여 넣어도, 코드만 넣어도 된다 */
+const codeOf=v=>{ v=String(v||'').trim(); const m=v.match(/[?&#]join=([A-Za-z0-9]{6})/); return (m?m[1]:v.replace(/\s/g,'')).toUpperCase(); };
+$('#doInvite').onclick=async()=>{
+  if(!cur||!cur.code) return; const url=inviteUrl(cur.code);
+  const text=`'${cur.name}' 팀플방 초대예요. 눌러서 들어와요 👉`;
+  if(navigator.share){ try{ await navigator.share({title:'담다 팀플방 초대',text,url}); return; }catch(e){ if(e&&e.name==='AbortError') return; } }
+  try{ await navigator.clipboard.writeText(text+' '+url); toast('초대 링크를 복사했어요. 단톡방에 붙여 넣으세요'); }catch(e){ toast(url); }
+};
+$('#joinCode').addEventListener('input',()=>{ const c=codeOf($('#joinCode').value); if(/[?&#]join=/.test($('#joinCode').value)&&c.length===6) $('#doJoin').click(); });
+$('#doJoin').onclick=()=>joinCode(codeOf($('#joinCode').value),$('#joinName').value);
+async function joinCode(c,name){
   if(c.length!==6){toast('6자리 코드를 입력하세요'); return;}
   if(rooms.some(r=>r.code===c)){toast('이미 참여한 방이에요'); close('#shJoin'); return;}
   if(SYNC_ON){
     if(!(SB&&me)){ toast('참여하려면 로그인하세요'); return; }
-    const nm=($('#joinName').value.trim()||RS.myName()).slice(0,20);
+    const nm=(String(name||'').trim()||RS.myName()).slice(0,20);
     const {data,error}=await SB.rpc('join_room',{p_code:c,p_display:nm});
     if(error){ toast(/too many/.test(error.message||'')?'여러 번 틀렸어요. 10분 뒤에 다시 해 주세요':'참여하지 못했어요. 인터넷 연결을 확인하세요'); return; }
     const x=data&&data[0];
@@ -7335,7 +7366,7 @@ $('#doJoin').onclick=async()=>{
     _members:d.members,joined:true,_perm:d.perm||'edit'});
   normalize(); await saveRooms(); await countDue(); drawRooms(); close('#shJoin');
   toast(d.perm==='view'?'방에 참여했어요 · 보기만 할 수 있어요':'방에 참여했어요');
-};
+}
 
 /* ---------- 로그인 화면 · 시작 ---------- */
 (()=>{ const sp=$('#splash'), a=$('#lgArt'); if(!sp||!a) return;
@@ -7347,6 +7378,7 @@ const loadJS=(src,ms)=>new Promise(res=>{ const s=document.createElement('script
 const lgMsg=(t,busy)=>{ $('#lgMsg').textContent=t||''; $('#login').classList.toggle('busy',!!busy); };
 function showLogin(){
   $('#login').classList.add('on');
+  try{ if(localStorage.getItem('damda:join')) lgMsg('로그인하면 초대받은 팀플방에 바로 들어가요'); }catch(e){}
   /* 로그인하다 돌아온 오류 (예: 카카오 동의 화면에서 취소) */
   const q=new URLSearchParams(location.search+'&'+location.hash.slice(1));
   if(q.get('error')){ lgMsg('로그인하지 못했어요. 다시 시도해 주세요.'); console.warn(q.get('error'),q.get('error_description'));
@@ -7443,8 +7475,12 @@ async function boot(){
   }
   await loadRooms(); openBrief();
   if(SB&&me){ RS.start(); LMS.start(); setTimeout(()=>REMIND.run().catch(()=>{}),6000);
+    let pj=null; try{ pj=localStorage.getItem('damda:join'); localStorage.removeItem('damda:join'); }catch(e){}
+    if(pj){ const ex=rooms.find(r=>r.code===pj); if(!ex) await joinCode(pj,''); const nr=rooms.find(r=>r.code===pj); if(nr) openRoom(nr.id); }
     document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') setTimeout(()=>REMIND.run().catch(()=>{}),3000); }); }
 }
+(()=>{ try{ const j=new URLSearchParams(location.search).get('join');
+  if(j&&/^[A-Za-z0-9]{6}$/.test(j)){ localStorage.setItem('damda:join',j.toUpperCase()); history.replaceState(null,'',location.pathname+location.hash); } }catch(e){} })();
 boot();
 })();
 </script>
