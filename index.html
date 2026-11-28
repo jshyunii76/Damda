@@ -1394,6 +1394,7 @@ body.rzing *{user-select:none!important}
 
   <div class="sheet" id="shJoin"><div class="card">
     <h2>코드로 참여</h2>
+    <p class="pdesc" id="joinHint"></p>
     <input type="text" id="joinCode" placeholder="초대 링크나 6자리 코드 붙여넣기" autocapitalize="characters" autocomplete="off">
     <input type="text" id="joinName" placeholder="이 방에서 쓸 이름" maxlength="20" style="margin-top:8px">
     <div class="btns"><button class="btn ghost" data-close>취소</button>
@@ -2520,8 +2521,8 @@ const SKINS=['#FFE3C8','#F2C094','#C68A5E'], HAIRS=['#2B2B2B','#5A3A22','#B5652B
 const EMO_FACE={'👋':'wave','👍':'smile','😂':'laugh','🎉':'laugh','🤔':'think','😮':'wow'};
 function shadeHex(c,k){ const n=parseInt(c.slice(1),16); const f=v=>Math.max(0,Math.min(255,Math.round(v*k))); return '#'+[n>>16,(n>>8)&255,n&255].map(f).map(v=>v.toString(16).padStart(2,'0')).join(''); }
 function avNorm(av){
-  av=av||{}; const m=MAJORS[av.m]?av.m:null;
-  return {m, sk:SKINS[av.sk|0]||SKINS[0], hc:HAIRS[av.hc==null?1:av.hc|0]||HAIRS[1], hs:(av.hs|0)%3,
+  av=av&&typeof av==='object'?av:{}; const m=typeof av.m==='string'&&Object.prototype.hasOwnProperty.call(MAJORS,av.m)?av.m:null;   /* 남이 보낸 값이라 그대로 믿지 않는다 */
+  return {m, sk:SKINS[av.sk|0]||SKINS[0], hc:HAIRS[av.hc==null?1:av.hc|0]||HAIRS[1], hs:Math.abs(av.hs|0)%3,
     top:m?MAJORS[m].top:(AV_COLORS.includes(av.c)?av.c:'#2E6A63'), pants:m?MAJORS[m].pants:'#3A4250'};
 }
 function drawAvatar(g,x,y,av,o={}){
@@ -3367,6 +3368,7 @@ async function srvFetch(path,body){
   if(st===503&&j.error==='nokey'){ pause(); const err=new Error('nokey'); err.kind='nokey'; throw err; }
   if(st===429&&j.error==='limit'){ pause(); const err=new Error('limit'); err.kind='limit'; err.status=429; throw err; }
   if(st===401){ const err=new Error('login'); err.kind='login'; throw err; }
+  if(st===502&&j.error==='upstream'){ const err=new Error('busy'); err.kind='busy'; throw err; }
   if(!st||st===502){ const err=new Error('network'); err.kind='network'; throw err; }
   const er=j.error&&typeof j.error==='object'?j.error:{};
   const err=new Error(st+' '+(er.status||'')+' '+(er.message||'')); err.status=st; err.code=(er.status||'')+' '; err.msg=er.message||''; throw err;
@@ -3485,6 +3487,7 @@ function aiWhy(e){
   if(e.kind==='limit') return '오늘 담다 AI 무료 사용량을 다 썼어요. 내일 다시 쓰거나, 아래에 내 Gemini 키를 넣으면 계속 쓸 수 있어요.';
   if(e.kind==='nokey') return '담다 AI가 아직 준비 중이에요. 아래에 내 Gemini 키를 넣으면 바로 쓸 수 있어요.';
   if(e.kind==='login') return '담다 AI는 로그인해야 쓸 수 있어요.';
+  if(e.kind==='busy') return '담다 AI가 지금 바빠요. 잠시 뒤 다시 해 주세요.';
   if(e.kind==='empty') return 'Gemini가 빈 답을 보냈어요. 새로고침 후 다시 해주세요.';
   if(/API_KEY_INVALID|API key not valid|API_KEY/i.test(c)||e.status===401)
     return 'API 키가 맞지 않아요. Google AI Studio에서 키를 다시 복사해 넣어주세요.';
@@ -7392,7 +7395,8 @@ $('#doCopy').onclick=async()=>{
   try{await navigator.clipboard.writeText(cur.code); toast('코드를 복사했어요');}
   catch(e){toast('코드: '+cur.code);}
 };
-function openJoin(){ $('#joinCode').value=''; $('#joinName').value=SB&&me?RS.myName():'';
+let joinLink=false;
+function openJoin(){ joinLink=false; $('#joinHint').textContent=''; $('#joinCode').value=''; $('#joinName').value=SB&&me?RS.myName():'';
   $('#joinName').style.display=SYNC_ON?'':'none';
   open('#shJoin'); setTimeout(()=>$('#joinCode').focus(),80); }
 const inviteUrl=c=>location.origin+location.pathname+'?join='+c;
@@ -7404,7 +7408,8 @@ $('#doInvite').onclick=async()=>{
   if(navigator.share){ try{ await navigator.share({title:'담다 팀플방 초대',text,url}); return; }catch(e){ if(e&&e.name==='AbortError') return; } }
   try{ await navigator.clipboard.writeText(text+' '+url); toast('초대 링크를 복사했어요. 단톡방에 붙여 넣으세요'); }catch(e){ toast(url); }
 };
-$('#joinCode').addEventListener('input',()=>{ const c=codeOf($('#joinCode').value); if(/[?&#]join=/.test($('#joinCode').value)&&c.length===6) $('#doJoin').click(); });
+/* 링크를 붙여 넣으면 코드만 남긴다 (참여는 이름을 확인하고 직접 누른다) */
+$('#joinCode').addEventListener('input',()=>{ const v=$('#joinCode').value, c=codeOf(v); if(/[?&#]join=/.test(v)&&c.length===6) $('#joinCode').value=c; });
 $('#doJoin').onclick=()=>joinCode(codeOf($('#joinCode').value),$('#joinName').value);
 async function joinCode(c,name){
   if(c.length!==6){toast('6자리 코드를 입력하세요'); return;}
@@ -7422,6 +7427,7 @@ async function joinCode(c,name){
       _members:2,joined:true,_perm:x.perm});
     normalize(); await saveRooms(); drawRooms(); close('#shJoin');
     toast(x.perm==='view'?'방에 참여했어요 · 보기만 할 수 있어요':'방에 참여했어요 · 기록을 받는 중…');
+    if(joinLink){ joinLink=false; const nr=rooms.find(r=>r.code===c); if(nr) openRoom(nr.id); }
     await RS.sync(); await countDue(); drawRooms();
     return;
   }
@@ -7445,7 +7451,7 @@ const loadJS=(src,ms)=>new Promise(res=>{ const s=document.createElement('script
 const lgMsg=(t,busy)=>{ $('#lgMsg').textContent=t||''; $('#login').classList.toggle('busy',!!busy); };
 function showLogin(){
   $('#login').classList.add('on');
-  try{ if(localStorage.getItem('damda:join')) lgMsg('로그인하면 초대받은 팀플방에 바로 들어가요'); }catch(e){}
+  try{ if(localStorage.getItem('damda:join')) lgMsg('로그인하면 초대받은 팀플방에 들어갈 수 있어요'); }catch(e){}
   /* 로그인하다 돌아온 오류 (예: 카카오 동의 화면에서 취소) */
   const q=new URLSearchParams(location.search+'&'+location.hash.slice(1));
   if(q.get('error')){ lgMsg('로그인하지 못했어요. 다시 시도해 주세요.'); console.warn(q.get('error'),q.get('error_description'));
@@ -7542,13 +7548,18 @@ async function boot(){
   }
   await loadRooms(); openBrief();
   if(SB&&me){ RS.start(); LMS.start(); setTimeout(()=>REMIND.run().catch(()=>{}),6000);
-    let pj=null; try{ pj=localStorage.getItem('damda:join'); localStorage.removeItem('damda:join'); }catch(e){}
-    if(pj){ const ex=rooms.find(r=>r.code===pj); if(!ex) await joinCode(pj,''); const nr=rooms.find(r=>r.code===pj); if(nr) openRoom(nr.id); }
-    maybeOnboard().catch(e=>console.warn(e));
+    /* 초대 링크: 30분 안에 연 것만. 바로 참여하지 않고, 코드·이름이 채워진 참여 화면에서 한 번 누르게 한다
+       (모르는 방에 저절로 들어가거나 내 이름이 공개되지 않게) */
+    let pj=null; try{ const v=JSON.parse(localStorage.getItem('damda:join')||'null'); localStorage.removeItem('damda:join');
+      if(v&&/^[A-Z0-9]{6}$/.test(v.c)&&Date.now()-v.t<30*60e3) pj=v.c; }catch(e){}
+    if(pj){ const ex=rooms.find(r=>r.code===pj);
+      if(ex) openRoom(ex.id);
+      else { openJoin(); $('#joinCode').value=pj; joinLink=true; $('#joinHint').textContent='초대 링크로 왔어요. 이 이름이 방 사람들에게 보여요. 맞으면 참여하기를 누르세요.'; } }
+    else maybeOnboard().catch(e=>console.warn(e));
     document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') setTimeout(()=>REMIND.run().catch(()=>{}),3000); }); }
 }
 (()=>{ try{ const j=new URLSearchParams(location.search).get('join');
-  if(j&&/^[A-Za-z0-9]{6}$/.test(j)){ localStorage.setItem('damda:join',j.toUpperCase()); history.replaceState(null,'',location.pathname+location.hash); } }catch(e){} })();
+  if(j&&/^[A-Za-z0-9]{6}$/.test(j)){ localStorage.setItem('damda:join',JSON.stringify({c:j.toUpperCase(),t:Date.now()})); history.replaceState(null,'',location.pathname+location.hash); } }catch(e){} })();
 boot();
 })();
 </script>

@@ -142,6 +142,9 @@ for (let i = 0; i < 59; i++) await as('A', `select public.ai_take('gen')`);
 r = await as('A', `select public.ai_take('gen') n`); check('AI 한도: 61번째는 -1', r.rows?.[0]?.n === -1, r);
 r = await as('A', `select public.ai_take('etc')`); check('AI 한도: 모르는 종류 거절', !!r.err, r);
 r = await as('anon', `select public.ai_take('gen')`); check('AI 한도: 로그인 안 하면 거절', !!r.err, r);
+await db.query(`update private.ai_total set n = 3000 where kind = 'gen'`);
+r = await as('C', `select public.ai_take('gen') n`); check('AI 한도: 모두 합친 하루 한도 넘으면 -1', r.rows?.[0]?.n === -1, r);
+r = await as('C', `select * from private.ai_total`); check('AI 한도: 전체 횟수 표도 직접 못 봄', !!r.err, r);
 r = await as('A', `select * from private.ai_usage`); check('AI 한도: 사용 기록 표는 직접 못 봄', !!r.err, r);
 r = await as('A', `update private.ai_usage set n = 0`); check('AI 한도: 횟수 직접 못 고침', !!r.err, r);
 
