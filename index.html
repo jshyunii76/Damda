@@ -1816,6 +1816,7 @@ async function wipeLocal(){
   pend={}; fpend={}; own={}; base={}; lsSet(PEND,null); lsSet(FPEND,null); lsSet(OWN,null); lsSet(BASE,null); lsSet(OWNER,null);
   lsSet('damda:lms',null);    /* Canvas 받은 시각 */
   lsSet(AI_KEY_STORE,null);   /* 이 기기에 넣어 둔 AI 키도 같이 지운다 */
+  lsSet(AI_SRV_STORE,null); aiSrv=false; aiKey=''; gTextOk=gEmbOk=null;   /* '키 없이 AI' 동의도 사람마다 */
   await idbRaw.clear(); urlCache.clear();
 }
 /* 처음 로그인한 기기: 서버 기록과 이 기기 기록을 합친다. 방 목록·메모 목록은 둘 다 살리고, 나머지는 서버 쪽을 쓴다 */
@@ -2724,15 +2725,16 @@ const MEET=(()=>{
   async function open(r){
     if(!r||!r.rid){ toast('공유방에서만 회의실을 열 수 있어요'); return; }
     if(!SB||!me||!navigator.onLine){ toast('인터넷에 연결하고 로그인해야 회의실에 들어갈 수 있어요'); return; }
-    leave(); room=r; log=[]; aiSay=null; aiT=0; mySeat=null; myWait=null; sitAt=0; waitAt=0; seatPrev={}; seatSeen={}; seatFocus=null; seats=[]; $('#mtSeatBox').classList.remove('on'); loadSeats();   /* 받아 적은 대화는 이 방 회의에서만 */
-    const d=await S.get('room:'+r.code,true)||{}; memCache=d.mem||[];
-    av=await myAvatar();
+    leave(); const tok=++openTok; cam.x=cam.y=null; zoomAll=false; room=r; log=[]; aiSay=null; aiT=0; mySeat=null; myWait=null; sitAt=0; waitAt=0; seatPrev={}; seatSeen={}; seatFocus=null; seats=[]; $('#mtSeatBox').classList.remove('on'); loadSeats();   /* 받아 적은 대화는 이 방 회의에서만 */
+    const d=await S.get('room:'+r.code,true)||{}; if(tok!==openTok) return; memCache=d.mem||[];
+    av=await myAvatar(); if(tok!==openTok) return;
     const sp=[...me.id].reduce((a,c)=>a+c.charCodeAt(0),0)%7;   /* 사람마다 문 앞 다른 자리 */
     me_={x:(7+sp)*T,y:10.6*T+(sp%2)*18,dir:sp%2?-1:1,moving:false,say:null,sayT:0,emo:null,emoT:9,seed:3};
     board=(d.messages||[]).filter(m=>m&&m.due&&!m.done&&m.due>=todayKey()).sort((a,b)=>a.due<b.due?-1:1).slice(0,2).map(m=>md(m.due)+' '+mlabel(m));
     try{ theme=localStorage.getItem('damda:meetTheme:'+r.rid)||'office'; }catch(e){} if(!MEET_THEMES[theme]) theme='office';
     $('#mtTitle').textContent=r.name+' · '+MEET_THEMES[theme].n; $('#meetview').classList.add('on'); $('#mtDressBox').classList.remove('on');
     try{ await SB.realtime.setAuth(); }catch(e){}            /* 방 멤버만 들어오는 채널 (supabase/meet.sql) */
+    if(tok!==openTok) return;
     ch=SB.channel('meet:'+r.rid,{config:{private:true,broadcast:{self:false},presence:{key:me.id}}});
     ch.on('broadcast',{event:'m'},({payload})=>onMsg(payload))
       .on('presence',{event:'sync'},()=>sync())
@@ -2742,8 +2744,9 @@ const MEET=(()=>{
     /* 움직임·음성 연결은 그리기와 따로 돈다 — 화면이 가려져 그리기가 멈춰도 계속 */
     tick=setInterval(()=>{ const now=performance.now(); if(!$('#meetview').classList.contains('on')){ leave(); return; } step(Math.min(.05,(now-last)/1000)); last=now; manageVoice(now); if(now-seatsAt>3000){ seatsAt=now; loadSeats(); } },33);
   }
+  let openTok=0;
   function leave(){
-    voiceOff();
+    openTok++; voiceOff();
     cancelAnimationFrame(raf); raf=0; clearInterval(tick); tick=0;
     if(ch){ try{ ch.untrack&&ch.untrack(); SB.removeChannel(ch); }catch(e){} }
     ch=null; peers=new Map(); keys.clear(); target=null;
@@ -2751,7 +2754,7 @@ const MEET=(()=>{
   function sync(){
     if(!ch) return;
     const st=ch.presenceState(), here=new Set(Object.keys(st));
-    for(const k of [...peers.keys()]) if(!here.has(k)) peers.delete(k);
+    for(const k of [...peers.keys()]) if(!here.has(k.split('#')[0])) peers.delete(k);
     for(const k of here){ if(k===me.id) continue; const meta=(st[k]||[])[0]||{};
       const p=peers.get(k)||{x:10*T,y:11*T,tx:10*T,ty:11*T,dir:1,moving:false,say:null,sayT:0,emo:null,emoT:9,seed:k.length};
       p.n=String(meta.n||'?').slice(0,10); p.av=meta.av; p.v=!!meta.v; p.seat=typeof meta.seat==='string'?meta.seat:null; p.sitAt=+meta.sitAt||0;
@@ -2776,6 +2779,7 @@ const MEET=(()=>{
     sentPos=k; sentAt=now; send({t:'pos',x:Math.round(me_.x),y:Math.round(me_.y),d:me_.dir,j:force?1:0});
   }
   function step(dt){
+    if(mySeat&&(keys.size||target)) stand();
     let vx=0, vy=0;
     if(keys.has('l')) vx--; if(keys.has('r')) vx++; if(keys.has('u')) vy--; if(keys.has('d')) vy++;
     if(!vx&&!vy&&target){ const dx=target.x-me_.x, dy=target.y-me_.y, d=Math.hypot(dx,dy); if(d<3) target=null; else { vx=dx/d; vy=dy/d; } }
@@ -2873,6 +2877,10 @@ const MEET=(()=>{
     const nx=(d.messages||[]).filter(m=>m&&m.type==='seat'&&m.title).sort((a,b)=>(a.order||0)-(b.order||0)||a.ts-b.ts).slice(0,8);
     const changed=JSON.stringify(nx.map(x=>[x.id,x.title,x.link||''])) !== JSON.stringify(seats.map(x=>[x.id,x.title,x.link||'']));
     seats=nx; if(changed&&$('#mtSeatBox').classList.contains('on')) drawSeats();
+    const ids=new Set(seats.map(x=>x.id)); let gone=false;
+    if(mySeat&&!ids.has(mySeat)){ mySeat=null; sitAt=0; gone=true; }
+    if(myWait&&!ids.has(myWait)){ myWait=null; waitAt=0; gone=true; }
+    if(gone){ toast('맡았거나 줄 선 자리가 지워졌어요'); retrack(); }
   }
   const people=()=>[{k:me.id,n:myName(),seat:mySeat,sitAt,wait:myWait,waitAt},...[...peers].filter(([k])=>!k.includes('#')).map(([k,p])=>({k,n:p.n,seat:p.seat,sitAt:p.sitAt,wait:p.wait,waitAt:p.waitAt}))];
   /* 같은 자리에 둘이 앉으면 먼저 앉은 사람이 주인 (같으면 ID 순) — 모든 기기가 같은 답을 낸다 */
@@ -2890,8 +2898,9 @@ const MEET=(()=>{
       if(prev&&!o){   /* 자리가 비었다 → 줄 맨 앞 사람에게 '비었어요' */
         const q=queueOf(st.id);
         if(q[0]){ aiSay=`'${st.title}' 비었어요 → ${q[0].n}`; aiT=6;
-          if(q[0].k===me.id&&!seatSeen[st.id+prev]){ seatSeen[st.id+prev]=1; toast(`'${st.title}' 비었어요! 앉을까요?`); openSeats(st.id); } }
+          if(q[0].k===me.id&&!seatSeen[st.id]){ seatSeen[st.id]=1; toast(`'${st.title}' 비었어요! 앉을까요?`); openSeats(st.id); } }
       }
+      if(o) delete seatSeen[st.id];   /* 누가 다시 앉으면, 다음에 비었을 때 또 알린다 */
       seatPrev[st.id]=o?o.k:null;
     }
     if($('#mtSeatBox').classList.contains('on')) drawSeats();
@@ -2911,8 +2920,9 @@ const MEET=(()=>{
     if(cur&&cur.id===room.id&&!briefOn){ msgs=nl; drawStream(true); }
     await loadSeats(); drawSeats(); return true;
   }
+  const normSeat=t=>String(t).replace(/^[\s\-*·•]+/,'').replace(/^\d+[.)]\s*/,'').trim().slice(0,30);
   async function addSeats(titles){
-    titles=titles.map(t=>String(t).replace(/^[\s\-*·•\d.)]+/,'').trim().slice(0,30)).filter(Boolean);
+    titles=[...new Set(titles.map(normSeat).filter(Boolean))];
     const room8=8-seats.length; if(room8<=0){ toast('자리는 8개까지예요'); return; }
     if(titles.length>room8){ toast(`자리는 8개까지라 앞의 ${room8}개만 만들어요`); titles=titles.slice(0,room8); }
     let ts=Date.now(), o=seats.length;
@@ -2978,7 +2988,8 @@ const MEET=(()=>{
     if(!room) return; const list=await readList(room);
     const t=list.filter(m=>m&&!m.done&&/^\[할 일\]/.test(m.text||'')).map(m=>mlabel(m).replace(/^\[할 일\]\s*/,''));
     if(!t.length){ toast('가져올 할 일이 없어요. 목차를 직접 붙여 넣어 주세요'); return; }
-    const have=new Set(seats.map(x=>x.title)); await addSeats(t.filter(x=>!have.has(x)));
+    const have=new Set(seats.map(x=>x.title)), nw=t.filter(x=>!have.has(normSeat(x)));
+    if(!nw.length){ toast('할 일이 이미 모두 자리로 있어요'); return; } await addSeats(nw);
   }
   function say(s){ s=String(s||'').trim().slice(0,60); if(!s) return; me_.say=s; me_.sayT=5; send({t:'say',s}); heard(myName(),s); }
   /* AI 담다가 회의 대화를 받아 적는다 (내 화면에 들린 말만, 서버에 저장 안 함) */
@@ -3584,7 +3595,7 @@ function aiStat(){
 $('#btnAI').onclick=()=>{ $('#aiKey').value=aiKey===SRV?'':aiKey; aiStat(); open('#shAI'); };
 $('#aiSrvTog').onclick=async()=>{ setAiSrv(!aiSrv); aiStat(); if(aiSrv&&aiKey===SRV){ toast('AI 담다를 켰어요'); $('#aiTest').click(); } else toast(aiSrv?'내 키로 쓰는 중이에요':'키 없이 쓰기를 껐어요'); };
 $('#aiSave').onclick=()=>{
-  let k=cleanKey($('#aiKey').value);
+  let k=cleanKey($('#aiKey').value); if(k===SRV) k='';
   if(/^sk-/.test(k)){ $('#aiKey').value=''; toast('OpenAI 키예요. Gemini 키(AIza…)를 넣어주세요'); aiStat(); return; }
   try{ k?localStorage.setItem(AI_KEY_STORE,k):localStorage.removeItem(AI_KEY_STORE); }catch(e){}
   aiKey=k||(aiSrv?SRV:''); gTextOk=gEmbOk=null;
@@ -6269,10 +6280,10 @@ $('#tpClear').onclick=()=>{ calTime=null; showTime(); };
 /* ---------- 검색 ---------- */
 /* 홈에서 열면 모든 방을, 방 안에서 열면 그 방만 찾는다 */
 let sAll=null;
-const sPool=()=>sAll||msgs.map(m=>({r:cur,m}));
+const sPool=()=>sAll||msgs.filter(m=>m&&m.type!=='seat'&&m.type!=='vote').map(m=>({r:cur,m}));
 async function openSearch(q,all){
   sAll=null;
-  if(all){ sAll=[]; for(const r of rooms){ (await readList(r)).forEach(m=>sAll.push({r,m})); } }
+  if(all){ sAll=[]; for(const r of rooms){ (await readList(r)).forEach(m=>{ if(m&&m.type!=='seat'&&m.type!=='vote') sAll.push({r,m}); }); } }
   $('#search').classList.add('on');
   $('#sTitle').textContent=all?'모든 방에서 찾기':(cur?cur.name+'에서 찾기':'찾기');
   $('#sq').value=q||''; $('#sres').innerHTML='';
