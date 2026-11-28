@@ -3362,8 +3362,10 @@ async function srvFetch(path,body){
   if(!error) return typeof data==='string'?JSON.parse(data):data;
   const rs=error.context; let j={}; try{ j=await rs.json(); }catch(e){}
   const st=rs&&rs.status||0;
-  if(st===503&&j.error==='nokey'){ const err=new Error('nokey'); err.kind='nokey'; throw err; }
-  if(st===429&&j.error==='limit'){ const err=new Error('limit'); err.kind='limit'; err.status=429; throw err; }
+  /* 서버에 키가 없거나 오늘 한도를 다 쓰면: 이번 실행 동안은 AI 없이(기본 계획표 등) 조용히 동작한다. 켜기 설정은 그대로 둬서 다음에 열면 다시 시도 */
+  const pause=()=>{ if(aiKey===SRV){ aiKey=''; gTextOk=gEmbOk=null; updAIBtn(); } };
+  if(st===503&&j.error==='nokey'){ pause(); const err=new Error('nokey'); err.kind='nokey'; throw err; }
+  if(st===429&&j.error==='limit'){ pause(); const err=new Error('limit'); err.kind='limit'; err.status=429; throw err; }
   if(st===401){ const err=new Error('login'); err.kind='login'; throw err; }
   if(!st||st===502){ const err=new Error('network'); err.kind='network'; throw err; }
   const er=j.error&&typeof j.error==='object'?j.error:{};
